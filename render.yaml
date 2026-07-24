@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: probe
+    runtime: node
+    buildCommand: npm install && npx playwright install chromium
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
