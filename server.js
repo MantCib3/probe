@@ -1854,7 +1854,7 @@ const server = http.createServer((req, res) => {
   serveStatic(res, filePath);
 });
 
-const HOST = '127.0.0.1';
+const HOST = process.env.RENDER ? '0.0.0.0' : '127.0.0.1';
 let didPortFallback = false;
 
 server.on('error', (err) => {
