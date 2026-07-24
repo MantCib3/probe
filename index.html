@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROBE | Username Intelligence</title>
+  <meta name="description" content="Fast username search across 100+ platforms. Check social media, developer sites, gaming, forums, and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo">PROBE</a>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="#search">Search</a></li>
+        <li><a href="#how-it-works">How&nbsp;It&nbsp;Works</a></li>
+        <li><a href="#sites">Platforms</a></li>
+      </ul>
+      <div class="hamburger" id="hamburger" role="button" aria-label="Toggle menu" tabindex="0">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Hero / Search ───────────────────────────────────────────────── -->
+  <section id="search" class="hero">
+    <div class="hero-content">
+      <p class="hero-eyebrow">OPEN SOURCE INTELLIGENCE</p>
+      <h1>Username<br>Intelligence</h1>
+      <p class="hero-desc">Map a username across <strong id="heroCount">100</strong> platforms and uncover digital footprints across social media, developer communities, gaming platforms, forums, professional networks, shopping sites, and beyond.</p>
+
+      <!-- Username search -->
+      <div class="search-box" id="searchBox">
+        <input
+          type="text"
+          id="usernameInput"
+          placeholder="Enter a username…"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="50"
+          aria-label="Username to search"
+        >
+        <button class="btn btn-primary" id="scanBtn">SCAN</button>
+      </div>
+      <div class="quick-checks" id="quickChecks" aria-live="polite"></div>
+
+      <p class="search-hint" id="searchHint"><span id="siteCount">100</span> platforms <!-- hint updated by JS --></p>
+      <p class="search-error" id="searchError" style="display:none"></p>
+    </div>
+
+    <div class="hero-checklist report-text">
+      <h3>What PROBE Checks</h3>
+      <ul class="report-list" id="categoryList">
+        <li><strong>Social</strong> — X, Instagram, TikTok, Pinterest, Threads &amp; more</li>
+        <li><strong>Developer</strong> — GitHub, GitLab, npm, PyPI, HackerNews &amp; more</li>
+        <li><strong>Gaming</strong> — Twitch, Steam, Chess.com, Itch.io &amp; more</li>
+        <li><strong>Content &amp; Creative</strong> — YouTube, Medium, Behance, Dribbble &amp; more</li>
+        <li><strong>Forums &amp; Communities</strong> — Reddit, Quora, ProductHunt &amp; more</li>
+        <li><strong>Professional</strong> — LinkedIn, Wellfound, Fiverr &amp; more</li>
+        <li><strong>Shopping</strong> — Etsy, Redbubble, eBay &amp; more</li>
+        <li><strong>Miscellaneous</strong> — Linktree, Telegram, Letterboxd &amp; more</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── Scan Progress ──────────────────────────────────────────────── -->
+  <div class="scan-progress-section" id="scanProgressSection" style="display:none">
+    <div class="container">
+      <div class="progress-header">
+        <div class="progress-status" id="progressStatus">
+          Scanning <strong id="currentUsername"></strong>…
+        </div>
+        <button class="btn-cancel" id="cancelBtn">✕ Cancel</button>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div>
+      </div>
+      <div class="scan-stats">
+        <span class="stat-item">
+          <span class="stat-num" id="statChecked">0</span>
+          <span class="stat-label">checked</span>
+        </span>
+        <span class="stat-sep">/</span>
+        <span class="stat-item">
+          <span class="stat-num" id="statTotal">0</span>
+          <span class="stat-label">total</span>
+        </span>
+        <span class="stat-item stat-found">
+          <span class="dot dot-found">●</span>
+          <span class="stat-num" id="statFound">0</span>
+          <span class="stat-label">found</span>
+        </span>
+        <span class="stat-item stat-deleted">
+          <span class="dot dot-deleted">●</span>
+          <span class="stat-num" id="statDeleted">0</span>
+          <span class="stat-label">deleted</span>
+        </span>
+        <span class="stat-item stat-notfound">
+          <span class="dot dot-notfound">●</span>
+          <span class="stat-num" id="statNotFound">0</span>
+          <span class="stat-label">not found</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Results ────────────────────────────────────────────────────── -->
+  <section class="results-section" id="resultsSection" style="display:none">
+    <div class="container">
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="filter-categories" id="filterCategories">
+          <button class="filter-pill active" data-cat="all">All</button>
+          <button class="filter-pill" data-cat="social">Social</button>
+          <button class="filter-pill" data-cat="developer">Developer</button>
+          <button class="filter-pill" data-cat="gaming">Gaming</button>
+          <button class="filter-pill" data-cat="content">Content</button>
+          <button class="filter-pill" data-cat="forum">Forum</button>
+          <button class="filter-pill" data-cat="professional">Professional</button>
+          <button class="filter-pill" data-cat="shopping">Shopping</button>
+          <button class="filter-pill" data-cat="misc">Misc</button>
+        </div>
+        <label class="toggle-label">
+          <input type="checkbox" id="foundOnlyToggle">
+          <span>Found only</span>
+        </label>
+      </div>
+
+      <div class="investigation-panels" id="investigationPanels">
+        <div class="case-panel">
+          <div class="panel-title">Case Timeline</div>
+          <div class="panel-body" id="caseTimeline"></div>
+        </div>
+        <div class="case-panel">
+          <div class="panel-title">Evidence</div>
+          <div class="panel-body" id="evidencePanel">Select a result card to inspect evidence.</div>
+        </div>
+      </div>
+
+      <!-- Results grid -->
+      <div class="results-grid" id="resultsGrid"></div>
+
+      <!-- Manual check panel -->
+      <div class="manual-check-panel" id="manualCheckPanel" style="display:none">
+        <div class="manual-check-header" id="manualCheckToggle" role="button" tabindex="0" aria-expanded="false">
+          <span class="manual-check-title">
+            <span class="manual-check-icon">↗</span>
+            Open to Verify Manually
+            <span class="manual-check-count" id="manualCheckCount">0</span>
+          </span>
+          <span class="manual-check-hint">These platforms can't be checked automatically — click a link to open.</span>
+          <span class="manual-chevron" id="manualChevron">▼</span>
+        </div>
+        <div class="manual-check-body" id="manualCheckBody">
+          <div class="manual-links-list" id="manualLinksList"></div>
+        </div>
+      </div>
+
+      <!-- Completion summary -->
+      <div class="completion-bar" id="completionBar" style="display:none">
+        <div class="completion-summary">
+          <span id="completionText">Scan complete</span>
+        </div>
+        <div class="export-actions">
+          <button class="btn btn-outline" id="openFoundBtn">Open Found Links</button>
+          <button class="btn btn-secondary" id="exportCsvBtn">Download CSV</button>
+          <button class="btn btn-secondary" id="exportJsonBtn">Download JSON</button>
+          <button class="btn btn-outline" id="copyUrlsBtn">Copy Found URLs</button>
+          <button class="btn btn-primary" id="newScanBtn">New Scan</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── How It Works ───────────────────────────────────────────────── -->
+  <section id="how-it-works" class="how-section">
+    <div class="container">
+      <h2 class="section-heading sm">How It Works</h2>
+      <p class="section-intro">PROBE makes concurrent HTTP requests to each platform in parallel, checking profile URLs and analysing responses to determine whether a username is registered. Results stream live as they arrive.</p>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h3>Enter Username</h3>
+          <p>Type any handle, alias, or username. PROBE accepts letters, numbers, dots, hyphens, and underscores.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h3>Parallel Scan</h3>
+          <p>All <span class="step-count"></span> platforms are checked concurrently with a 10-second timeout per site for fast results.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h3>Live Results</h3>
+          <p>Results stream in real-time as each platform responds. Found profiles are highlighted immediately.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">04</div>
+          <h3>Export &amp; Analyse</h3>
+          <p>Download found profiles as a CSV, copy all URLs to clipboard, or open each profile directly in a new tab.</p>
+        </div>
+      </div>
+
+      <div class="accuracy-note">
+        <strong>Accuracy note:</strong> "Found" means the platform URL returned a successful response — verify manually before drawing conclusions.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Platforms Database ─────────────────────────────────────────── -->
+  <section id="sites" class="platforms-section">
+    <div class="container">
+      <h2 class="section-heading sm">Supported Platforms</h2>
+      <p class="section-intro">PROBE checks <span class="step-count"></span> platforms across 8 categories. The database is compiled from open-source OSINT lists and updated regularly.</p>
+
+      <div class="platforms-grid" id="platformsGrid"></div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-logo">PROBE</span>
+      <span class="footer-note">Username intelligence tool · For educational and investigative purposes only · Always comply with platform terms of service and applicable law.</span>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

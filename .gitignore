@@ -1,0 +1,13 @@
+node_modules/
+server.out.log
+server.err.log
+scan-result.txt
+
+# dev/temp scripts
+_*.js
+fix-unknowns.js
+import-wmn.js
+calibrate.js
+scan-test.js
+run_calibrate.bat
+wmn-data.json

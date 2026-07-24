@@ -1,0 +1,107 @@
+[
+  {
+    "name": "TruePeopleSearch",
+    "url": "https://www.truepeoplesearch.com/results?name={fullname}",
+    "urlFiltered": "https://www.truepeoplesearch.com/results?name={fullname}&citystatezip={location_qs}",
+    "filterRequires": "any",
+    "urlMain": "https://www.truepeoplesearch.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "no results found",
+    "resultsPattern": "btnViewDetails"
+  },
+  {
+    "name": "FastPeopleSearch",
+    "url": "https://www.fastpeoplesearch.com/name/{fullname_hyphen_lower}/",
+    "urlFiltered": "https://www.fastpeoplesearch.com/name/{fullname_hyphen_lower}/{location_path}/",
+    "filterRequires": "any",
+    "urlMain": "https://www.fastpeoplesearch.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "couldn't find any results",
+    "resultsPattern": "card-block"
+  },
+  {
+    "name": "Radaris",
+    "url": "https://radaris.com/p/{first}/{last}/",
+    "urlFiltered": "https://radaris.com/ng/search?ff={first}&fl={last}&fs={state_full}&fc={city_plus}",
+    "filterRequires": "city_and_state",
+    "urlMain": "https://radaris.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "no people records found",
+    "resultsPattern": "search-card"
+  },
+  {
+    "name": "Spokeo",
+    "url": "https://www.spokeo.com/{first}-{last}",
+    "urlMain": "https://www.spokeo.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "no results",
+    "resultsPattern": "persona-block"
+  },
+  {
+    "name": "AnyWho",
+    "url": "https://www.anywho.com/people/{first}/{last}/",
+    "urlMain": "https://www.anywho.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "no results",
+    "resultsPattern": "result-block"
+  },
+  {
+    "name": "411.com",
+    "url": "https://www.411.com/name/{first_lower}-{last_lower}",
+    "urlFiltered": "https://www.411.com/name/{first_lower}-{last_lower}/{location_path}",
+    "filterRequires": "any",
+    "urlMain": "https://www.411.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "could not find results",
+    "resultsPattern": "result-name"
+  },
+  {
+    "name": "PeekYou",
+    "url": "https://www.peekyou.com/{first_lower}_{last_lower}",
+    "urlMain": "https://www.peekyou.com",
+    "category": "people-finder",
+    "usOnly": false,
+    "noResultsMsg": "no results found",
+    "resultsPattern": "profile-cell"
+  },
+  {
+    "name": "ZabaSearch",
+    "url": "https://www.zabasearch.com/people/{first_lower}+{last_lower}/",
+    "urlFiltered": "https://www.zabasearch.com/people/{first_lower}+{last_lower}/{state_code_lower}/",
+    "filterRequires": "state",
+    "urlMain": "https://www.zabasearch.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "no records found",
+    "resultsPattern": "results-name"
+  },
+  {
+    "name": "BeenVerified",
+    "url": "https://www.beenverified.com/people/{fullname_hyphen_lower}/",
+    "urlFiltered": "https://www.beenverified.com/lp/98101d/2/loading?fn={first}&ln={last}&city={city_plus}&state=All",
+    "filterRequires": "city_and_state",
+    "urlMain": "https://www.beenverified.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "supportsAge": true,
+    "noResultsMsg": "no results",
+    "resultsPattern": "result-card"
+  },
+  {
+    "name": "Whitepages",
+    "url": "https://www.whitepages.com/name/{first}-{last}",
+    "urlFiltered": "https://www.whitepages.com/name/{first}-{last}/{city_title_slug}-{state_code}?fs=1&searchedName={fullname_double}&searchedLocation={location_qs_double}",
+    "filterRequires": "city_and_state",
+    "urlMain": "https://www.whitepages.com",
+    "category": "people-finder",
+    "usOnly": true,
+    "noResultsMsg": "no results",
+    "resultsPattern": "people-result"
+  }
+]

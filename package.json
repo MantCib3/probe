@@ -1,0 +1,22 @@
+{
+  "name": "probe-username-osint",
+  "version": "1.0.0",
+  "description": "OSINT username search across 100+ platforms",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "calibrate": "node calibrate.js",
+    "calibrate:all": "node calibrate.js --all",
+    "calibrate:dry": "node calibrate.js --dry-run"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  },
+  "dependencies": {
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
