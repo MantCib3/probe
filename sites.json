@@ -1,1742 +1,1779 @@
 [
-    {
-        "name":  "X (Twitter)",
-        "url":  "https://x.com/{}",
-        "urlMain":  "https://x.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://publish.twitter.com/oembed?url=https://x.com/{}",
-        "caveat":  "Only detects public accounts; private/protected accounts show as not found"
-    },
-    {
-        "name":  "Instagram",
-        "url":  "https://www.instagram.com/{}/",
-        "urlMain":  "https://www.instagram.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Facebook",
-        "url":  "https://www.facebook.com/{}",
-        "urlMain":  "https://www.facebook.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "TikTok",
-        "url":  "https://www.tiktok.com/@{}",
-        "urlMain":  "https://www.tiktok.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "notFoundStatus":  400,
-        "apiUrl":  "https://www.tiktok.com/oembed?url=https://www.tiktok.com/@{}",
-        "caveat":  "Only detects public accounts with at least one public video. Private or empty accounts return not_found."
-    },
-    {
-        "name":  "Tumblr",
-        "url":  "https://{}.tumblr.com/",
-        "urlMain":  "https://tumblr.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "Thereâ€™s nothing here."
-    },
-    {
-        "name":  "VK",
-        "url":  "https://vk.com/{}",
-        "urlMain":  "https://vk.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "skipBodyCheck":  true
-    },
-    {
-        "name":  "Mastodon",
-        "url":  "https://mastodon.social/@{}",
-        "urlMain":  "https://mastodon.social",
-        "category":  "social",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Bluesky",
-        "url":  "https://bsky.app/profile/{}",
-        "urlMain":  "https://bsky.app",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor={}.bsky.social",
-        "notFoundStatus":  400,
-        "caveat":  "Only detects accounts on the default bsky.social domain, not custom handles"
-    },
-    {
-        "name":  "Threads",
-        "url":  "https://www.threads.net/@{}",
-        "urlMain":  "https://www.threads.net",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Ask.fm",
-        "url":  "https://ask.fm/{}",
-        "urlMain":  "https://ask.fm",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "undetectable":  true,
-        "defunct":  true
-    },
-    {
-        "name":  "Minds",
-        "url":  "https://www.minds.com/{}",
-        "urlMain":  "https://www.minds.com",
-        "category":  "social",
-        "checkMethod":  "body",
-        "apiUrl":  "https://www.minds.com/api/v1/channel/{}",
-        "errorMsg":  "\"status\":\"error\""
-    },
-    {
-        "name":  "Plurk",
-        "url":  "https://www.plurk.com/{}",
-        "urlMain":  "https://www.plurk.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "needsBrowser":  true,
-        "errorMsg":  "User Not Found! - Plurk Sign in Register your plurk ac"
-    },
-    {
-        "name":  "LiveJournal",
-        "url":  "https://{}.livejournal.com/",
-        "urlMain":  "https://www.livejournal.com",
-        "category":  "social",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Flickr",
-        "url":  "https://www.flickr.com/people/{}/",
-        "urlMain":  "https://www.flickr.com",
-        "category":  "social",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Myspace",
-        "url":  "https://myspace.com/{}",
-        "urlMain":  "https://myspace.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "Oops! We couldnâ€™t find that page.",
-        "defunct":  true
-    },
-    {
-        "name":  "Foursquare",
-        "url":  "https://foursquare.com/{}",
-        "urlMain":  "https://foursquare.com",
-        "category":  "social",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "GitHub",
-        "url":  "https://github.com/{}",
-        "urlMain":  "https://github.com",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://api.github.com/users/{}",
-        "skipBodyCheck":  true
-    },
-    {
-        "name":  "GitLab",
-        "url":  "https://gitlab.com/{}",
-        "urlMain":  "https://gitlab.com",
-        "category":  "developer",
-        "checkMethod":  "body",
-        "apiUrl":  "https://gitlab.com/api/v4/users?username={}",
-        "positiveMsg":  "\"id\":"
-    },
-    {
-        "name":  "Bitbucket",
-        "url":  "https://bitbucket.org/{}/",
-        "urlMain":  "https://bitbucket.org",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://api.bitbucket.org/2.0/users/{}",
-        "skipBodyCheck":  true
-    },
-    {
-        "name":  "npm",
-        "url":  "https://www.npmjs.com/~{}",
-        "urlMain":  "https://www.npmjs.com",
-        "category":  "developer",
-        "checkMethod":  "body",
-        "apiUrl":  "https://registry.npmjs.org/-/v1/search?text=maintainer:{}\u0026size=1",
-        "errorMsg":  "\"total\":0,"
-    },
-    {
-        "name":  "PyPI",
-        "url":  "https://pypi.org/user/{}/",
-        "urlMain":  "https://pypi.org",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://pypi.org/user/{}/",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Hacker News",
-        "url":  "https://news.ycombinator.com/user?id={}",
-        "urlMain":  "https://news.ycombinator.com",
-        "category":  "developer",
-        "checkMethod":  "body",
-        "apiUrl":  "https://hacker-news.firebaseio.com/v0/user/{}.json",
-        "positiveMsg":  "\"id\":"
-    },
-    {
-        "name":  "Dev.to",
-        "url":  "https://dev.to/{}",
-        "urlMain":  "https://dev.to",
-        "category":  "developer",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "CodePen",
-        "url":  "https://codepen.io/{}",
-        "urlMain":  "https://codepen.io",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Replit",
-        "url":  "https://replit.com/@{}",
-        "urlMain":  "https://replit.com",
-        "category":  "developer",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Keybase",
-        "url":  "https://keybase.io/{}",
-        "urlMain":  "https://keybase.io",
-        "category":  "developer",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "HuggingFace",
-        "url":  "https://huggingface.co/{}",
-        "urlMain":  "https://huggingface.co",
-        "category":  "developer",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Kaggle",
-        "url":  "https://www.kaggle.com/{}",
-        "urlMain":  "https://www.kaggle.com",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "usernameInBody":  true,
-        "undetectable":  true
-    },
-    {
-        "name":  "Exercism",
-        "url":  "https://exercism.org/profiles/{}",
-        "urlMain":  "https://exercism.org",
-        "category":  "developer",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Hashnode",
-        "url":  "https://hashnode.com/@{}",
-        "urlMain":  "https://hashnode.com",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Codeberg",
-        "url":  "https://codeberg.org/{}",
-        "urlMain":  "https://codeberg.org",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://codeberg.org/api/v1/users/{}",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "CodeWars",
-        "url":  "https://www.codewars.com/users/{}",
-        "urlMain":  "https://www.codewars.com",
-        "category":  "developer",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "HackerEarth",
-        "url":  "https://www.hackerearth.com/@{}",
-        "urlMain":  "https://www.hackerearth.com",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://www.hackerearth.com/@{}/",
-        "notFoundStatus":  404
-    },
-    {
-        "name":  "Stack Overflow",
-        "url":  "https://stackoverflow.com/users/{}",
-        "urlMain":  "https://stackoverflow.com",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "defunct":  true
-    },
-    {
-        "name":  "SourceForge",
-        "url":  "https://sourceforge.net/u/{}/profile/",
-        "urlMain":  "https://sourceforge.net",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Steam",
-        "url":  "https://steamcommunity.com/id/{}",
-        "urlMain":  "https://steamcommunity.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "The specified profile could not be found."
-    },
-    {
-        "name":  "Chess.com",
-        "url":  "https://www.chess.com/member/{}",
-        "urlMain":  "https://www.chess.com",
-        "category":  "gaming",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Lichess",
-        "url":  "https://lichess.org/@/{}",
-        "urlMain":  "https://lichess.org",
-        "category":  "gaming",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Speedrun.com",
-        "url":  "https://www.speedrun.com/users/{}",
-        "urlMain":  "https://www.speedrun.com",
-        "category":  "gaming",
-        "checkMethod":  "status_code",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Kongregate",
-        "url":  "https://www.kongregate.com/accounts/{}",
-        "urlMain":  "https://www.kongregate.com",
-        "category":  "gaming",
-        "checkMethod":  "status_code",
-        "needsBrowser":  true,
-        "errorMsg":  "n In ðŸ‡ºðŸ‡¸ Account Not Found Sorry, no account with that name was f"
-    },
-    {
-        "name":  "Newgrounds",
-        "url":  "https://{}.newgrounds.com/",
-        "urlMain":  "https://www.newgrounds.com",
-        "category":  "gaming",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Itch.io",
-        "url":  "https://{}.itch.io/",
-        "urlMain":  "https://itch.io",
-        "category":  "gaming",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "PSN Profiles",
-        "url":  "https://psnprofiles.com/{}",
-        "urlMain":  "https://psnprofiles.com",
-        "category":  "gaming",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Roblox",
-        "url":  "https://www.roblox.com/user.aspx?username={}",
-        "urlMain":  "https://www.roblox.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "Page Not Found"
-    },
-    {
-        "name":  "Kick",
-        "url":  "https://kick.com/{}",
-        "urlMain":  "https://kick.com",
-        "category":  "gaming",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Rumble",
-        "url":  "https://rumble.com/c/{}",
-        "urlMain":  "https://rumble.com",
-        "category":  "gaming",
-        "checkMethod":  "status_code",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Trakt.tv",
-        "url":  "https://trakt.tv/users/{}",
-        "urlMain":  "https://trakt.tv",
-        "category":  "gaming",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "YouTube",
-        "url":  "https://www.youtube.com/@{}",
-        "urlMain":  "https://www.youtube.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "skipBodyCheck":  true
-    },
-    {
-        "name":  "Medium",
-        "url":  "https://medium.com/@{}",
-        "urlMain":  "https://medium.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "404",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Substack",
-        "url":  "https://{}.substack.com/",
-        "urlMain":  "https://substack.com",
-        "category":  "content",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Patreon",
-        "url":  "https://www.patreon.com/{}",
-        "urlMain":  "https://www.patreon.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "This page isnâ€™t available",
-        "undetectable":  true
-    },
-    {
-        "name":  "Ko-fi",
-        "url":  "https://ko-fi.com/{}",
-        "urlMain":  "https://ko-fi.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "usernameInBody":  true,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Behance",
-        "url":  "https://www.behance.net/{}",
-        "urlMain":  "https://www.behance.net",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "skipBodyCheck":  true
-    },
-    {
-        "name":  "Dribbble",
-        "url":  "https://dribbble.com/{}",
-        "urlMain":  "https://dribbble.com",
-        "category":  "content",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "ArtStation",
-        "url":  "https://www.artstation.com/{}",
-        "urlMain":  "https://www.artstation.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "DeviantArt",
-        "url":  "https://www.deviantart.com/{}",
-        "urlMain":  "https://www.deviantart.com",
-        "category":  "content",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "500px",
-        "url":  "https://500px.com/p/{}",
-        "urlMain":  "https://500px.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "usernameInBody":  true
-    },
-    {
-        "name":  "SoundCloud",
-        "url":  "https://soundcloud.com/{}",
-        "urlMain":  "https://soundcloud.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "We canâ€™t find that user."
-    },
-    {
-        "name":  "Bandcamp",
-        "url":  "https://{}.bandcamp.com/",
-        "urlMain":  "https://bandcamp.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "needsBrowser":  true,
-        "errorMsg":  "dcamp.com doesn\u0027t exist, but you can sign up for it right now."
-    },
-    {
-        "name":  "Last.fm",
-        "url":  "https://www.last.fm/user/{}",
-        "urlMain":  "https://www.last.fm",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "There is no one here",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Unsplash",
-        "url":  "https://unsplash.com/@{}",
-        "urlMain":  "https://unsplash.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://unsplash.com/@{}",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Wattpad",
-        "url":  "https://www.wattpad.com/user/{}",
-        "urlMain":  "https://www.wattpad.com",
-        "category":  "content",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Vimeo",
-        "url":  "https://vimeo.com/{}",
-        "urlMain":  "https://vimeo.com",
-        "checkMethod":  "message",
-        "errorMsg":  "Sorry, we couldnâ€™t find that page"
-    },
-    {
-        "name":  "Dailymotion",
-        "url":  "https://www.dailymotion.com/{}",
-        "urlMain":  "https://www.dailymotion.com",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://api.dailymotion.com/user/{}"
-    },
-    {
-        "name":  "Imgur",
-        "url":  "https://imgur.com/user/{}",
-        "urlMain":  "https://imgur.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Spotify",
-        "url":  "https://open.spotify.com/user/{}",
-        "urlMain":  "https://open.spotify.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Odysee",
-        "url":  "https://odysee.com/@{}",
-        "urlMain":  "https://odysee.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "usernameInBody":  true
-    },
-    {
-        "name":  "Giphy",
-        "url":  "https://giphy.com/{}",
-        "urlMain":  "https://giphy.com",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "undetectable":  true,
-        "defunct":  true
-    },
-    {
-        "name":  "Reddit",
-        "url":  "https://www.reddit.com/user/{}",
-        "urlMain":  "https://www.reddit.com",
-        "category":  "forum",
-        "checkMethod":  "status_code",
-        "errorMsg":  "Sorry, nobody on Reddit goes by that name.",
-        "notFoundStatus":  404,
-        "apiUrl":  "https://www.reddit.com/user/{}/about.json",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Quora",
-        "url":  "https://www.quora.com/profile/{}",
-        "urlMain":  "https://www.quora.com",
-        "category":  "forum",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Disqus",
-        "url":  "https://disqus.com/by/{}/",
-        "urlMain":  "https://disqus.com",
-        "category":  "forum",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "ProductHunt",
-        "url":  "https://www.producthunt.com/@{}",
-        "urlMain":  "https://www.producthunt.com",
-        "category":  "forum",
-        "checkMethod":  "status_code",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Lemmy",
-        "url":  "https://lemmy.world/u/{}",
-        "urlMain":  "https://lemmy.world",
-        "category":  "forum",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Lobste.rs",
-        "url":  "https://lobste.rs/u/{}",
-        "urlMain":  "https://lobste.rs",
-        "category":  "forum",
-        "checkMethod":  "message",
-        "errorMsg":  "No such user"
-    },
-    {
-        "name":  "Slashdot",
-        "url":  "https://slashdot.org/~{}",
-        "urlMain":  "https://slashdot.org",
-        "category":  "forum",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "LinkedIn",
-        "url":  "https://www.linkedin.com/in/{}/",
-        "urlMain":  "https://www.linkedin.com",
-        "category":  "professional",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Wellfound",
-        "url":  "https://wellfound.com/u/{}",
-        "urlMain":  "https://wellfound.com",
-        "category":  "professional",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Fiverr",
-        "url":  "https://www.fiverr.com/{}",
-        "urlMain":  "https://www.fiverr.com",
-        "category":  "professional",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Freelancer",
-        "url":  "https://www.freelancer.com/u/{}",
-        "urlMain":  "https://www.freelancer.com",
-        "category":  "professional",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Guru",
-        "url":  "https://www.guru.com/freelancers/{}/",
-        "urlMain":  "https://www.guru.com",
-        "category":  "professional",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Upwork",
-        "url":  "https://www.upwork.com/freelancers/~{}",
-        "urlMain":  "https://www.upwork.com",
-        "category":  "professional",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Etsy",
-        "url":  "https://www.etsy.com/shop/{}",
-        "urlMain":  "https://www.etsy.com",
-        "category":  "shopping",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Redbubble",
-        "url":  "https://www.redbubble.com/people/{}",
-        "urlMain":  "https://www.redbubble.com",
-        "category":  "shopping",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://www.redbubble.com/people/{}/shop",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "eBay",
-        "url":  "https://www.ebay.com/usr/{}",
-        "urlMain":  "https://www.ebay.com",
-        "category":  "shopping",
-        "checkMethod":  "status_code",
-        "usernameInBody":  true,
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Society6",
-        "url":  "https://society6.com/{}",
-        "urlMain":  "https://society6.com",
-        "category":  "shopping",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Threadless",
-        "url":  "https://www.threadless.com/{}",
-        "urlMain":  "https://www.threadless.com",
-        "category":  "shopping",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Poshmark",
-        "url":  "https://poshmark.com/closet/{}",
-        "urlMain":  "https://poshmark.com",
-        "category":  "shopping",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Depop",
-        "url":  "https://www.depop.com/{}",
-        "urlMain":  "https://www.depop.com",
-        "category":  "shopping",
-        "checkMethod":  "status_code",
-        "needsBrowser":  true,
-        "errorMsg":  "page 404 Page not found Depop About us Careers Blog News",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "About.me",
-        "url":  "https://about.me/{}",
-        "urlMain":  "https://about.me",
-        "category":  "misc",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Linktree",
-        "url":  "https://linktr.ee/{}",
-        "urlMain":  "https://linktr.ee",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "errorMsg":  "Sorry, this page isnâ€™t available"
-    },
-    {
-        "name":  "Gravatar",
-        "url":  "https://en.gravatar.com/{}",
-        "urlMain":  "https://gravatar.com",
-        "category":  "misc",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://gravatar.com/{}",
-        "notFoundStatus":  404
-    },
-    {
-        "name":  "Wikipedia",
-        "url":  "https://en.wikipedia.org/wiki/User:{}",
-        "urlMain":  "https://en.wikipedia.org",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "errorMsg":  "There is currently no text in this page"
-    },
-    {
-        "name":  "WordPress.org",
-        "url":  "https://profiles.wordpress.org/{}/",
-        "urlMain":  "https://profiles.wordpress.org",
-        "category":  "misc",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Slideshare",
-        "url":  "https://www.slideshare.net/{}",
-        "urlMain":  "https://www.slideshare.net",
-        "category":  "misc",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Scribd",
-        "url":  "https://www.scribd.com/{}",
-        "urlMain":  "https://www.scribd.com",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "errorMsg":  "The page you requested does not exist",
-        "undetectable":  true
-    },
-    {
-        "name":  "Telegram",
-        "url":  "https://t.me/{}",
-        "urlMain":  "https://t.me",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "positiveMsg":  "subscribers"
-    },
-    {
-        "name":  "Goodreads",
-        "url":  "https://www.goodreads.com/{}",
-        "urlMain":  "https://www.goodreads.com",
-        "category":  "misc",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Letterboxd",
-        "url":  "https://letterboxd.com/{}",
-        "urlMain":  "https://letterboxd.com",
-        "category":  "misc",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Carrd",
-        "url":  "https://{}.carrd.co/",
-        "urlMain":  "https://carrd.co",
-        "category":  "misc",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Instructables",
-        "url":  "https://www.instructables.com/member/{}",
-        "urlMain":  "https://www.instructables.com",
-        "category":  "misc",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://www.instructables.com/member/{}/",
-        "notFoundStatus":  404
-    },
-    {
-        "name":  "Strava",
-        "url":  "https://www.strava.com/athletes/{}",
-        "urlMain":  "https://www.strava.com",
-        "category":  "misc",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Untappd",
-        "url":  "https://untappd.com/user/{}",
-        "urlMain":  "https://untappd.com",
-        "category":  "misc",
-        "checkMethod":  "status_code",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Duolingo",
-        "url":  "https://www.duolingo.com/profile/{}",
-        "urlMain":  "https://www.duolingo.com",
-        "category":  "misc",
-        "checkMethod":  "body",
-        "apiUrl":  "https://www.duolingo.com/2017-06-30/users?username={}",
-        "errorMsg":  "\"users\":[]"
-    },
-    {
-        "name":  "Genius",
-        "url":  "https://genius.com/{}",
-        "urlMain":  "https://genius.com",
-        "category":  "misc",
-        "undetectable":  true,
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Pinterest",
-        "url":  "https://www.pinterest.com/{}/",
-        "urlMain":  "https://www.pinterest.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Snapchat",
-        "url":  "https://www.snapchat.com/add/{}",
-        "urlMain":  "https://www.snapchat.com",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Docker Hub",
-        "url":  "https://hub.docker.com/u/{}",
-        "urlMain":  "https://hub.docker.com",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Packagist",
-        "url":  "https://packagist.org/users/{}/",
-        "urlMain":  "https://packagist.org",
-        "category":  "developer",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Buy Me a Coffee",
-        "url":  "https://buymeacoffee.com/{}",
-        "urlMain":  "https://buymeacoffee.com",
-        "category":  "content",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "VSCO",
-        "url":  "https://vsco.co/{}/gallery",
-        "urlMain":  "https://vsco.co",
-        "category":  "content",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Pastebin",
-        "url":  "https://pastebin.com/u/{}",
-        "urlMain":  "https://pastebin.com",
-        "category":  "misc",
-        "checkMethod":  "status_code"
-    },
-    {
-        "name":  "Clubhouse",
-        "url":  "https://www.joinclubhouse.com/@{}",
-        "urlMain":  "https://www.joinclubhouse.com",
-        "category":  "misc",
-        "checkMethod":  "status_code",
-        "apiUrl":  "https://www.clubhouse.com/@{}",
-        "notFoundStatus":  404
-    },
-    {
-        "name":  "AniList",
-        "url":  "https://graphql.anilist.co",
-        "urlMain":  "https://graphql.anilist.co",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "Not Found"
-    },
-    {
-        "name":  "MyAnimeList",
-        "url":  "https://myanimelist.net/profile/{}",
-        "urlMain":  "https://myanimelist.net",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003ctitle\u003e404 Not Found"
-    },
-    {
-        "name":  "Discord (User)",
-        "url":  "https://discord.com/api/v9/unique-username/username-attempt-unauthed",
-        "urlMain":  "https://discord.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\"taken\":false",
-        "defunct":  true
-    },
-    {
-        "name":  "Gettr",
-        "url":  "https://gettr.com/api/s/uinf/{}",
-        "urlMain":  "https://gettr.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\"rc\":\"ERR\"",
-        "notFoundStatus":  400
-    },
-    {
-        "name":  "KnowYourMeme",
-        "url":  "https://knowyourmeme.com/users/{}",
-        "urlMain":  "https://knowyourmeme.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "404, File Not Found!"
-    },
-    {
-        "name":  "Neocities",
-        "url":  "https://neocities.org/site/{}",
-        "urlMain":  "https://neocities.org",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "- Not Found\u003c/title\u003e"
-    },
-    {
-        "name":  "OpenStreetMap",
-        "url":  "https://www.openstreetmap.org/user/{}",
-        "urlMain":  "https://www.openstreetmap.org",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "does not exist"
-    },
-    {
-        "name":  "Speaker Deck",
-        "url":  "https://speakerdeck.com/{}/",
-        "urlMain":  "https://speakerdeck.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "User Not Found - Speaker Deck"
-    },
-    {
-        "name":  "Steemit",
-        "url":  "https://signup.steemit.com/api/check_username?username={}",
-        "urlMain":  "https://signup.steemit.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\"success\":true",
-        "positiveMsg":  "\"success\":false"
-    },
-    {
-        "name":  "Tellonym",
-        "url":  "https://api.tellonym.me/profiles/name/{}",
-        "urlMain":  "https://api.tellonym.me",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\"code\":\"NOT_FOUND\"",
-        "undetectable":  true
-    },
-    {
-        "name":  "Truth Social",
-        "url":  "https://truthsocial.com/api/v1/accounts/lookup?acct={}",
-        "urlMain":  "https://truthsocial.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\"error\":\"Record not found\"",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Twitcasting",
-        "url":  "https://twitcasting.tv/{}",
-        "urlMain":  "https://twitcasting.tv",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "Not Found"
-    },
-    {
-        "name":  "Wikidot",
-        "url":  "http://www.wikidot.com/user:info/{}",
-        "urlMain":  "https://www.wikidot.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003cdiv class=\"error-block\"\u003eUser does not exist.\u003c/div\u003e"
-    },
-    {
-        "name":  "Xing",
-        "url":  "https://www.xing.com/profile/{}",
-        "urlMain":  "https://www.xing.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "404 Not Found | XING"
-    },
-    {
-        "name":  "YouNow",
-        "url":  "https://api.younow.com/php/api/broadcast/info/user={}",
-        "urlMain":  "https://api.younow.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\"errorMsg\":\"No users found\""
-    },
-    {
-        "name":  "Zomato",
-        "url":  "https://www.zomato.com/{}/reviews",
-        "urlMain":  "https://www.zomato.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "This is a 404 page and we think it\u0027s fairly clear"
-    },
-    {
-        "name":  "Trello",
-        "url":  "https://trello.com/1/Members/{}",
-        "urlMain":  "https://trello.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003ch1\u003eOh no! 404!\u003c/h1\u003e"
-    },
-    {
-        "name":  "tripadvisor",
-        "url":  "https://www.tripadvisor.com/Profile/{}",
-        "urlMain":  "https://www.tripadvisor.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "This page is on vacation",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "BuzzFeed",
-        "url":  "https://www.buzzfeed.com/{}",
-        "urlMain":  "https://www.buzzfeed.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "We can\u0027t find the page you\u0027re looking for",
-        "defunct":  true
-    },
-    {
-        "name":  "postcrossing",
-        "url":  "https://www.postcrossing.com/user/{}",
-        "urlMain":  "https://www.postcrossing.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "- Postcrossing"
-    },
-    {
-        "name":  "Destructoid",
-        "url":  "https://www.destructoid.com/?name={}",
-        "urlMain":  "https://www.destructoid.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "Error in query",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Anime-Planet",
-        "url":  "https://www.anime-planet.com/users/{}",
-        "urlMain":  "https://www.anime-planet.com/users/",
-        "category":  "social",
-        "checkMethod":  "status_code",
-        "undetectable":  true
-    },
-    {
-        "name":  "Zepeto",
-        "url":  "https://gw-napi.zepeto.io/profiles/{}",
-        "urlMain":  "https://gw-napi.zepeto.io",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "errorCode\":"
-    },
-    {
-        "name":  "LINE",
-        "url":  "https://line.me/R/ti/p/@{}?from=page",
-        "urlMain":  "https://line.me",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "404 Not Found"
-    },
-    {
-        "name":  "weheartit",
-        "url":  "https://weheartit.com/{}",
-        "urlMain":  "https://weheartit.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "(404)\u003c/title\u003e",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "solo.to",
-        "url":  "https://solo.to/{}",
-        "urlMain":  "https://solo.to",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "The page you\u0027re looking for isn\u0027t here.",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Geocaching",
-        "url":  "https://www.geocaching.com/p/?u={}",
-        "urlMain":  "https://www.geocaching.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "class=\"callout http-error\""
-    },
-    {
-        "name":  "zhihu",
-        "url":  "https://api.zhihu.com/books/people/{}/publications?offset=0\u0026limit=5",
-        "urlMain":  "https://api.zhihu.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "\"name\": \"NotFoundException\""
-    },
-    {
-        "name":  "Parler",
-        "url":  "https://parler.com/user/{}",
-        "urlMain":  "https://parler.com",
-        "category":  "social",
-        "checkMethod":  "message",
-        "errorMsg":  "join Parler today"
-    },
-    {
-        "name":  "FACEIT",
-        "url":  "https://www.faceit.com/api/users/v1/nicknames/{}",
-        "urlMain":  "https://www.faceit.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\"message\":\"user not found\""
-    },
-    {
-        "name":  "Fandom",
-        "url":  "https://www.fandom.com/u/{}",
-        "urlMain":  "https://www.fandom.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "Not Found",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Fortnite Tracker",
-        "url":  "https://fortnitetracker.com/profile/all/{}",
-        "urlMain":  "https://fortnitetracker.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "Fortnite Player Stats -",
-        "undetectable":  true
-    },
-    {
-        "name":  "Game Jolt",
-        "url":  "https://gamejolt.com/site-api/web/profile/@{}/",
-        "urlMain":  "https://gamejolt.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "null,"
-    },
-    {
-        "name":  "Gamespot",
-        "url":  "https://www.gamespot.com/profile/{}/summary/activity/?ajax",
-        "urlMain":  "https://www.gamespot.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\"success\":false",
-        "undetectable":  true
-    },
-    {
-        "name":  "GOG",
-        "url":  "https://www.gog.com/u/{}",
-        "urlMain":  "https://www.gog.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "href=\"http://www.gog.com/404\""
-    },
-    {
-        "name":  "Habbo.com",
-        "url":  "https://www.habbo.com/api/public/users?name={}",
-        "urlMain":  "https://www.habbo.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "error\": \"not-found"
-    },
-    {
-        "name":  "MCUUID (Minecraft)",
-        "url":  "https://playerdb.co/api/player/minecraft/{}",
-        "urlMain":  "https://playerdb.co",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "minecraft.api_failure"
-    },
-    {
-        "name":  "Minecraft List",
-        "url":  "https://minecraftlist.com/players/{}",
-        "urlMain":  "https://minecraftlist.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "0 Minecraft servers recently"
-    },
-    {
-        "name":  "Mod DB",
-        "url":  "https://www.moddb.com/html/scripts/autocomplete.php?a=username\u0026q={}",
-        "urlMain":  "https://www.moddb.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\"available\":true",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Moxfield",
-        "url":  "https://api2.moxfield.com/v1/users/{}",
-        "urlMain":  "https://api2.moxfield.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\"status\":404",
-        "notFoundStatus":  404,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "OPGG",
-        "url":  "https://eune.op.gg/summoners/eune/{}",
-        "urlMain":  "https://eune.op.gg",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "Guide - OP.GG"
-    },
-    {
-        "name":  "osu!",
-        "url":  "https://osu.ppy.sh/users/{}",
-        "urlMain":  "https://osu.ppy.sh",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "User not found! ;_;"
-    },
-    {
-        "name":  "Playstation Network",
-        "url":  "https://psnprofiles.com/xhr/search/users?q={}",
-        "urlMain":  "https://psnprofiles.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "We couldn\u0027t find anything",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "pokemonshowdown",
-        "url":  "https://pokemonshowdown.com/users/{}",
-        "urlMain":  "https://pokemonshowdown.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "(Unregistered)"
-    },
-    {
-        "name":  "BoardGameGeek",
-        "url":  "https://api.geekdo.com/api/accounts/validate/username?username={}",
-        "urlMain":  "https://api.geekdo.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\"isValid\":true"
-    },
-    {
-        "name":  "BIGO Live",
-        "url":  "https://www.bigo.tv/user/{}",
-        "urlMain":  "https://www.bigo.tv",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "userInfo:{}"
-    },
-    {
-        "name":  "hiberworld",
-        "url":  "https://hiberworld.com/user/{}",
-        "urlMain":  "https://hiberworld.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "Looks like you got lost",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Apex Legends",
-        "url":  "https://api.tracker.gg/api/v2/apex/standard/profile/origin/{}",
-        "urlMain":  "https://api.tracker.gg",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "CollectorResultStatus::NotFound",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Xbox Gamertag",
-        "url":  "https://www.xboxgamertag.com/search/{}",
-        "urlMain":  "https://www.xboxgamertag.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "Gamertag doesn\u0027t exist"
-    },
-    {
-        "name":  "ArmorGames",
-        "url":  "https://armorgames.com/user/{}",
-        "urlMain":  "https://armorgames.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "404: Oh Noes!",
-        "undetectable":  true
-    },
-    {
-        "name":  "speedrun",
-        "url":  "https://www.speedrun.com/user/{}/",
-        "urlMain":  "https://www.speedrun.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003ctitle\u003espeedrun.com",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "TETR.IO",
-        "url":  "https://ch.tetr.io/api/users/{}",
-        "urlMain":  "https://ch.tetr.io",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\"success\":false"
-    },
-    {
-        "name":  "SteamGifts",
-        "url":  "https://www.steamgifts.com/user/{}",
-        "urlMain":  "https://www.steamgifts.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "positiveMsg":  "\"identifier\":",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Wowhead",
-        "url":  "https://www.wowhead.com/user={}",
-        "urlMain":  "https://www.wowhead.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "Error - Wowhead",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "TruckersMP",
-        "url":  "https://truckersmp.com/user/search?search={}",
-        "urlMain":  "https://truckersmp.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003ch4\u003eCould not find any member using these credentials\u003c/h4\u003e"
-    },
-    {
-        "name":  "lichess.org",
-        "url":  "https://lichess.org/api/player/autocomplete?term={}\u0026exists=1",
-        "urlMain":  "https://lichess.org",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "false"
-    },
-    {
-        "name":  "LeetCode",
-        "url":  "https://leetcode.com/graphql/",
-        "urlMain":  "https://leetcode.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"matchedUser\":null",
-        "defunct":  true
-    },
-    {
-        "name":  "Gitea",
-        "url":  "https://gitea.com/api/v1/users/{}",
-        "urlMain":  "https://gitea.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"message\":\"user redirect does not exist",
-        "defunct":  true
-    },
-    {
-        "name":  "Wakatime",
-        "url":  "https://wakatime.com/api/v1/users/{}",
-        "urlMain":  "https://wakatime.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"error\": \"Not found.\""
-    },
-    {
-        "name":  "HackerRank",
-        "url":  "https://www.hackerrank.com/rest/contests/master/hackers/{}/profile",
-        "urlMain":  "https://www.hackerrank.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"error\":\"Not Found\""
-    },
-    {
-        "name":  "Codecademy",
-        "url":  "https://www.codecademy.com/profiles/{}",
-        "urlMain":  "https://www.codecademy.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"type\":\"UserNotFound\""
-    },
-    {
-        "name":  "AtCoder",
-        "url":  "https://atcoder.jp/users/{}",
-        "urlMain":  "https://atcoder.jp",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003e404 Page Not Found\u003c/h1\u003e"
-    },
-    {
-        "name":  "CodeChef",
-        "url":  "https://www.codechef.com/users/{}",
-        "urlMain":  "https://www.codechef.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "positiveMsg":  "class=\"user-profile-container\""
-    },
-    {
-        "name":  "Codeforces",
-        "url":  "https://codeforces.com/api/user.info?handles={}",
-        "urlMain":  "https://codeforces.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"status\":\"FAILED\"",
-        "notFoundStatus":  400
-    },
-    {
-        "name":  "CodeSandbox",
-        "url":  "https://codesandbox.io/api/v1/users/{}",
-        "urlMain":  "https://codesandbox.io",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "Could not find user with username",
-        "undetectable":  true
-    },
-    {
-        "name":  "devRant",
-        "url":  "https://devrant.com/api/get-user-id?app=3\u0026username={}",
-        "urlMain":  "https://devrant.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"success\":false",
-        "notFoundStatus":  400
-    },
-    {
-        "name":  "Docker Hub (User)",
-        "url":  "https://hub.docker.com/v2/users/{}/",
-        "urlMain":  "https://hub.docker.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"message\":\"User not found\"",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "GeeksForGeeks",
-        "url":  "https://authapi.geeksforgeeks.org/api-get/user-profile-info/?handle={}",
-        "urlMain":  "https://authapi.geeksforgeeks.org",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"message\":\"User not found!\"",
-        "notFoundStatus":  400
-    },
-    {
-        "name":  "Hackster",
-        "url":  "https://www.hackster.io/{}",
-        "urlMain":  "https://www.hackster.io",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "id=\"error\""
-    },
-    {
-        "name":  "JSFiddle",
-        "url":  "https://jsfiddle.net/user/{}/",
-        "urlMain":  "https://jsfiddle.net",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "That page doesn\u0027t exist.",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Monkeytype",
-        "url":  "https://api.monkeytype.com/users/{}/profile",
-        "urlMain":  "https://api.monkeytype.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"message\":\"User not found\""
-    },
-    {
-        "name":  "RubyGems.org",
-        "url":  "https://rubygems.org/api/v1/profiles/{}.json",
-        "urlMain":  "https://rubygems.org",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"error\":\"Not Found\""
-    },
-    {
-        "name":  "Scratch",
-        "url":  "https://api.scratch.mit.edu/accounts/checkusername/{}/",
-        "urlMain":  "https://api.scratch.mit.edu",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"msg\":\"valid username\""
-    },
-    {
-        "name":  "Topcoder",
-        "url":  "https://api.topcoder.com/v5/members/{}",
-        "urlMain":  "https://api.topcoder.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"message\":\"Member with handle:",
-        "defunct":  true
-    },
-    {
-        "name":  "Bugcrowd",
-        "url":  "https://bugcrowd.com/profile-service/v1/profiles/{}",
-        "urlMain":  "https://bugcrowd.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"error\":\"Not Found\""
-    },
-    {
-        "name":  "HackerOne",
-        "url":  "https://hackerone.com/graphql",
-        "urlMain":  "https://hackerone.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"type\":\"NOT_FOUND\""
-    },
-    {
-        "name":  "Hackernoon",
-        "url":  "https://hackernoon.com/u/{}",
-        "urlMain":  "https://hackernoon.com",
-        "category":  "developer",
-        "checkMethod":  "status_code",
-        "undetectable":  false,
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "TryHackMe",
-        "url":  "https://tryhackme.com/api/user/exist/{}",
-        "urlMain":  "https://tryhackme.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\"success\":false",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Udemy",
-        "url":  "https://www.udemy.com/user/{}/",
-        "urlMain":  "https://www.udemy.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003ctitle\u003eOnline Courses - Learn Anything, On Your Schedule | Udemy\u003c/title\u003e",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Chocolatey",
-        "url":  "https://community.chocolatey.org/profiles/{}",
-        "urlMain":  "https://community.chocolatey.org",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "id=\"error404Message\""
-    },
-    {
-        "name":  "PCPartPicker",
-        "url":  "https://pcpartpicker.com/user/{}/",
-        "urlMain":  "https://pcpartpicker.com",
-        "category":  "developer",
-        "checkMethod":  "message",
-        "errorMsg":  "The page you requested could not be found."
-    },
-    {
-        "name":  "DOTAFire",
-        "url":  "https://www.dotafire.com/ajax/searchSite?text={}\u0026search=members",
-        "urlMain":  "https://www.dotafire.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003eNo results found\u003c/span\u003e",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "sporcle",
-        "url":  "https://www.sporcle.com/user/{}/people/",
-        "urlMain":  "https://www.sporcle.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "This Sporcle user cannot be found.",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Ubisoft",
-        "url":  "https://discussions.ubisoft.com/user/{}",
-        "urlMain":  "https://discussions.ubisoft.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "You seem to have stumbled upon a page that does not exist."
-    },
-    {
-        "name":  "Diablo",
-        "url":  "https://diablo2.io/member/{}/",
-        "urlMain":  "https://diablo2.io",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "The requested user does not exist",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "SimplePlanes",
-        "url":  "https://www.simpleplanes.com/u/{}",
-        "urlMain":  "https://www.simpleplanes.com",
-        "category":  "gaming",
-        "checkMethod":  "message",
-        "errorMsg":  "\u003ctitle\u003eSimplePlanes Airplanes\u003c/title\u003e"
-    },
-    {
-        "name":  "smule",
-        "url":  "https://www.smule.com/api/profile/?handle={}",
-        "urlMain":  "https://www.smule.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "\"code\":",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Mixcloud",
-        "url":  "https://api.mixcloud.com/{}/",
-        "urlMain":  "https://api.mixcloud.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "\"error\":"
-    },
-    {
-        "name":  "Audiojungle",
-        "url":  "https://audiojungle.net/user/{}",
-        "urlMain":  "https://audiojungle.net",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "404 - Nothing to see here"
-    },
-    {
-        "name":  "Discogs",
-        "url":  "https://api.discogs.com/users/{}",
-        "urlMain":  "https://api.discogs.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "\"message\": \"User does not exist or may have been deleted.\""
-    },
-    {
-        "name":  "Bandlab",
-        "url":  "https://www.bandlab.com/api/v1.3/users/{}",
-        "urlMain":  "https://www.bandlab.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "Couldnâ€™t find any matching element, it might be deleted"
-    },
-    {
-        "name":  "Blogspot",
-        "url":  "http://{}.blogspot.com",
-        "urlMain":  "https://{}.blogspot.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "Blog not found",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "WordPress.com (Public)",
-        "url":  "https://public-api.wordpress.com/rest/v1.1/sites/{}.wordpress.com",
-        "urlMain":  "https://public-api.wordpress.com",
-        "category":  "content",
-        "checkMethod":  "message",
-        "errorMsg":  "\"error\":\"unknown_blog\""
-    },
-    {
-        "name":  "Researchgate",
-        "url":  "https://www.researchgate.net/profile/{}",
-        "urlMain":  "https://www.researchgate.net",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "errorMsg":  "20+ million researchers on ResearchGate",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "Houzz",
-        "url":  "https://www.houzz.com/user/{}",
-        "urlMain":  "https://www.houzz.com",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "errorMsg":  "Page Not Found"
-    },
-    {
-        "name":  "Quizlet",
-        "url":  "https://quizlet.com/webapi/3.2/users/check-username?username={}",
-        "urlMain":  "https://quizlet.com",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "errorMsg":  "\"success\":true",
-        "undetectable":  true,
-        "positiveMsg":  "\"success\":false"
-    },
-    {
-        "name":  "LibraryThing",
-        "url":  "https://www.librarything.com/profile/{}",
-        "urlMain":  "https://www.librarything.com",
-        "category":  "misc",
-        "checkMethod":  "message",
-        "errorMsg":  "Error: This user doesn\u0027t exist",
-        "allowBrowserFallback":  false
-    },
-    {
-        "name":  "carrd.co",
-        "url":  "https://{}.carrd.co",
-        "urlMain":  "https://{}.carrd.co",
-        "category":  "professional",
-        "checkMethod":  "message",
-        "errorMsg":  "Sorry, the requested page could not be found."
-    }
+  {
+    "name": "X (Twitter)",
+    "url": "https://x.com/{}",
+    "urlMain": "https://x.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "apiUrl": "https://publish.twitter.com/oembed?url=https://x.com/{}",
+    "caveat": "Only detects public accounts; private/protected accounts show as not found"
+  },
+  {
+    "name": "Instagram",
+    "url": "https://www.instagram.com/{}/",
+    "urlMain": "https://www.instagram.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Facebook",
+    "url": "https://www.facebook.com/{}",
+    "urlMain": "https://www.facebook.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "TikTok",
+    "url": "https://www.tiktok.com/@{}",
+    "urlMain": "https://www.tiktok.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "notFoundStatus": 400,
+    "apiUrl": "https://www.tiktok.com/oembed?url=https://www.tiktok.com/@{}",
+    "caveat": "Only detects public accounts with at least one public video. Private or empty accounts return not_found."
+  },
+  {
+    "name": "Tumblr",
+    "url": "https://{}.tumblr.com/",
+    "urlMain": "https://tumblr.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "apiUrl": "https://{}.tumblr.com/rss",
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
+  },
+  {
+    "name": "VK",
+    "url": "https://vk.com/{}",
+    "urlMain": "https://vk.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Mastodon",
+    "url": "https://mastodon.social/@{}",
+    "urlMain": "https://mastodon.social",
+    "category": "social",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Bluesky",
+    "url": "https://bsky.app/profile/{}",
+    "urlMain": "https://bsky.app",
+    "category": "social",
+    "checkMethod": "status_code",
+    "apiUrl": "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor={}.bsky.social",
+    "notFoundStatus": 400,
+    "caveat": "Only detects accounts on the default bsky.social domain, not custom handles"
+  },
+  {
+    "name": "Threads",
+    "url": "https://www.threads.net/@{}",
+    "urlMain": "https://www.threads.net",
+    "category": "social",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Ask.fm",
+    "url": "https://ask.fm/{}",
+    "urlMain": "https://ask.fm",
+    "category": "social",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "defunct": true
+  },
+  {
+    "name": "Minds",
+    "url": "https://www.minds.com/{}",
+    "urlMain": "https://www.minds.com",
+    "category": "social",
+    "checkMethod": "body",
+    "apiUrl": "https://www.minds.com/api/v1/channel/{}",
+    "errorMsg": "\"status\":\"error\""
+  },
+  {
+    "name": "Plurk",
+    "url": "https://www.plurk.com/{}",
+    "urlMain": "https://www.plurk.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "needsBrowser": true,
+    "errorMsg": "User Not Found! - Plurk Sign in Register your plurk ac"
+  },
+  {
+    "name": "LiveJournal",
+    "url": "https://{}.livejournal.com/",
+    "urlMain": "https://www.livejournal.com",
+    "category": "social",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Flickr",
+    "url": "https://www.flickr.com/people/{}/",
+    "urlMain": "https://www.flickr.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Myspace",
+    "url": "https://myspace.com/{}",
+    "urlMain": "https://myspace.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "Oops! We couldnÃ¢â‚¬â„¢t find that page.",
+    "defunct": true
+  },
+  {
+    "name": "Foursquare",
+    "url": "https://foursquare.com/{}",
+    "urlMain": "https://foursquare.com",
+    "category": "social",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "GitHub",
+    "url": "https://github.com/{}",
+    "urlMain": "https://github.com",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "apiUrl": "https://api.github.com/users/{}",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "GitLab",
+    "url": "https://gitlab.com/{}",
+    "urlMain": "https://gitlab.com",
+    "category": "developer",
+    "checkMethod": "body",
+    "apiUrl": "https://gitlab.com/api/v4/users?username={}",
+    "positiveMsg": "\"id\":"
+  },
+  {
+    "name": "Bitbucket",
+    "url": "https://bitbucket.org/{}/",
+    "urlMain": "https://bitbucket.org",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "apiUrl": "https://api.bitbucket.org/2.0/users/{}",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "npm",
+    "url": "https://www.npmjs.com/~{}",
+    "urlMain": "https://www.npmjs.com",
+    "category": "developer",
+    "checkMethod": "body",
+    "apiUrl": "https://registry.npmjs.org/-/v1/search?text=maintainer:{}&size=1",
+    "errorMsg": "\"total\":0,"
+  },
+  {
+    "name": "PyPI",
+    "url": "https://pypi.org/user/{}/",
+    "urlMain": "https://pypi.org",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "apiUrl": "https://pypi.org/user/{}/",
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Hacker News",
+    "url": "https://news.ycombinator.com/user?id={}",
+    "urlMain": "https://news.ycombinator.com",
+    "category": "developer",
+    "checkMethod": "body",
+    "apiUrl": "https://hacker-news.firebaseio.com/v0/user/{}.json",
+    "positiveMsg": "\"id\":"
+  },
+  {
+    "name": "Dev.to",
+    "url": "https://dev.to/{}",
+    "urlMain": "https://dev.to",
+    "category": "developer",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "CodePen",
+    "url": "https://codepen.io/{}",
+    "urlMain": "https://codepen.io",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Replit",
+    "url": "https://replit.com/@{}",
+    "urlMain": "https://replit.com",
+    "category": "developer",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Keybase",
+    "url": "https://keybase.io/{}",
+    "urlMain": "https://keybase.io",
+    "category": "developer",
+    "checkMethod": "message",
+    "apiUrl": "https://keybase.io/_/api/1.0/user/lookup.json?username={}",
+    "positiveMsg": "\"status\":{\"code\":0",
+    "errorMsg": "\"status\":{\"code\":404",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "HuggingFace",
+    "url": "https://huggingface.co/{}",
+    "urlMain": "https://huggingface.co",
+    "category": "developer",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Kaggle",
+    "url": "https://www.kaggle.com/{}",
+    "urlMain": "https://www.kaggle.com",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "usernameInBody": true,
+    "undetectable": true
+  },
+  {
+    "name": "Exercism",
+    "url": "https://exercism.org/profiles/{}",
+    "urlMain": "https://exercism.org",
+    "category": "developer",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Hashnode",
+    "url": "https://hashnode.com/@{}",
+    "urlMain": "https://hashnode.com",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Codeberg",
+    "url": "https://codeberg.org/{}",
+    "urlMain": "https://codeberg.org",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "apiUrl": "https://codeberg.org/api/v1/users/{}",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "CodeWars",
+    "url": "https://www.codewars.com/users/{}",
+    "urlMain": "https://www.codewars.com",
+    "category": "developer",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "HackerEarth",
+    "url": "https://www.hackerearth.com/@{}",
+    "urlMain": "https://www.hackerearth.com",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "apiUrl": "https://www.hackerearth.com/@{}/",
+    "notFoundStatus": 404
+  },
+  {
+    "name": "Stack Overflow",
+    "url": "https://stackoverflow.com/users/{}",
+    "urlMain": "https://stackoverflow.com",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "defunct": true
+  },
+  {
+    "name": "SourceForge",
+    "url": "https://sourceforge.net/u/{}/profile/",
+    "urlMain": "https://sourceforge.net",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Steam",
+    "url": "https://steamcommunity.com/id/{}",
+    "urlMain": "https://steamcommunity.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "apiUrl": "https://steamcommunity.com/id/{}?xml=1",
+    "errorMsg": "<error>",
+    "positiveMsg": "<steamID64>",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Chess.com",
+    "url": "https://www.chess.com/member/{}",
+    "urlMain": "https://www.chess.com",
+    "category": "gaming",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Lichess",
+    "url": "https://lichess.org/@/{}",
+    "urlMain": "https://lichess.org",
+    "category": "gaming",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Speedrun.com",
+    "url": "https://www.speedrun.com/users/{}",
+    "urlMain": "https://www.speedrun.com",
+    "category": "gaming",
+    "checkMethod": "status_code",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Kongregate",
+    "url": "https://www.kongregate.com/accounts/{}",
+    "urlMain": "https://www.kongregate.com",
+    "category": "gaming",
+    "checkMethod": "status_code",
+    "needsBrowser": true,
+    "errorMsg": "n In Ã°Å¸â€¡ÂºÃ°Å¸â€¡Â¸ Account Not Found Sorry, no account with that name was f"
+  },
+  {
+    "name": "Newgrounds",
+    "url": "https://{}.newgrounds.com/",
+    "urlMain": "https://www.newgrounds.com",
+    "category": "gaming",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Itch.io",
+    "url": "https://{}.itch.io/",
+    "urlMain": "https://itch.io",
+    "category": "gaming",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "PSN Profiles",
+    "url": "https://psnprofiles.com/{}",
+    "urlMain": "https://psnprofiles.com",
+    "category": "gaming",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Roblox",
+    "url": "https://www.roblox.com/user.aspx?username={}",
+    "urlMain": "https://www.roblox.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "Page Not Found"
+  },
+  {
+    "name": "Kick",
+    "url": "https://kick.com/{}",
+    "urlMain": "https://kick.com",
+    "category": "gaming",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Rumble",
+    "url": "https://rumble.com/c/{}",
+    "urlMain": "https://rumble.com",
+    "category": "gaming",
+    "checkMethod": "status_code",
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Trakt.tv",
+    "url": "https://trakt.tv/users/{}",
+    "urlMain": "https://trakt.tv",
+    "category": "gaming",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "YouTube",
+    "url": "https://www.youtube.com/@{}",
+    "urlMain": "https://www.youtube.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Medium",
+    "url": "https://medium.com/@{}",
+    "urlMain": "https://medium.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "allowBrowserFallback": false,
+    "apiUrl": "https://medium.com/feed/@{}",
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Substack",
+    "url": "https://{}.substack.com/",
+    "urlMain": "https://substack.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Patreon",
+    "url": "https://www.patreon.com/{}",
+    "urlMain": "https://www.patreon.com",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "This page isnÃ¢â‚¬â„¢t available",
+    "undetectable": true
+  },
+  {
+    "name": "Ko-fi",
+    "url": "https://ko-fi.com/{}",
+    "urlMain": "https://ko-fi.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "usernameInBody": true,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Behance",
+    "url": "https://www.behance.net/{}",
+    "urlMain": "https://www.behance.net",
+    "category": "content",
+    "checkMethod": "status_code",
+    "skipBodyCheck": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Dribbble",
+    "url": "https://dribbble.com/{}",
+    "urlMain": "https://dribbble.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "ArtStation",
+    "url": "https://www.artstation.com/{}",
+    "urlMain": "https://www.artstation.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "DeviantArt",
+    "url": "https://www.deviantart.com/{}",
+    "urlMain": "https://www.deviantart.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "apiUrl": "https://backend.deviantart.com/oembed?url=https://www.deviantart.com/{}",
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
+  },
+  {
+    "name": "500px",
+    "url": "https://500px.com/p/{}",
+    "urlMain": "https://500px.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "usernameInBody": true
+  },
+  {
+    "name": "SoundCloud",
+    "url": "https://soundcloud.com/{}",
+    "urlMain": "https://soundcloud.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "apiUrl": "https://soundcloud.com/oembed?url=https://soundcloud.com/{}&format=json",
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Bandcamp",
+    "url": "https://{}.bandcamp.com/",
+    "urlMain": "https://bandcamp.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "needsBrowser": true,
+    "apiUrl": "https://{}.bandcamp.com/feed.rss",
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Last.fm",
+    "url": "https://www.last.fm/user/{}",
+    "urlMain": "https://www.last.fm",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "There is no one here",
+    "allowBrowserFallback": false,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Unsplash",
+    "url": "https://unsplash.com/@{}",
+    "urlMain": "https://unsplash.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "apiUrl": "https://unsplash.com/@{}",
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Wattpad",
+    "url": "https://www.wattpad.com/user/{}",
+    "urlMain": "https://www.wattpad.com",
+    "category": "content",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Vimeo",
+    "url": "https://vimeo.com/{}",
+    "urlMain": "https://vimeo.com",
+    "checkMethod": "status_code",
+    "apiUrl": "https://vimeo.com/api/oembed.json?url=https://vimeo.com/{}",
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
+  },
+  {
+    "name": "Dailymotion",
+    "url": "https://www.dailymotion.com/{}",
+    "urlMain": "https://www.dailymotion.com",
+    "checkMethod": "status_code",
+    "apiUrl": "https://api.dailymotion.com/user/{}"
+  },
+  {
+    "name": "Imgur",
+    "url": "https://imgur.com/user/{}",
+    "urlMain": "https://imgur.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Spotify",
+    "url": "https://open.spotify.com/user/{}",
+    "urlMain": "https://open.spotify.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Odysee",
+    "url": "https://odysee.com/@{}",
+    "urlMain": "https://odysee.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "usernameInBody": true
+  },
+  {
+    "name": "Giphy",
+    "url": "https://giphy.com/{}",
+    "urlMain": "https://giphy.com",
+    "category": "content",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "defunct": true
+  },
+  {
+    "name": "Reddit",
+    "url": "https://www.reddit.com/user/{}",
+    "urlMain": "https://www.reddit.com",
+    "category": "forum",
+    "checkMethod": "status_code",
+    "errorMsg": "Sorry, nobody on Reddit goes by that name.",
+    "notFoundStatus": 404,
+    "apiUrl": "https://www.reddit.com/user/{}/about.json",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Quora",
+    "url": "https://www.quora.com/profile/{}",
+    "urlMain": "https://www.quora.com",
+    "category": "forum",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Disqus",
+    "url": "https://disqus.com/by/{}/",
+    "urlMain": "https://disqus.com",
+    "category": "forum",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "ProductHunt",
+    "url": "https://www.producthunt.com/@{}",
+    "urlMain": "https://www.producthunt.com",
+    "category": "forum",
+    "checkMethod": "status_code",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Lemmy",
+    "url": "https://lemmy.world/u/{}",
+    "urlMain": "https://lemmy.world",
+    "category": "forum",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Lobste.rs",
+    "url": "https://lobste.rs/u/{}",
+    "urlMain": "https://lobste.rs",
+    "category": "forum",
+    "checkMethod": "message",
+    "errorMsg": "No such user"
+  },
+  {
+    "name": "Slashdot",
+    "url": "https://slashdot.org/~{}",
+    "urlMain": "https://slashdot.org",
+    "category": "forum",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "LinkedIn",
+    "url": "https://www.linkedin.com/in/{}/",
+    "urlMain": "https://www.linkedin.com",
+    "category": "professional",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Wellfound",
+    "url": "https://wellfound.com/u/{}",
+    "urlMain": "https://wellfound.com",
+    "category": "professional",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Fiverr",
+    "url": "https://www.fiverr.com/{}",
+    "urlMain": "https://www.fiverr.com",
+    "category": "professional",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Freelancer",
+    "url": "https://www.freelancer.com/u/{}",
+    "urlMain": "https://www.freelancer.com",
+    "category": "professional",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Guru",
+    "url": "https://www.guru.com/freelancers/{}/",
+    "urlMain": "https://www.guru.com",
+    "category": "professional",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Upwork",
+    "url": "https://www.upwork.com/freelancers/~{}",
+    "urlMain": "https://www.upwork.com",
+    "category": "professional",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Etsy",
+    "url": "https://www.etsy.com/shop/{}",
+    "urlMain": "https://www.etsy.com",
+    "category": "shopping",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Redbubble",
+    "url": "https://www.redbubble.com/people/{}",
+    "urlMain": "https://www.redbubble.com",
+    "category": "shopping",
+    "checkMethod": "status_code",
+    "apiUrl": "https://www.redbubble.com/people/{}/shop",
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "eBay",
+    "url": "https://www.ebay.com/usr/{}",
+    "urlMain": "https://www.ebay.com",
+    "category": "shopping",
+    "checkMethod": "status_code",
+    "usernameInBody": true,
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Society6",
+    "url": "https://society6.com/{}",
+    "urlMain": "https://society6.com",
+    "category": "shopping",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Threadless",
+    "url": "https://www.threadless.com/{}",
+    "urlMain": "https://www.threadless.com",
+    "category": "shopping",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Poshmark",
+    "url": "https://poshmark.com/closet/{}",
+    "urlMain": "https://poshmark.com",
+    "category": "shopping",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Depop",
+    "url": "https://www.depop.com/{}",
+    "urlMain": "https://www.depop.com",
+    "category": "shopping",
+    "checkMethod": "status_code",
+    "needsBrowser": true,
+    "errorMsg": "page 404 Page not found Depop About us Careers Blog News",
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "About.me",
+    "url": "https://about.me/{}",
+    "urlMain": "https://about.me",
+    "category": "misc",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Linktree",
+    "url": "https://linktr.ee/{}",
+    "urlMain": "https://linktr.ee",
+    "category": "misc",
+    "checkMethod": "message",
+    "errorMsg": "Sorry, this page isnÃ¢â‚¬â„¢t available"
+  },
+  {
+    "name": "Gravatar",
+    "url": "https://en.gravatar.com/{}",
+    "urlMain": "https://gravatar.com",
+    "category": "misc",
+    "checkMethod": "status_code",
+    "apiUrl": "https://gravatar.com/{}",
+    "notFoundStatus": 404
+  },
+  {
+    "name": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/User:{}",
+    "urlMain": "https://en.wikipedia.org",
+    "category": "misc",
+    "checkMethod": "message",
+    "apiUrl": "https://en.wikipedia.org/w/api.php?action=query&list=users&ususers={}&format=json&formatversion=2",
+    "errorMsg": "\"missing\":true",
+    "skipBodyCheck": true
+  },
+  {
+    "name": "WordPress.org",
+    "url": "https://profiles.wordpress.org/{}/",
+    "urlMain": "https://profiles.wordpress.org",
+    "category": "misc",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Slideshare",
+    "url": "https://www.slideshare.net/{}",
+    "urlMain": "https://www.slideshare.net",
+    "category": "misc",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Scribd",
+    "url": "https://www.scribd.com/{}",
+    "urlMain": "https://www.scribd.com",
+    "category": "misc",
+    "checkMethod": "message",
+    "errorMsg": "The page you requested does not exist",
+    "undetectable": true
+  },
+  {
+    "name": "Telegram",
+    "url": "https://t.me/{}",
+    "urlMain": "https://t.me",
+    "category": "misc",
+    "checkMethod": "message",
+    "positiveMsg": "subscribers"
+  },
+  {
+    "name": "Goodreads",
+    "url": "https://www.goodreads.com/{}",
+    "urlMain": "https://www.goodreads.com",
+    "category": "misc",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Letterboxd",
+    "url": "https://letterboxd.com/{}",
+    "urlMain": "https://letterboxd.com",
+    "category": "misc",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Carrd",
+    "url": "https://{}.carrd.co/",
+    "urlMain": "https://carrd.co",
+    "category": "misc",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Instructables",
+    "url": "https://www.instructables.com/member/{}",
+    "urlMain": "https://www.instructables.com",
+    "category": "misc",
+    "checkMethod": "status_code",
+    "apiUrl": "https://www.instructables.com/member/{}/",
+    "notFoundStatus": 404
+  },
+  {
+    "name": "Strava",
+    "url": "https://www.strava.com/athletes/{}",
+    "urlMain": "https://www.strava.com",
+    "category": "misc",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Untappd",
+    "url": "https://untappd.com/user/{}",
+    "urlMain": "https://untappd.com",
+    "category": "misc",
+    "checkMethod": "status_code",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Duolingo",
+    "url": "https://www.duolingo.com/profile/{}",
+    "urlMain": "https://www.duolingo.com",
+    "category": "misc",
+    "checkMethod": "body",
+    "apiUrl": "https://www.duolingo.com/2017-06-30/users?username={}",
+    "errorMsg": "\"users\":[]"
+  },
+  {
+    "name": "Genius",
+    "url": "https://genius.com/{}",
+    "urlMain": "https://genius.com",
+    "category": "misc",
+    "undetectable": true,
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Pinterest",
+    "url": "https://www.pinterest.com/{}/",
+    "urlMain": "https://www.pinterest.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Snapchat",
+    "url": "https://www.snapchat.com/add/{}",
+    "urlMain": "https://www.snapchat.com",
+    "category": "social",
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "crawlerUA": "googlebot"
+  },
+  {
+    "name": "Docker Hub",
+    "url": "https://hub.docker.com/u/{}",
+    "urlMain": "https://hub.docker.com",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Packagist",
+    "url": "https://packagist.org/users/{}/",
+    "urlMain": "https://packagist.org",
+    "category": "developer",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Buy Me a Coffee",
+    "url": "https://buymeacoffee.com/{}",
+    "urlMain": "https://buymeacoffee.com",
+    "category": "content",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "VSCO",
+    "url": "https://vsco.co/{}/gallery",
+    "urlMain": "https://vsco.co",
+    "category": "content",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Pastebin",
+    "url": "https://pastebin.com/u/{}",
+    "urlMain": "https://pastebin.com",
+    "category": "misc",
+    "checkMethod": "status_code"
+  },
+  {
+    "name": "Clubhouse",
+    "url": "https://www.joinclubhouse.com/@{}",
+    "urlMain": "https://www.joinclubhouse.com",
+    "category": "misc",
+    "checkMethod": "status_code",
+    "apiUrl": "https://www.clubhouse.com/@{}",
+    "notFoundStatus": 404
+  },
+  {
+    "name": "AniList",
+    "url": "https://graphql.anilist.co",
+    "urlMain": "https://graphql.anilist.co",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "Not Found"
+  },
+  {
+    "name": "MyAnimeList",
+    "url": "https://myanimelist.net/profile/{}",
+    "urlMain": "https://myanimelist.net",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "<title>404 Not Found"
+  },
+  {
+    "name": "Discord (User)",
+    "url": "https://discord.com/api/v9/unique-username/username-attempt-unauthed",
+    "urlMain": "https://discord.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "\"taken\":false",
+    "defunct": true
+  },
+  {
+    "name": "Gettr",
+    "url": "https://gettr.com/api/s/uinf/{}",
+    "urlMain": "https://gettr.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "\"rc\":\"ERR\"",
+    "notFoundStatus": 400
+  },
+  {
+    "name": "KnowYourMeme",
+    "url": "https://knowyourmeme.com/users/{}",
+    "urlMain": "https://knowyourmeme.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "404, File Not Found!"
+  },
+  {
+    "name": "Neocities",
+    "url": "https://neocities.org/site/{}",
+    "urlMain": "https://neocities.org",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "- Not Found</title>"
+  },
+  {
+    "name": "OpenStreetMap",
+    "url": "https://www.openstreetmap.org/user/{}",
+    "urlMain": "https://www.openstreetmap.org",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "does not exist"
+  },
+  {
+    "name": "Speaker Deck",
+    "url": "https://speakerdeck.com/{}/",
+    "urlMain": "https://speakerdeck.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "User Not Found - Speaker Deck"
+  },
+  {
+    "name": "Steemit",
+    "url": "https://signup.steemit.com/api/check_username?username={}",
+    "urlMain": "https://signup.steemit.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "\"success\":true",
+    "positiveMsg": "\"success\":false"
+  },
+  {
+    "name": "Tellonym",
+    "url": "https://api.tellonym.me/profiles/name/{}",
+    "urlMain": "https://api.tellonym.me",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "\"code\":\"NOT_FOUND\"",
+    "undetectable": true
+  },
+  {
+    "name": "Truth Social",
+    "url": "https://truthsocial.com/api/v1/accounts/lookup?acct={}",
+    "urlMain": "https://truthsocial.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "\"error\":\"Record not found\"",
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Twitcasting",
+    "url": "https://twitcasting.tv/{}",
+    "urlMain": "https://twitcasting.tv",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "Not Found"
+  },
+  {
+    "name": "Wikidot",
+    "url": "http://www.wikidot.com/user:info/{}",
+    "urlMain": "https://www.wikidot.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "<div class=\"error-block\">User does not exist.</div>"
+  },
+  {
+    "name": "Xing",
+    "url": "https://www.xing.com/profile/{}",
+    "urlMain": "https://www.xing.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "404 Not Found | XING"
+  },
+  {
+    "name": "YouNow",
+    "url": "https://api.younow.com/php/api/broadcast/info/user={}",
+    "urlMain": "https://api.younow.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "\"errorMsg\":\"No users found\""
+  },
+  {
+    "name": "Zomato",
+    "url": "https://www.zomato.com/{}/reviews",
+    "urlMain": "https://www.zomato.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "This is a 404 page and we think it's fairly clear"
+  },
+  {
+    "name": "Trello",
+    "url": "https://trello.com/1/Members/{}",
+    "urlMain": "https://trello.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "<h1>Oh no! 404!</h1>"
+  },
+  {
+    "name": "tripadvisor",
+    "url": "https://www.tripadvisor.com/Profile/{}",
+    "urlMain": "https://www.tripadvisor.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "This page is on vacation",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "BuzzFeed",
+    "url": "https://www.buzzfeed.com/{}",
+    "urlMain": "https://www.buzzfeed.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "We can't find the page you're looking for",
+    "defunct": true
+  },
+  {
+    "name": "postcrossing",
+    "url": "https://www.postcrossing.com/user/{}",
+    "urlMain": "https://www.postcrossing.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "- Postcrossing"
+  },
+  {
+    "name": "Destructoid",
+    "url": "https://www.destructoid.com/?name={}",
+    "urlMain": "https://www.destructoid.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "Error in query",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Anime-Planet",
+    "url": "https://www.anime-planet.com/users/{}",
+    "urlMain": "https://www.anime-planet.com/users/",
+    "category": "social",
+    "checkMethod": "status_code",
+    "undetectable": true
+  },
+  {
+    "name": "Zepeto",
+    "url": "https://gw-napi.zepeto.io/profiles/{}",
+    "urlMain": "https://gw-napi.zepeto.io",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "errorCode\":"
+  },
+  {
+    "name": "LINE",
+    "url": "https://line.me/R/ti/p/@{}?from=page",
+    "urlMain": "https://line.me",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "404 Not Found"
+  },
+  {
+    "name": "weheartit",
+    "url": "https://weheartit.com/{}",
+    "urlMain": "https://weheartit.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "(404)</title>",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "solo.to",
+    "url": "https://solo.to/{}",
+    "urlMain": "https://solo.to",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "The page you're looking for isn't here.",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Geocaching",
+    "url": "https://www.geocaching.com/p/?u={}",
+    "urlMain": "https://www.geocaching.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "class=\"callout http-error\""
+  },
+  {
+    "name": "zhihu",
+    "url": "https://api.zhihu.com/books/people/{}/publications?offset=0&limit=5",
+    "urlMain": "https://api.zhihu.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "\"name\": \"NotFoundException\""
+  },
+  {
+    "name": "Parler",
+    "url": "https://parler.com/user/{}",
+    "urlMain": "https://parler.com",
+    "category": "social",
+    "checkMethod": "message",
+    "errorMsg": "join Parler today"
+  },
+  {
+    "name": "FACEIT",
+    "url": "https://www.faceit.com/api/users/v1/nicknames/{}",
+    "urlMain": "https://www.faceit.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "\"message\":\"user not found\""
+  },
+  {
+    "name": "Fandom",
+    "url": "https://www.fandom.com/u/{}",
+    "urlMain": "https://www.fandom.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "Not Found",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Fortnite Tracker",
+    "url": "https://fortnitetracker.com/profile/all/{}",
+    "urlMain": "https://fortnitetracker.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "Fortnite Player Stats -",
+    "undetectable": true
+  },
+  {
+    "name": "Game Jolt",
+    "url": "https://gamejolt.com/site-api/web/profile/@{}/",
+    "urlMain": "https://gamejolt.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "null,"
+  },
+  {
+    "name": "Gamespot",
+    "url": "https://www.gamespot.com/profile/{}/summary/activity/?ajax",
+    "urlMain": "https://www.gamespot.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "\"success\":false",
+    "undetectable": true
+  },
+  {
+    "name": "GOG",
+    "url": "https://www.gog.com/u/{}",
+    "urlMain": "https://www.gog.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "href=\"http://www.gog.com/404\""
+  },
+  {
+    "name": "Habbo.com",
+    "url": "https://www.habbo.com/api/public/users?name={}",
+    "urlMain": "https://www.habbo.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "error\": \"not-found"
+  },
+  {
+    "name": "MCUUID (Minecraft)",
+    "url": "https://playerdb.co/api/player/minecraft/{}",
+    "urlMain": "https://playerdb.co",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "minecraft.api_failure"
+  },
+  {
+    "name": "Minecraft List",
+    "url": "https://minecraftlist.com/players/{}",
+    "urlMain": "https://minecraftlist.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "0 Minecraft servers recently"
+  },
+  {
+    "name": "Mod DB",
+    "url": "https://www.moddb.com/html/scripts/autocomplete.php?a=username&q={}",
+    "urlMain": "https://www.moddb.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "\"available\":true",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Moxfield",
+    "url": "https://api2.moxfield.com/v1/users/{}",
+    "urlMain": "https://api2.moxfield.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "\"status\":404",
+    "notFoundStatus": 404,
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "OPGG",
+    "url": "https://eune.op.gg/summoners/eune/{}",
+    "urlMain": "https://eune.op.gg",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "Guide - OP.GG"
+  },
+  {
+    "name": "osu!",
+    "url": "https://osu.ppy.sh/users/{}",
+    "urlMain": "https://osu.ppy.sh",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "User not found! ;_;"
+  },
+  {
+    "name": "Playstation Network",
+    "url": "https://psnprofiles.com/xhr/search/users?q={}",
+    "urlMain": "https://psnprofiles.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "We couldn't find anything",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "pokemonshowdown",
+    "url": "https://pokemonshowdown.com/users/{}",
+    "urlMain": "https://pokemonshowdown.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "(Unregistered)"
+  },
+  {
+    "name": "BoardGameGeek",
+    "url": "https://api.geekdo.com/api/accounts/validate/username?username={}",
+    "urlMain": "https://api.geekdo.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "\"isValid\":true"
+  },
+  {
+    "name": "BIGO Live",
+    "url": "https://www.bigo.tv/user/{}",
+    "urlMain": "https://www.bigo.tv",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "userInfo:{}"
+  },
+  {
+    "name": "hiberworld",
+    "url": "https://hiberworld.com/user/{}",
+    "urlMain": "https://hiberworld.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "Looks like you got lost",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Apex Legends",
+    "url": "https://api.tracker.gg/api/v2/apex/standard/profile/origin/{}",
+    "urlMain": "https://api.tracker.gg",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "CollectorResultStatus::NotFound",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Xbox Gamertag",
+    "url": "https://www.xboxgamertag.com/search/{}",
+    "urlMain": "https://www.xboxgamertag.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "Gamertag doesn't exist"
+  },
+  {
+    "name": "ArmorGames",
+    "url": "https://armorgames.com/user/{}",
+    "urlMain": "https://armorgames.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "404: Oh Noes!",
+    "undetectable": true
+  },
+  {
+    "name": "speedrun",
+    "url": "https://www.speedrun.com/user/{}/",
+    "urlMain": "https://www.speedrun.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "<title>speedrun.com",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "TETR.IO",
+    "url": "https://ch.tetr.io/api/users/{}",
+    "urlMain": "https://ch.tetr.io",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "\"success\":false"
+  },
+  {
+    "name": "SteamGifts",
+    "url": "https://www.steamgifts.com/user/{}",
+    "urlMain": "https://www.steamgifts.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "positiveMsg": "\"identifier\":",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Wowhead",
+    "url": "https://www.wowhead.com/user={}",
+    "urlMain": "https://www.wowhead.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "Error - Wowhead",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "TruckersMP",
+    "url": "https://truckersmp.com/user/search?search={}",
+    "urlMain": "https://truckersmp.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "<h4>Could not find any member using these credentials</h4>"
+  },
+  {
+    "name": "lichess.org",
+    "url": "https://lichess.org/api/player/autocomplete?term={}&exists=1",
+    "urlMain": "https://lichess.org",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "false"
+  },
+  {
+    "name": "LeetCode",
+    "url": "https://leetcode.com/graphql/",
+    "urlMain": "https://leetcode.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"matchedUser\":null",
+    "defunct": true
+  },
+  {
+    "name": "Gitea",
+    "url": "https://gitea.com/api/v1/users/{}",
+    "urlMain": "https://gitea.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"message\":\"user redirect does not exist",
+    "defunct": true
+  },
+  {
+    "name": "Wakatime",
+    "url": "https://wakatime.com/api/v1/users/{}",
+    "urlMain": "https://wakatime.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"error\": \"Not found.\""
+  },
+  {
+    "name": "HackerRank",
+    "url": "https://www.hackerrank.com/rest/contests/master/hackers/{}/profile",
+    "urlMain": "https://www.hackerrank.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"error\":\"Not Found\""
+  },
+  {
+    "name": "Codecademy",
+    "url": "https://www.codecademy.com/profiles/{}",
+    "urlMain": "https://www.codecademy.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"type\":\"UserNotFound\""
+  },
+  {
+    "name": "AtCoder",
+    "url": "https://atcoder.jp/users/{}",
+    "urlMain": "https://atcoder.jp",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": ">404 Page Not Found</h1>"
+  },
+  {
+    "name": "CodeChef",
+    "url": "https://www.codechef.com/users/{}",
+    "urlMain": "https://www.codechef.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "positiveMsg": "class=\"user-profile-container\""
+  },
+  {
+    "name": "Codeforces",
+    "url": "https://codeforces.com/api/user.info?handles={}",
+    "urlMain": "https://codeforces.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"status\":\"FAILED\"",
+    "notFoundStatus": 400
+  },
+  {
+    "name": "CodeSandbox",
+    "url": "https://codesandbox.io/api/v1/users/{}",
+    "urlMain": "https://codesandbox.io",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "Could not find user with username",
+    "undetectable": true
+  },
+  {
+    "name": "devRant",
+    "url": "https://devrant.com/api/get-user-id?app=3&username={}",
+    "urlMain": "https://devrant.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"success\":false",
+    "notFoundStatus": 400
+  },
+  {
+    "name": "Docker Hub (User)",
+    "url": "https://hub.docker.com/v2/users/{}/",
+    "urlMain": "https://hub.docker.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"message\":\"User not found\"",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "GeeksForGeeks",
+    "url": "https://authapi.geeksforgeeks.org/api-get/user-profile-info/?handle={}",
+    "urlMain": "https://authapi.geeksforgeeks.org",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"message\":\"User not found!\"",
+    "notFoundStatus": 400
+  },
+  {
+    "name": "Hackster",
+    "url": "https://www.hackster.io/{}",
+    "urlMain": "https://www.hackster.io",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "id=\"error\""
+  },
+  {
+    "name": "JSFiddle",
+    "url": "https://jsfiddle.net/user/{}/",
+    "urlMain": "https://jsfiddle.net",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "That page doesn't exist.",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Monkeytype",
+    "url": "https://api.monkeytype.com/users/{}/profile",
+    "urlMain": "https://api.monkeytype.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"message\":\"User not found\""
+  },
+  {
+    "name": "RubyGems.org",
+    "url": "https://rubygems.org/api/v1/profiles/{}.json",
+    "urlMain": "https://rubygems.org",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"error\":\"Not Found\""
+  },
+  {
+    "name": "Scratch",
+    "url": "https://api.scratch.mit.edu/accounts/checkusername/{}/",
+    "urlMain": "https://api.scratch.mit.edu",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"msg\":\"valid username\""
+  },
+  {
+    "name": "Topcoder",
+    "url": "https://api.topcoder.com/v5/members/{}",
+    "urlMain": "https://api.topcoder.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"message\":\"Member with handle:",
+    "defunct": true
+  },
+  {
+    "name": "Bugcrowd",
+    "url": "https://bugcrowd.com/profile-service/v1/profiles/{}",
+    "urlMain": "https://bugcrowd.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"error\":\"Not Found\""
+  },
+  {
+    "name": "HackerOne",
+    "url": "https://hackerone.com/graphql",
+    "urlMain": "https://hackerone.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"type\":\"NOT_FOUND\""
+  },
+  {
+    "name": "Hackernoon",
+    "url": "https://hackernoon.com/u/{}",
+    "urlMain": "https://hackernoon.com",
+    "category": "developer",
+    "checkMethod": "status_code",
+    "allowBrowserFallback": false,
+    "apiUrl": "https://hackernoon.com/u/{}/rss",
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
+  },
+  {
+    "name": "TryHackMe",
+    "url": "https://tryhackme.com/api/user/exist/{}",
+    "urlMain": "https://tryhackme.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "\"success\":false",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Udemy",
+    "url": "https://www.udemy.com/user/{}/",
+    "urlMain": "https://www.udemy.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "<title>Online Courses - Learn Anything, On Your Schedule | Udemy</title>",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Chocolatey",
+    "url": "https://community.chocolatey.org/profiles/{}",
+    "urlMain": "https://community.chocolatey.org",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "id=\"error404Message\""
+  },
+  {
+    "name": "PCPartPicker",
+    "url": "https://pcpartpicker.com/user/{}/",
+    "urlMain": "https://pcpartpicker.com",
+    "category": "developer",
+    "checkMethod": "message",
+    "errorMsg": "The page you requested could not be found."
+  },
+  {
+    "name": "DOTAFire",
+    "url": "https://www.dotafire.com/ajax/searchSite?text={}&search=members",
+    "urlMain": "https://www.dotafire.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": ">No results found</span>",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "sporcle",
+    "url": "https://www.sporcle.com/user/{}/people/",
+    "urlMain": "https://www.sporcle.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "This Sporcle user cannot be found.",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Ubisoft",
+    "url": "https://discussions.ubisoft.com/user/{}",
+    "urlMain": "https://discussions.ubisoft.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "You seem to have stumbled upon a page that does not exist."
+  },
+  {
+    "name": "Diablo",
+    "url": "https://diablo2.io/member/{}/",
+    "urlMain": "https://diablo2.io",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "The requested user does not exist",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "SimplePlanes",
+    "url": "https://www.simpleplanes.com/u/{}",
+    "urlMain": "https://www.simpleplanes.com",
+    "category": "gaming",
+    "checkMethod": "message",
+    "errorMsg": "<title>SimplePlanes Airplanes</title>"
+  },
+  {
+    "name": "smule",
+    "url": "https://www.smule.com/api/profile/?handle={}",
+    "urlMain": "https://www.smule.com",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "\"code\":",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Mixcloud",
+    "url": "https://api.mixcloud.com/{}/",
+    "urlMain": "https://api.mixcloud.com",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "\"error\":"
+  },
+  {
+    "name": "Audiojungle",
+    "url": "https://audiojungle.net/user/{}",
+    "urlMain": "https://audiojungle.net",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "404 - Nothing to see here"
+  },
+  {
+    "name": "Discogs",
+    "url": "https://api.discogs.com/users/{}",
+    "urlMain": "https://api.discogs.com",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "\"message\": \"User does not exist or may have been deleted.\""
+  },
+  {
+    "name": "Bandlab",
+    "url": "https://www.bandlab.com/api/v1.3/users/{}",
+    "urlMain": "https://www.bandlab.com",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "CouldnÃ¢â‚¬â„¢t find any matching element, it might be deleted"
+  },
+  {
+    "name": "Blogspot",
+    "url": "http://{}.blogspot.com",
+    "urlMain": "https://{}.blogspot.com",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "Blog not found",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "WordPress.com (Public)",
+    "url": "https://public-api.wordpress.com/rest/v1.1/sites/{}.wordpress.com",
+    "urlMain": "https://public-api.wordpress.com",
+    "category": "content",
+    "checkMethod": "message",
+    "errorMsg": "\"error\":\"unknown_blog\""
+  },
+  {
+    "name": "Researchgate",
+    "url": "https://www.researchgate.net/profile/{}",
+    "urlMain": "https://www.researchgate.net",
+    "category": "misc",
+    "checkMethod": "message",
+    "errorMsg": "20+ million researchers on ResearchGate",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "Houzz",
+    "url": "https://www.houzz.com/user/{}",
+    "urlMain": "https://www.houzz.com",
+    "category": "misc",
+    "checkMethod": "message",
+    "errorMsg": "Page Not Found"
+  },
+  {
+    "name": "Quizlet",
+    "url": "https://quizlet.com/webapi/3.2/users/check-username?username={}",
+    "urlMain": "https://quizlet.com",
+    "category": "misc",
+    "checkMethod": "message",
+    "errorMsg": "\"success\":true",
+    "undetectable": true,
+    "positiveMsg": "\"success\":false"
+  },
+  {
+    "name": "LibraryThing",
+    "url": "https://www.librarything.com/profile/{}",
+    "urlMain": "https://www.librarything.com",
+    "category": "misc",
+    "checkMethod": "message",
+    "errorMsg": "Error: This user doesn't exist",
+    "allowBrowserFallback": false
+  },
+  {
+    "name": "carrd.co",
+    "url": "https://{}.carrd.co",
+    "urlMain": "https://{}.carrd.co",
+    "category": "professional",
+    "checkMethod": "message",
+    "errorMsg": "Sorry, the requested page could not be found."
+  }
 ]
