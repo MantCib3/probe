@@ -4,20 +4,23 @@
     "url": "https://x.com/{}",
     "urlMain": "https://x.com",
     "category": "social",
-    "checkMethod": "status_code",
-    "apiUrl": "https://publish.twitter.com/oembed?url=https://x.com/{}",
-    "caveat": "Only detects public accounts; private/protected accounts show as not found"
+    "checkMethod": "message",
+    "caveat": "Only detects public accounts; private/protected accounts show as not found",
+    "checkUrl": "https://publish.twitter.com/oembed?url=https://x.com/{}",
+    "cors": true,
+    "positiveMsg": "\"author_name\":",
+    "errorMsg": "\"errors\":["
   },
   {
     "name": "Instagram",
     "url": "https://www.instagram.com/{}/",
     "urlMain": "https://www.instagram.com",
     "category": "social",
-    "checkMethod": "message",
-    "undetectable": true,
-    "crawlerUA": "googlebot",
-    "positiveMsg": "Posts - See Instagram photos and videos from",
-    "errorMsg": "\"routePath\":null"
+    "checkMethod": "status_code",
+    "positiveMsg": "\"username\":",
+    "errorMsg": "\"routePath\":null",
+    "checkUrl": "https://www.instagram.com/api/v1/users/web_profile_info/?username={}",
+    "cfProxy": true
   },
   {
     "name": "Facebook",
@@ -25,10 +28,9 @@
     "urlMain": "https://www.facebook.com",
     "category": "social",
     "checkMethod": "message",
-    "undetectable": true,
-    "crawlerUA": "googlebot",
     "positiveMsg": "__isProfile",
-    "errorMsg": "<title>Facebook</title>"
+    "errorMsg": "<title>Facebook</title>",
+    "cfProxy": true
   },
   {
     "name": "TikTok",
@@ -716,10 +718,11 @@
     "url": "https://www.linkedin.com/in/{}/",
     "urlMain": "https://www.linkedin.com",
     "category": "professional",
-    "checkMethod": "status_code",
-    "undetectable": true,
-    "crawlerUA": "googlebot",
-    "requiresAuth": true
+    "checkMethod": "message",
+    "checkUrl": "https://www.linkedin.com/in/{}/",
+    "cfProxy": true,
+    "positiveMsg": "public_profile_v3_desktop",
+    "errorMsg": "window.onload"
   },
   {
     "name": "Wellfound",

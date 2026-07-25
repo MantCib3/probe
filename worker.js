@@ -98,6 +98,10 @@ const EXACT = new Set([
   'www.etsy.com',
   'www.ebay.com',
   'x.com',
+  // Twitter oEmbed (CORS, no auth needed)
+  'publish.twitter.com',
+  // LinkedIn (Googlebot UA injected by worker)
+  'www.linkedin.com',
 ]);
 
 // Hostname suffixes — allows subdomains (e.g. cerberus.newgrounds.com)
@@ -162,6 +166,10 @@ export default {
       }
       if (h === 'api.x.com' || h === 'x.com') {
         extraHeaders['Authorization'] = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+      }
+      if (h === 'www.linkedin.com' || h === 'linkedin.com') {
+        // Googlebot UA causes LinkedIn to serve public profiles instead of redirecting to login
+        extraHeaders['User-Agent'] = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
       }
 
       const upstream = await fetch(targetUrl.toString(), {

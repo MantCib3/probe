@@ -1007,19 +1007,20 @@ function _applyVerdict(card, verdict, label) {
 }
 
 async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg) {
-  if (resp.status === 403 || resp.status === 401 || resp.status === 429) return 'blocked';
-  if (resp.status === 404 || resp.status === 410) return 'not_found';
-  if (resp.status !== 200) return 'unknown';
+  const st = resp.status;
+  if (st === 403 || st === 401 || st === 429) return 'blocked';
+  if (st === 404 || st === 410) return 'not_found';
 
-  // Always read body for 200 responses: detect CF challenge pages (false-positive guard)
+  // Read body for all non-hard-error responses so errorMsg/positiveMsg can fire
+  // even on non-200 status codes (e.g. LinkedIn returns 999 for missing users)
   let body = '';
-  try { body = await resp.text(); } catch (_) { return 'found'; }
+  try { body = await resp.text(); } catch (_) { return st === 200 ? 'found' : 'unknown'; }
   const lbody = body.toLowerCase();
   if (CF_CHALLENGE.some(p => lbody.includes(p))) return 'blocked';
 
   if (positiveMsg && body.includes(positiveMsg)) return 'found';
   if (errorMsg   && body.includes(errorMsg))     return 'not_found';
-  return 'found'; // 200 with no specific pattern = found (status_code mode)
+  return st === 200 ? 'found' : 'unknown'; // non-200 without matching msg = unknown
 }
 
 async function _clientVerifyOne(job) {
