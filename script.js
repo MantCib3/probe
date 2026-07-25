@@ -2,16 +2,18 @@
 
 /* ── Constants ───────────────────────────────────────────────────────── */
 const STATUS_LABEL = {
-  found    : 'FOUND',
-  not_found: 'NOT FOUND',
-  deleted  : 'DELETED',
-  error    : 'ERROR',
-  timeout  : 'TIMEOUT',
-  unknown  : 'UNKNOWN',
-  link     : 'OPEN',
+  found       : 'FOUND',
+  not_found   : 'NOT FOUND',
+  deleted     : 'DELETED',
+  error       : 'ERROR',
+  timeout     : 'TIMEOUT',
+  unknown     : 'UNKNOWN',
+  auth_required: 'LOGIN REQ',
+  link        : 'OPEN',
 };
 
 const REASON_LABEL = {
+  requires_authentication: 'Requires login — manual check needed',
   body_guard_username_match: 'Username matched on page',
   body_guard_no_username_match: 'Profile loaded but username was not confirmed',
   site_positive_message: 'Site-specific positive signal matched',
@@ -850,6 +852,8 @@ function makeCard(r, animDelay = 0) {
 
   const badgeHtml = (r.status === 'found' || r.status === 'deleted')
     ? `<a href="${escHtml(urlAttr)}" target="_blank" rel="noopener noreferrer" class="site-url">${urlDisplay}</a>`
+    : r.status === 'auth_required'
+    ? `<span class="site-url auth-req-note">🔒 open manually to check</span>`
     : `<span class="site-url">${urlDisplay}</span>`;
 
   const displayNameHtml = r.displayName
@@ -859,6 +863,11 @@ function makeCard(r, animDelay = 0) {
   const reasons = humanizeReasons(Array.isArray(r.reasonCodes) ? r.reasonCodes.slice(0, 2) : []);
   const reasonHtml = reasons.length
     ? `<div class="reason-codes" title="Classification signals">${escHtml(reasons.join(' · '))}</div>`
+    : '';
+
+  // auth_required: show a direct link so user can check manually
+  const manualLink = r.status === 'auth_required'
+    ? `<a href="${escHtml(urlAttr)}" target="_blank" rel="noopener noreferrer" class="site-url" style="margin-top:2px;font-size:0.72rem;">↗ open ${escHtml(r.name)}</a>`
     : '';
 
   const isPinned = pinnedItems.some(p => p.name === r.name);
@@ -871,7 +880,20 @@ function makeCard(r, animDelay = 0) {
     ${displayNameHtml}
     ${reasonHtml}
     ${badgeHtml}
+    ${manualLink}
   `;
+
+  // Queue client-side verification for unknown results on CORS-capable endpoints
+  if (r.status === 'unknown' && r.cors && r.checkUrl) {
+    _cvQueue.push({
+      card,
+      checkUrl: r.checkUrl,
+      checkMethod: r.checkMethod || 'status_code',
+      errorMsg: r.errorMsg || null,
+      positiveMsg: r.positiveMsg || null,
+    });
+  }
+
   return card;
 }
 
@@ -933,6 +955,63 @@ function makeNameCard(r, animDelay = 0) {
     <a href="${escHtml(urlAttr)}" target="_blank" rel="noopener noreferrer" class="site-url name-search-url">${linkLabel}</a>
   `;
   return card;
+}
+
+/* ── Client-side verification (uses browser's residential IP) ─────── */
+// Runs after server returns `unknown` for a CORS-capable API endpoint.
+// Stores pending verify jobs so we can process after SSE ends (or in parallel).
+const _cvQueue = [];
+
+async function _clientVerifyOne(job) {
+  const { card, checkUrl, checkMethod, errorMsg, positiveMsg } = job;
+  if (!card || !card.isConnected) return;
+  // Mark card as verifying
+  card.classList.add('cv-verifying');
+  const statusEl = card.querySelector('.status-badge');
+  const prevText = statusEl ? statusEl.textContent : '';
+  if (statusEl) statusEl.textContent = '...';
+  try {
+    let verdict = 'unknown';
+    const resp = await fetch(checkUrl, { signal: AbortSignal.timeout(9000) });
+    if (checkMethod === 'status_code' || (!errorMsg && !positiveMsg)) {
+      verdict = resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
+    } else {
+      const body = await resp.text();
+      if (positiveMsg && body.includes(positiveMsg)) verdict = 'found';
+      else if (errorMsg && body.includes(errorMsg)) verdict = 'not_found';
+      else verdict = resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
+    }
+    if (verdict !== 'unknown') {
+      // Update card class + badge + dataset
+      card.classList.remove('unknown', 'cv-verifying');
+      card.classList.add(verdict);
+      card.dataset.status = verdict;
+      if (statusEl) {
+        statusEl.className = `status-badge ${verdict}`;
+        statusEl.textContent = (STATUS_LABEL[verdict] || verdict.toUpperCase()) + ' (browser)';
+      }
+      // Update global results array
+      const idx = results.findIndex(r => r.name === card.dataset.site);
+      if (idx !== -1) results[idx].status = verdict;
+      updateStats();
+    } else {
+      card.classList.remove('cv-verifying');
+      if (statusEl) statusEl.textContent = prevText;
+    }
+  } catch (_) {
+    card.classList.remove('cv-verifying');
+    if (statusEl) statusEl.textContent = prevText;
+  }
+}
+
+// Kick off all queued verify jobs (called when SSE scan ends)
+async function runClientVerifyQueue() {
+  // Run in batches of 8 so we don't overwhelm the browser
+  const BATCH = 8;
+  for (let i = 0; i < _cvQueue.length; i += BATCH) {
+    await Promise.all(_cvQueue.slice(i, i + BATCH).map(_clientVerifyOne));
+  }
+  _cvQueue.length = 0;
 }
 
 /* ── Found-first insertion ───────────────────────────────────────────── */
@@ -1335,6 +1414,16 @@ function finishScan(username, done, total) {
   pushCaseEvent(`Username investigation complete: ${found} found across ${total} sources`, 'done');
 
   resetScanControls();
+
+  // Run client-side verification for CORS-capable unknowns
+  if (_cvQueue.length > 0) {
+    progressStatus.innerHTML += ` &mdash; <span id="cvStatus">verifying ${_cvQueue.length} in browser…</span>`;
+    runClientVerifyQueue().then(() => {
+      const cvEl = document.getElementById('cvStatus');
+      if (cvEl) cvEl.remove();
+      updateStats();
+    });
+  }
 }
 
 function finishNameScan(name, done, total) {

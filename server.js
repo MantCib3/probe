@@ -1373,6 +1373,21 @@ async function probeStealth(site, username) {
 
 function probe(site, username) {
   // Optional fast-path: skip stealth for undetectable sites.
+  // Sites that require authentication — server-side check is never possible
+  if (site.requiresAuth) {
+    return Promise.resolve({
+      name: site.name,
+      category: site.category,
+      url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
+      status: 'auth_required',
+      statusCode: 0,
+      reasonCodes: ['requires_authentication'],
+      confidence: 1.0,
+      detectionMethod: 'http',
+      bodyHash: null,
+    });
+  }
+
   if (site.undetectable && !ENABLE_UNDETECTABLE_STEALTH) {
     return Promise.resolve({
       name: site.name,
@@ -1677,7 +1692,15 @@ const server = http.createServer((req, res) => {
           active--;
           done++;
           const normalized = normalizeResult(result);
-          if (!cancelled) send({ type: 'result', ...normalized, done, total });
+          // Include CORS flag + check info so client can self-verify unknowns
+          const extra = {};
+          if (site.cors) extra.cors = true;
+          if (site.checkMethod) extra.checkMethod = site.checkMethod;
+          if (site.errorMsg)    extra.errorMsg    = site.errorMsg;
+          if (site.positiveMsg) extra.positiveMsg = site.positiveMsg;
+          const checkUrl = (site.apiUrl || site.url).replace(/\{\}/g, encodeURIComponent(username));
+          extra.checkUrl = checkUrl;
+          if (!cancelled) send({ type: 'result', ...normalized, done, total, ...extra });
           tick();
         }).catch(() => {
           active--;

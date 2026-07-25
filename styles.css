@@ -650,6 +650,8 @@ a.nav-logo {
 .result-card.timeout::before { background: var(--err); }
 .result-card.unknown::before,
 .result-card.not_found::before { background: #e5e7eb; }
+.result-card.auth_required::before { background: #fde68a; }
+.result-card.auth_required { border-color: #fcd34d; opacity: 0.65; }
 
 .result-card:not(.found):not(.deleted) { opacity: 0.52; }
 .result-card:not(.found):not(.deleted):hover { opacity: 1; }
@@ -703,11 +705,29 @@ a.nav-logo {
 .status-badge.found    { background: #dcfce7; color: #15803d; }
 .status-badge.not_found{ background: #f3f4f6; color: #9ca3af; }
 .status-badge.deleted  { background: #ede9fe; color: #6d28d9; }
-.status-badge.blocked  { background: #fef3c7; color: #b45309; }
-.status-badge.error    { background: #fee2e2; color: #dc2626; }
-.status-badge.timeout  { background: #fef3c7; color: #b45309; }
-.status-badge.unknown  { background: #f3f4f6; color: #6b7280; }
-.status-badge.link     { background: #e0f2fe; color: #0369a1; }
+.status-badge.blocked       { background: #fef3c7; color: #b45309; }
+.status-badge.error         { background: #fee2e2; color: #dc2626; }
+.status-badge.timeout       { background: #fef3c7; color: #b45309; }
+.status-badge.unknown       { background: #f3f4f6; color: #6b7280; }
+.status-badge.auth_required { background: #fff3cd; color: #856404; }
+.status-badge.link          { background: #e0f2fe; color: #0369a1; }
+
+/* auth_required card */
+.result-card.auth_required { opacity: 0.72; }
+.auth-req-note { color: #856404; font-size: 0.72rem; font-style: italic; }
+
+/* cv-verifying: pulsing border while client-side verify is in progress */
+.result-card.cv-verifying {
+  border-color: #818cf8 !important;
+  animation: cv-pulse 1s infinite;
+}
+@keyframes cv-pulse {
+  0%, 100% { border-color: #818cf8; }
+  50%       { border-color: #c7d2fe; }
+}
+
+/* np-pin notepad auth_required badge */
+.np-pin-status.auth_required { background: #fff3cd; color: #856404; }
 
 .category-badge {
   display: inline-block;

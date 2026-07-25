@@ -15,7 +15,8 @@
     "category": "social",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "requiresAuth": true
   },
   {
     "name": "Facebook",
@@ -24,7 +25,8 @@
     "category": "social",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "requiresAuth": true
   },
   {
     "name": "TikTok",
@@ -34,7 +36,8 @@
     "checkMethod": "status_code",
     "notFoundStatus": 400,
     "apiUrl": "https://www.tiktok.com/oembed?url=https://www.tiktok.com/@{}",
-    "caveat": "Only detects public accounts with at least one public video. Private or empty accounts return not_found."
+    "caveat": "Only detects public accounts with at least one public video. Private or empty accounts return not_found.",
+    "requiresAuth": true
   },
   {
     "name": "Tumblr",
@@ -44,7 +47,8 @@
     "checkMethod": "status_code",
     "apiUrl": "https://{}.tumblr.com/rss",
     "notFoundStatus": 404,
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "VK",
@@ -78,7 +82,8 @@
     "category": "social",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "requiresAuth": true
   },
   {
     "name": "Ask.fm",
@@ -145,7 +150,8 @@
     "category": "developer",
     "checkMethod": "status_code",
     "apiUrl": "https://api.github.com/users/{}",
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "GitLab",
@@ -154,7 +160,8 @@
     "category": "developer",
     "checkMethod": "body",
     "apiUrl": "https://gitlab.com/api/v4/users?username={}",
-    "positiveMsg": "\"id\":"
+    "positiveMsg": "\"id\":",
+    "cors": true
   },
   {
     "name": "Bitbucket",
@@ -163,7 +170,8 @@
     "category": "developer",
     "checkMethod": "status_code",
     "apiUrl": "https://api.bitbucket.org/2.0/users/{}",
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "npm",
@@ -172,7 +180,8 @@
     "category": "developer",
     "checkMethod": "body",
     "apiUrl": "https://registry.npmjs.org/-/v1/search?text=maintainer:{}&size=1",
-    "errorMsg": "\"total\":0,"
+    "errorMsg": "\"total\":0,",
+    "cors": true
   },
   {
     "name": "PyPI",
@@ -182,7 +191,8 @@
     "checkMethod": "status_code",
     "apiUrl": "https://pypi.org/user/{}/",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Hacker News",
@@ -191,7 +201,8 @@
     "category": "developer",
     "checkMethod": "body",
     "apiUrl": "https://hacker-news.firebaseio.com/v0/user/{}.json",
-    "positiveMsg": "\"id\":"
+    "positiveMsg": "\"id\":",
+    "cors": true
   },
   {
     "name": "Dev.to",
@@ -224,7 +235,8 @@
     "apiUrl": "https://keybase.io/_/api/1.0/user/lookup.json?username={}",
     "positiveMsg": "\"status\":{\"code\":0",
     "errorMsg": "\"status\":{\"code\":404",
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "HuggingFace",
@@ -264,7 +276,8 @@
     "category": "developer",
     "checkMethod": "status_code",
     "apiUrl": "https://codeberg.org/api/v1/users/{}",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "CodeWars",
@@ -307,14 +320,16 @@
     "apiUrl": "https://steamcommunity.com/id/{}?xml=1",
     "errorMsg": "<error>",
     "positiveMsg": "<steamID64>",
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "Chess.com",
     "url": "https://www.chess.com/member/{}",
     "urlMain": "https://www.chess.com",
     "category": "gaming",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cors": true
   },
   {
     "name": "Lichess",
@@ -329,7 +344,8 @@
     "urlMain": "https://www.speedrun.com",
     "category": "gaming",
     "checkMethod": "status_code",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Kongregate",
@@ -413,7 +429,8 @@
     "allowBrowserFallback": false,
     "apiUrl": "https://medium.com/feed/@{}",
     "notFoundStatus": 404,
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "Substack",
@@ -421,7 +438,8 @@
     "urlMain": "https://substack.com",
     "category": "content",
     "checkMethod": "status_code",
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "Patreon",
@@ -475,7 +493,8 @@
     "checkMethod": "status_code",
     "apiUrl": "https://backend.deviantart.com/oembed?url=https://www.deviantart.com/{}",
     "notFoundStatus": 404,
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "500px",
@@ -493,7 +512,8 @@
     "checkMethod": "status_code",
     "apiUrl": "https://soundcloud.com/oembed?url=https://soundcloud.com/{}&format=json",
     "notFoundStatus": 404,
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "Bandcamp",
@@ -504,7 +524,8 @@
     "needsBrowser": true,
     "apiUrl": "https://{}.bandcamp.com/feed.rss",
     "notFoundStatus": 404,
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "Last.fm",
@@ -540,7 +561,8 @@
     "checkMethod": "status_code",
     "apiUrl": "https://vimeo.com/api/oembed.json?url=https://vimeo.com/{}",
     "notFoundStatus": 404,
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "Dailymotion",
@@ -591,7 +613,8 @@
     "errorMsg": "Sorry, nobody on Reddit goes by that name.",
     "notFoundStatus": 404,
     "apiUrl": "https://www.reddit.com/user/{}/about.json",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Quora",
@@ -648,7 +671,8 @@
     "category": "professional",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "requiresAuth": true
   },
   {
     "name": "Wellfound",
@@ -772,7 +796,8 @@
     "category": "misc",
     "checkMethod": "status_code",
     "apiUrl": "https://gravatar.com/{}",
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "cors": true
   },
   {
     "name": "Wikipedia",
@@ -782,7 +807,8 @@
     "checkMethod": "message",
     "apiUrl": "https://en.wikipedia.org/w/api.php?action=query&list=users&ususers={}&format=json&formatversion=2",
     "errorMsg": "\"missing\":true",
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "WordPress.org",
@@ -888,7 +914,8 @@
     "category": "social",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "requiresAuth": true
   },
   {
     "name": "Snapchat",
@@ -897,7 +924,8 @@
     "category": "social",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "requiresAuth": true
   },
   {
     "name": "Docker Hub",
@@ -905,7 +933,8 @@
     "urlMain": "https://hub.docker.com",
     "category": "developer",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cors": true
   },
   {
     "name": "Packagist",
@@ -951,7 +980,8 @@
     "urlMain": "https://graphql.anilist.co",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Not Found"
+    "errorMsg": "Not Found",
+    "cors": true
   },
   {
     "name": "MyAnimeList",
@@ -977,7 +1007,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"rc\":\"ERR\"",
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "cors": true
   },
   {
     "name": "KnowYourMeme",
@@ -1018,7 +1049,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"success\":true",
-    "positiveMsg": "\"success\":false"
+    "positiveMsg": "\"success\":false",
+    "cors": true
   },
   {
     "name": "Tellonym",
@@ -1027,7 +1059,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"code\":\"NOT_FOUND\"",
-    "undetectable": true
+    "undetectable": true,
+    "cors": true
   },
   {
     "name": "Truth Social",
@@ -1037,7 +1070,8 @@
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Record not found\"",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Twitcasting",
@@ -1069,7 +1103,8 @@
     "urlMain": "https://api.younow.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"errorMsg\":\"No users found\""
+    "errorMsg": "\"errorMsg\":\"No users found\"",
+    "cors": true
   },
   {
     "name": "Zomato",
@@ -1085,7 +1120,8 @@
     "urlMain": "https://trello.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<h1>Oh no! 404!</h1>"
+    "errorMsg": "<h1>Oh no! 404!</h1>",
+    "cors": true
   },
   {
     "name": "tripadvisor",
@@ -1136,7 +1172,8 @@
     "urlMain": "https://gw-napi.zepeto.io",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "errorCode\":"
+    "errorMsg": "errorCode\":",
+    "cors": true
   },
   {
     "name": "LINE",
@@ -1194,7 +1231,8 @@
     "urlMain": "https://www.faceit.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"user not found\""
+    "errorMsg": "\"message\":\"user not found\"",
+    "cors": true
   },
   {
     "name": "Fandom",
@@ -1212,7 +1250,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "Fortnite Player Stats -",
-    "undetectable": true
+    "undetectable": true,
+    "cors": true
   },
   {
     "name": "Game Jolt",
@@ -1220,7 +1259,8 @@
     "urlMain": "https://gamejolt.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "null,"
+    "errorMsg": "null,",
+    "cors": true
   },
   {
     "name": "Gamespot",
@@ -1245,7 +1285,8 @@
     "urlMain": "https://www.habbo.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "cors": true
   },
   {
     "name": "MCUUID (Minecraft)",
@@ -1253,7 +1294,8 @@
     "urlMain": "https://playerdb.co",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "minecraft.api_failure"
+    "errorMsg": "minecraft.api_failure",
+    "cors": true
   },
   {
     "name": "Minecraft List",
@@ -1270,7 +1312,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "\"available\":true",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Moxfield",
@@ -1280,7 +1323,8 @@
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "OPGG",
@@ -1305,7 +1349,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "We couldn't find anything",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "pokemonshowdown",
@@ -1313,7 +1358,8 @@
     "urlMain": "https://pokemonshowdown.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "(Unregistered)"
+    "errorMsg": "(Unregistered)",
+    "cors": true
   },
   {
     "name": "BoardGameGeek",
@@ -1321,7 +1367,8 @@
     "urlMain": "https://api.geekdo.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "\"isValid\":true"
+    "errorMsg": "\"isValid\":true",
+    "cors": true
   },
   {
     "name": "BIGO Live",
@@ -1347,7 +1394,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "CollectorResultStatus::NotFound",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Xbox Gamertag",
@@ -1373,7 +1421,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "<title>speedrun.com",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "TETR.IO",
@@ -1381,7 +1430,8 @@
     "urlMain": "https://ch.tetr.io",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "\"success\":false"
+    "errorMsg": "\"success\":false",
+    "cors": true
   },
   {
     "name": "SteamGifts",
@@ -1407,7 +1457,8 @@
     "urlMain": "https://truckersmp.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<h4>Could not find any member using these credentials</h4>"
+    "errorMsg": "<h4>Could not find any member using these credentials</h4>",
+    "cors": true
   },
   {
     "name": "lichess.org",
@@ -1415,7 +1466,8 @@
     "urlMain": "https://lichess.org",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "false"
+    "errorMsg": "false",
+    "cors": true
   },
   {
     "name": "LeetCode",
@@ -1441,7 +1493,8 @@
     "urlMain": "https://wakatime.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"error\": \"Not found.\""
+    "errorMsg": "\"error\": \"Not found.\"",
+    "cors": true
   },
   {
     "name": "HackerRank",
@@ -1449,7 +1502,8 @@
     "urlMain": "https://www.hackerrank.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"Not Found\""
+    "errorMsg": "\"error\":\"Not Found\"",
+    "cors": true
   },
   {
     "name": "Codecademy",
@@ -1482,7 +1536,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"status\":\"FAILED\"",
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "cors": true
   },
   {
     "name": "CodeSandbox",
@@ -1491,7 +1546,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "Could not find user with username",
-    "undetectable": true
+    "undetectable": true,
+    "cors": true
   },
   {
     "name": "devRant",
@@ -1500,7 +1556,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "cors": true
   },
   {
     "name": "Docker Hub (User)",
@@ -1509,7 +1566,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User not found\"",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "GeeksForGeeks",
@@ -1518,7 +1576,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User not found!\"",
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "cors": true
   },
   {
     "name": "Hackster",
@@ -1543,7 +1602,8 @@
     "urlMain": "https://api.monkeytype.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"User not found\""
+    "errorMsg": "\"message\":\"User not found\"",
+    "cors": true
   },
   {
     "name": "RubyGems.org",
@@ -1551,7 +1611,8 @@
     "urlMain": "https://rubygems.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"Not Found\""
+    "errorMsg": "\"error\":\"Not Found\"",
+    "cors": true
   },
   {
     "name": "Scratch",
@@ -1559,7 +1620,8 @@
     "urlMain": "https://api.scratch.mit.edu",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"msg\":\"valid username\""
+    "errorMsg": "\"msg\":\"valid username\"",
+    "cors": true
   },
   {
     "name": "Topcoder",
@@ -1576,7 +1638,8 @@
     "urlMain": "https://bugcrowd.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"Not Found\""
+    "errorMsg": "\"error\":\"Not Found\"",
+    "cors": true
   },
   {
     "name": "HackerOne",
@@ -1595,7 +1658,8 @@
     "allowBrowserFallback": false,
     "apiUrl": "https://hackernoon.com/u/{}/rss",
     "notFoundStatus": 404,
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "cors": true
   },
   {
     "name": "TryHackMe",
@@ -1604,7 +1668,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Udemy",
@@ -1638,7 +1703,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": ">No results found</span>",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "sporcle",
@@ -1681,7 +1747,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"code\":",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cors": true
   },
   {
     "name": "Mixcloud",
@@ -1689,7 +1756,8 @@
     "urlMain": "https://api.mixcloud.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"error\":"
+    "errorMsg": "\"error\":",
+    "cors": true
   },
   {
     "name": "Audiojungle",
@@ -1705,7 +1773,8 @@
     "urlMain": "https://api.discogs.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"message\": \"User does not exist or may have been deleted.\""
+    "errorMsg": "\"message\": \"User does not exist or may have been deleted.\"",
+    "cors": true
   },
   {
     "name": "Bandlab",
@@ -1757,7 +1826,8 @@
     "checkMethod": "message",
     "errorMsg": "\"success\":true",
     "undetectable": true,
-    "positiveMsg": "\"success\":false"
+    "positiveMsg": "\"success\":false",
+    "cors": true
   },
   {
     "name": "LibraryThing",
