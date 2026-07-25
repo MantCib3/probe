@@ -1566,6 +1566,22 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 }
 .np-capture-dl:hover { background: #e0e0e0; color: #222; }
 
+.np-capture-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e8e8;
+  color: #999;
+  font-size: 1.2rem;
+  font-weight: 700;
+  width: 72px;
+  height: 46px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: default;
+  user-select: none;
+}
+
 /* ── Metadata embed inside notes editor ──────────────────────────────── */
 .np-meta-embed {
   display: inline-flex;

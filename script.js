@@ -521,7 +521,7 @@ function renderCaptures() {
   container.innerHTML = keys.map(url => {
     const c = captures[url];
     const m = c.metadata || {};
-    const imgSrc = `data:${c.mimeType};base64,${c.screenshot}`;
+    const imgSrc = c.screenshot ? `data:${c.mimeType};base64,${c.screenshot}` : '';
     const domain = (() => { try { return new URL(url).hostname; } catch { return url; } })();
     const title = m.title || m.ogTitle || domain;
     const desc  = m.description || '';
@@ -529,8 +529,11 @@ function renderCaptures() {
     const safeDomain = escHtml(domain);
     const safeTitle  = escHtml(title.slice(0, 80));
     const safeDesc   = escHtml(desc.slice(0, 140));
+    const thumbEl = imgSrc
+      ? `<img class="np-capture-thumb" src="${safeImgSrc}" alt="Screenshot of ${safeDomain}" title="Click to view full size">`
+      : `<div class="np-capture-thumb np-capture-thumb-empty" title="No image available">${safeDomain.slice(0,1).toUpperCase()}</div>`;
     return `<div class="np-capture-card" data-cap-url="${escHtml(url)}">
-      <img class="np-capture-thumb" src="${safeImgSrc}" alt="Screenshot of ${safeDomain}" title="Click to view full size">
+      ${thumbEl}
       <div class="np-capture-info">
         <div class="np-capture-domain">${safeDomain}</div>
         ${title !== domain ? `<div class="np-capture-title">${safeTitle}</div>` : ''}
@@ -562,7 +565,7 @@ function renderCaptures() {
 
 function downloadCaptureImage(url) {
   const c = captures[url];
-  if (!c) return;
+  if (!c || !c.screenshot) return;
   const ext = c.mimeType === 'image/jpeg' ? 'jpg' : 'png';
   const domain = (() => { try { return new URL(url).hostname.replace(/\./g, '-'); } catch { return 'capture'; } })();
   const a = document.createElement('a');

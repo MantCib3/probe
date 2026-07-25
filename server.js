@@ -1540,6 +1540,45 @@ async function fetchPageCheerio(rawUrl, res) {
   }
 }
 
+/* ── OG image proxy (returns base64 JSON) ──────────────────────────── */
+function proxyImage(rawUrl, res) {
+  const https = require('https');
+  const httpMod = require('http');
+  const mod = rawUrl.startsWith('https') ? https : httpMod;
+  const req = mod.get(rawUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' },
+    timeout: 8000,
+  }, (r) => {
+    const ct = (r.headers['content-type'] || 'image/jpeg').split(';')[0].trim();
+    if (!ct.startsWith('image/')) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'not an image' }));
+      return;
+    }
+    const chunks = [];
+    let total = 0;
+    r.on('data', d => { total += d.length; if (total < 5000000) chunks.push(d); });
+    r.on('end', () => {
+      const b64 = Buffer.concat(chunks).toString('base64');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, b64, mimeType: ct }));
+    });
+    r.on('error', () => {
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'stream error' }));
+      }
+    });
+  });
+  req.on('error', (err) => {
+    if (!res.headersSent) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+  });
+  req.setTimeout(8000, () => req.destroy());
+}
+
 /* ── Static file helper ───────────────────────────────────────────────── */
 function serveStatic(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -1808,6 +1847,31 @@ const server = http.createServer((req, res) => {
         res.end();
       }
     });
+    return;
+  }
+
+  /* ── OG image proxy endpoint ───────────────────────────────────────── */
+  if (pathname === '/api/og-image') {
+    const rawUrl = (urlObj.searchParams.get('url') || '').trim();
+    let parsedOG;
+    try {
+      parsedOG = new URL(rawUrl);
+      if (!['http:', 'https:'].includes(parsedOG.protocol)) throw new Error('bad protocol');
+    } catch (_) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Invalid URL' }));
+    }
+    const hOG = parsedOG.hostname.toLowerCase();
+    if (
+      hOG === 'localhost' || hOG === '127.0.0.1' || hOG === '::1' ||
+      /^10\./.test(hOG) || /^192\.168\./.test(hOG) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(hOG) ||
+      /^169\.254\./.test(hOG) || hOG.endsWith('.local')
+    ) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
+    }
+    proxyImage(rawUrl, res);
     return;
   }
 
