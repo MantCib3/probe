@@ -1388,6 +1388,22 @@ function probe(site, username) {
     });
   }
 
+  // CF-blocked sites — skip server attempt (always 403/challenge from datacenter).
+  // Client will retry via CF Worker proxy using the user's residential-adjacent IP.
+  if (site.cfProxy) {
+    return Promise.resolve({
+      name: site.name,
+      category: site.category,
+      url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
+      status: 'unknown',
+      statusCode: 0,
+      reasonCodes: ['datacenter_ip_blocked'],
+      confidence: 0,
+      detectionMethod: 'http',
+      bodyHash: null,
+    });
+  }
+
   if (site.undetectable && !ENABLE_UNDETECTABLE_STEALTH) {
     return Promise.resolve({
       name: site.name,
@@ -1694,10 +1710,12 @@ const server = http.createServer((req, res) => {
           const normalized = normalizeResult(result);
           // Include CORS flag + check info so client can self-verify unknowns
           const extra = {};
-          if (site.cors) extra.cors = true;
-          if (site.checkMethod) extra.checkMethod = site.checkMethod;
-          if (site.errorMsg)    extra.errorMsg    = site.errorMsg;
-          if (site.positiveMsg) extra.positiveMsg = site.positiveMsg;
+          if (site.cors)         extra.cors     = true;
+          if (site.cfProxy)      extra.cfProxy  = true;
+          if (site.requiresAuth) extra.auth     = true;
+          if (site.checkMethod)  extra.checkMethod = site.checkMethod;
+          if (site.errorMsg)     extra.errorMsg    = site.errorMsg;
+          if (site.positiveMsg)  extra.positiveMsg = site.positiveMsg;
           const checkUrl = (site.apiUrl || site.url).replace(/\{\}/g, encodeURIComponent(username));
           extra.checkUrl = checkUrl;
           if (!cancelled) send({ type: 'result', ...normalized, done, total, ...extra });

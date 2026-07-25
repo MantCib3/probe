@@ -883,15 +883,14 @@ function makeCard(r, animDelay = 0) {
     ${manualLink}
   `;
 
-  // Queue client-side verification for unknown results on CORS-capable endpoints
-  if (r.status === 'unknown' && r.cors && r.checkUrl) {
-    _cvQueue.push({
-      card,
-      checkUrl: r.checkUrl,
-      checkMethod: r.checkMethod || 'status_code',
-      errorMsg: r.errorMsg || null,
-      positiveMsg: r.positiveMsg || null,
-    });
+  // Queue client-side verification based on what the server sent
+  if (r.cors && r.status === 'unknown' && r.checkUrl) {
+    _cvQueue.push({ type: 'cors', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
+  } else if (r.cfProxy && (r.status === 'unknown') && r.checkUrl) {
+    _cvQueue.push({ type: 'cfProxy', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
+  } else if (r.auth && r.status === 'auth_required') {
+    // No-cors redirect detection using user's browser cookies
+    _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
   }
 
   return card;
@@ -957,42 +956,93 @@ function makeNameCard(r, animDelay = 0) {
   return card;
 }
 
-/* ── Client-side verification (uses browser's residential IP) ─────── */
-// Runs after server returns `unknown` for a CORS-capable API endpoint.
-// Stores pending verify jobs so we can process after SSE ends (or in parallel).
+/* ── Client-side verification ─────────────────────────────────────────
+ *
+ *  Three job types — all run after the SSE scan ends:
+ *
+ *  'cors'    → direct browser fetch (CORS-enabled API; uses residential IP)
+ *  'cfProxy' → fetch via Cloudflare Worker proxy (CF-blocked HTML sites)
+ *  'auth'    → no-cors redirect-detect (auth-gated sites; uses user's cookies)
+ *
+ *  Set CF_WORKER_URL to your deployed worker URL to enable cfProxy jobs.
+ *  Leave empty to skip CF proxying (cors/auth still run).
+ * ─────────────────────────────────────────────────────────────────── */
+const CF_WORKER_URL = ''; // e.g. 'https://probe-proxy.xxx.workers.dev'
+
 const _cvQueue = [];
 
+function _applyVerdict(card, verdict, label) {
+  const prevStatus = card.dataset.status;
+  const removals = [prevStatus, 'cv-verifying', 'auth_required', 'unknown'];
+  card.classList.remove(...removals);
+  card.classList.add(verdict);
+  card.dataset.status = verdict;
+  const statusEl = card.querySelector('.status-badge');
+  if (statusEl) {
+    statusEl.className = `status-badge ${verdict}`;
+    statusEl.textContent = label || (STATUS_LABEL[verdict] || verdict.toUpperCase());
+  }
+  const idx = results.findIndex(r => r.name === card.dataset.site);
+  if (idx !== -1) results[idx].status = verdict;
+}
+
+async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg) {
+  if (checkMethod === 'status_code' || (!errorMsg && !positiveMsg)) {
+    return resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
+  }
+  const body = await resp.text();
+  if (positiveMsg && body.includes(positiveMsg)) return 'found';
+  if (errorMsg && body.includes(errorMsg)) return 'not_found';
+  return resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
+}
+
 async function _clientVerifyOne(job) {
-  const { card, checkUrl, checkMethod, errorMsg, positiveMsg } = job;
+  const { type, card, checkUrl, checkMethod, errorMsg, positiveMsg } = job;
   if (!card || !card.isConnected) return;
-  // Mark card as verifying
+
   card.classList.add('cv-verifying');
   const statusEl = card.querySelector('.status-badge');
   const prevText = statusEl ? statusEl.textContent : '';
-  if (statusEl) statusEl.textContent = '...';
+  if (statusEl) statusEl.textContent = '…';
+
   try {
-    let verdict = 'unknown';
-    const resp = await fetch(checkUrl, { signal: AbortSignal.timeout(9000) });
-    if (checkMethod === 'status_code' || (!errorMsg && !positiveMsg)) {
-      verdict = resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
-    } else {
-      const body = await resp.text();
-      if (positiveMsg && body.includes(positiveMsg)) verdict = 'found';
-      else if (errorMsg && body.includes(errorMsg)) verdict = 'not_found';
-      else verdict = resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
-    }
-    if (verdict !== 'unknown') {
-      // Update card class + badge + dataset
-      card.classList.remove('unknown', 'cv-verifying');
-      card.classList.add(verdict);
-      card.dataset.status = verdict;
-      if (statusEl) {
-        statusEl.className = `status-badge ${verdict}`;
-        statusEl.textContent = (STATUS_LABEL[verdict] || verdict.toUpperCase()) + ' (browser)';
+    if (type === 'auth') {
+      // No-cors redirect detection — sends user's browser cookies to the site.
+      // opaque = page loaded without redirect → profile probably exists.
+      // opaqueredirect = redirected (to login or 404) → inconclusive.
+      const resp = await fetch(checkUrl, {
+        mode: 'no-cors',
+        redirect: 'manual',
+        credentials: 'include',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (resp.type === 'opaque') {
+        // Direct (non-redirected) response — likely the profile loaded
+        _applyVerdict(card, 'found', 'FOUND (browser)');
+        updateStats();
+      } else {
+        // Redirected or error → keep auth_required
+        card.classList.remove('cv-verifying');
+        if (statusEl) statusEl.textContent = prevText;
       }
-      // Update global results array
-      const idx = results.findIndex(r => r.name === card.dataset.site);
-      if (idx !== -1) results[idx].status = verdict;
+      return;
+    }
+
+    let fetchUrl = checkUrl;
+    if (type === 'cfProxy') {
+      if (!CF_WORKER_URL) {
+        card.classList.remove('cv-verifying');
+        if (statusEl) statusEl.textContent = prevText;
+        return;
+      }
+      fetchUrl = CF_WORKER_URL + '?url=' + encodeURIComponent(checkUrl);
+    }
+
+    const resp = await fetch(fetchUrl, { signal: AbortSignal.timeout(14000) });
+    const verdict = await _resolveBody(resp, checkMethod, errorMsg, positiveMsg);
+    if (verdict !== 'unknown') {
+      const suffix = type === 'cfProxy' ? ' (CF)' : ' (browser)';
+      _applyVerdict(card, verdict, (STATUS_LABEL[verdict] || verdict.toUpperCase()) + suffix);
       updateStats();
     } else {
       card.classList.remove('cv-verifying');
@@ -1004,14 +1054,15 @@ async function _clientVerifyOne(job) {
   }
 }
 
-// Kick off all queued verify jobs (called when SSE scan ends)
+// Kick off all queued verify jobs after SSE scan ends.
+// Batched: 8 concurrent to avoid overwhelming the browser / CF Worker.
 async function runClientVerifyQueue() {
-  // Run in batches of 8 so we don't overwhelm the browser
   const BATCH = 8;
-  for (let i = 0; i < _cvQueue.length; i += BATCH) {
-    await Promise.all(_cvQueue.slice(i, i + BATCH).map(_clientVerifyOne));
-  }
+  const q = [..._cvQueue];
   _cvQueue.length = 0;
+  for (let i = 0; i < q.length; i += BATCH) {
+    await Promise.all(q.slice(i, i + BATCH).map(_clientVerifyOne));
+  }
 }
 
 /* ── Found-first insertion ───────────────────────────────────────────── */
@@ -1417,7 +1468,15 @@ function finishScan(username, done, total) {
 
   // Run client-side verification for CORS-capable unknowns
   if (_cvQueue.length > 0) {
-    progressStatus.innerHTML += ` &mdash; <span id="cvStatus">verifying ${_cvQueue.length} in browser…</span>`;
+    const n = _cvQueue.length;
+    const cfCount = _cvQueue.filter(j => j.type === 'cfProxy').length;
+    const corsCount = _cvQueue.filter(j => j.type === 'cors').length;
+    const authCount = _cvQueue.filter(j => j.type === 'auth').length;
+    const parts = [];
+    if (corsCount) parts.push(`${corsCount} API`);
+    if (cfCount) parts.push(cfCount + ' CF' + (CF_WORKER_URL ? '' : ' (no worker URL)'));
+    if (authCount) parts.push(`${authCount} auth`);
+    progressStatus.innerHTML += ` &mdash; <span id="cvStatus">browser-verifying ${parts.join(', ')}…</span>`;
     runClientVerifyQueue().then(() => {
       const cvEl = document.getElementById('cvStatus');
       if (cvEl) cvEl.remove();

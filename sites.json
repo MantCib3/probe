@@ -217,7 +217,8 @@
     "urlMain": "https://codepen.io",
     "category": "developer",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Replit",
@@ -252,7 +253,8 @@
     "category": "developer",
     "checkMethod": "status_code",
     "usernameInBody": true,
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Exercism",
@@ -267,7 +269,8 @@
     "urlMain": "https://hashnode.com",
     "category": "developer",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Codeberg",
@@ -309,7 +312,8 @@
     "urlMain": "https://sourceforge.net",
     "category": "developer",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Steam",
@@ -362,7 +366,8 @@
     "urlMain": "https://www.newgrounds.com",
     "category": "gaming",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Itch.io",
@@ -393,7 +398,8 @@
     "urlMain": "https://kick.com",
     "category": "gaming",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Rumble",
@@ -402,7 +408,9 @@
     "category": "gaming",
     "checkMethod": "status_code",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Trakt.tv",
@@ -410,7 +418,8 @@
     "urlMain": "https://trakt.tv",
     "category": "gaming",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "YouTube",
@@ -448,7 +457,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "This page isnÃ¢â‚¬â„¢t available",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Ko-fi",
@@ -457,7 +467,9 @@
     "category": "content",
     "checkMethod": "status_code",
     "usernameInBody": true,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Behance",
@@ -474,7 +486,9 @@
     "urlMain": "https://dribbble.com",
     "category": "content",
     "checkMethod": "status_code",
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "ArtStation",
@@ -483,7 +497,8 @@
     "category": "content",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "cfProxy": true
   },
   {
     "name": "DeviantArt",
@@ -545,14 +560,18 @@
     "checkMethod": "status_code",
     "apiUrl": "https://unsplash.com/@{}",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Wattpad",
     "url": "https://www.wattpad.com/user/{}",
     "urlMain": "https://www.wattpad.com",
     "category": "content",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Vimeo",
@@ -577,7 +596,8 @@
     "urlMain": "https://imgur.com",
     "category": "content",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Spotify",
@@ -585,7 +605,8 @@
     "urlMain": "https://open.spotify.com",
     "category": "content",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Odysee",
@@ -602,7 +623,8 @@
     "category": "content",
     "checkMethod": "status_code",
     "undetectable": true,
-    "defunct": true
+    "defunct": true,
+    "cfProxy": true
   },
   {
     "name": "Reddit",
@@ -623,7 +645,8 @@
     "category": "forum",
     "checkMethod": "status_code",
     "undetectable": true,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "cfProxy": true
   },
   {
     "name": "Disqus",
@@ -638,7 +661,9 @@
     "urlMain": "https://www.producthunt.com",
     "category": "forum",
     "checkMethod": "status_code",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Lemmy",
@@ -646,7 +671,8 @@
     "urlMain": "https://lemmy.world",
     "category": "forum",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Lobste.rs",
@@ -662,7 +688,8 @@
     "urlMain": "https://slashdot.org",
     "category": "forum",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "LinkedIn",
@@ -680,7 +707,8 @@
     "urlMain": "https://wellfound.com",
     "category": "professional",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Fiverr",
@@ -688,7 +716,8 @@
     "urlMain": "https://www.fiverr.com",
     "category": "professional",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Freelancer",
@@ -710,7 +739,8 @@
     "urlMain": "https://www.upwork.com",
     "category": "professional",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Etsy",
@@ -718,7 +748,8 @@
     "urlMain": "https://www.etsy.com",
     "category": "shopping",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Redbubble",
@@ -728,7 +759,9 @@
     "checkMethod": "status_code",
     "apiUrl": "https://www.redbubble.com/people/{}/shop",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "eBay",
@@ -738,14 +771,18 @@
     "checkMethod": "status_code",
     "usernameInBody": true,
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Society6",
     "url": "https://society6.com/{}",
     "urlMain": "https://society6.com",
     "category": "shopping",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Threadless",
@@ -753,7 +790,8 @@
     "urlMain": "https://www.threadless.com",
     "category": "shopping",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Poshmark",
@@ -761,7 +799,8 @@
     "urlMain": "https://poshmark.com",
     "category": "shopping",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Depop",
@@ -772,7 +811,9 @@
     "needsBrowser": true,
     "errorMsg": "page 404 Page not found Depop About us Careers Blog News",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "About.me",
@@ -823,7 +864,8 @@
     "urlMain": "https://www.slideshare.net",
     "category": "misc",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Scribd",
@@ -832,7 +874,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "The page you requested does not exist",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Telegram",
@@ -855,7 +898,8 @@
     "urlMain": "https://letterboxd.com",
     "category": "misc",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Carrd",
@@ -886,7 +930,9 @@
     "urlMain": "https://untappd.com",
     "category": "misc",
     "checkMethod": "status_code",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Duolingo",
@@ -905,7 +951,8 @@
     "undetectable": true,
     "notFoundStatus": 404,
     "allowBrowserFallback": false,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "cfProxy": true
   },
   {
     "name": "Pinterest",
@@ -948,7 +995,9 @@
     "url": "https://buymeacoffee.com/{}",
     "urlMain": "https://buymeacoffee.com",
     "category": "content",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "VSCO",
@@ -956,7 +1005,8 @@
     "urlMain": "https://vsco.co",
     "category": "content",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Pastebin",
@@ -1016,7 +1066,9 @@
     "urlMain": "https://knowyourmeme.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "404, File Not Found!"
+    "errorMsg": "404, File Not Found!",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Neocities",
@@ -1156,7 +1208,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Error in query",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Anime-Planet",
@@ -1164,7 +1218,8 @@
     "urlMain": "https://www.anime-planet.com/users/",
     "category": "social",
     "checkMethod": "status_code",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "Zepeto",
@@ -1190,7 +1245,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "(404)</title>",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "solo.to",
@@ -1199,7 +1256,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "The page you're looking for isn't here.",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Geocaching",
@@ -1241,7 +1300,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "Not Found",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Fortnite Tracker",
@@ -1269,7 +1330,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "GOG",
@@ -1376,7 +1438,9 @@
     "urlMain": "https://www.bigo.tv",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "userInfo:{}"
+    "errorMsg": "userInfo:{}",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "hiberworld",
@@ -1412,7 +1476,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "404: Oh Noes!",
-    "undetectable": true
+    "undetectable": true,
+    "cfProxy": true
   },
   {
     "name": "speedrun",
@@ -1440,7 +1505,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "positiveMsg": "\"identifier\":",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Wowhead",
@@ -1519,7 +1586,9 @@
     "urlMain": "https://atcoder.jp",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": ">404 Page Not Found</h1>"
+    "errorMsg": ">404 Page Not Found</h1>",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "CodeChef",
@@ -1594,7 +1663,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "That page doesn't exist.",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Monkeytype",
@@ -1678,7 +1749,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "<title>Online Courses - Learn Anything, On Your Schedule | Udemy</title>",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "Chocolatey",
@@ -1694,7 +1767,9 @@
     "urlMain": "https://pcpartpicker.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "The page you requested could not be found."
+    "errorMsg": "The page you requested could not be found.",
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "DOTAFire",
@@ -1836,7 +1911,9 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Error: This user doesn't exist",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true,
+    "undetectable": true
   },
   {
     "name": "carrd.co",
