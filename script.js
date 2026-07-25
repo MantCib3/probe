@@ -403,9 +403,30 @@ async function capturePin(idx, btn) {
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Snapshot failed');
     captures[pin.url] = { metadata: data.metadata, screenshot: data.screenshot, mimeType: data.mimeType, name: pin.name };
+
+    // Insert thumbnail + metadata block into the notes editor
+    const npEditor = $('npEditor');
+    if (npEditor) {
+      const m = data.metadata || {};
+      const domain = (() => { try { return new URL(pin.url).hostname; } catch (_) { return pin.url; } })();
+      const pageTitle = (m.title || m.ogTitle || '').slice(0, 90);
+      const desc = (m.description || '').slice(0, 150);
+      const thumbHtml = data.screenshot
+        ? `<img class="np-meta-thumb" src="data:${data.mimeType};base64,${data.screenshot}" alt="${escHtml(domain)}">`
+        : '';
+      const metaLines = [
+        `<strong>${escHtml(pageTitle || domain)}</strong>`,
+        desc ? `<em>${escHtml(desc)}</em>` : '',
+        m.author ? `Author: ${escHtml(m.author)}` : '',
+        `<span class="np-meta-ts">${escHtml(domain)} · ${escHtml((m.capturedAt || '').slice(0,10))}</span>`,
+      ].filter(Boolean).join('<br>');
+      npEditor.insertAdjacentHTML('beforeend',
+        `<div class="np-meta-embed">${thumbHtml}<div class="np-meta-detail">${metaLines}</div></div><p></p>`);
+      localStorage.setItem('probe_case_content', npEditor.innerHTML);
+    }
+
     renderCaptures();
     updateNotepad(); // refresh button to ✓
-    // Show export buttons
     const imgBtn  = $('npExportImg');
     const jsonBtn = $('npExportJson');
     if (imgBtn)  imgBtn.style.display = '';
@@ -516,10 +537,10 @@ function exportMarkdown() {
     lines.push('');
   }
   const md = lines.join('\n');
-  const blob = new Blob([md], { type: 'text/markdown; charset=utf-8' });
+  const blob = new Blob([md], { type: 'text/plain; charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'case-notes'}.md`;
+  a.download = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'case-notes'}.txt`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }

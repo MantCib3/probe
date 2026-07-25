@@ -1753,26 +1753,38 @@ const server = http.createServer((req, res) => {
         const page = await context.newPage();
         try {
           await page.goto(rawUrl, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
-          await page.waitForTimeout(1000);
-          const metadata = await page.evaluate(() => {
-            function gm(sel) { const e = document.querySelector(sel); return e ? (e.getAttribute('content') || '') : ''; }
-            return {
-              title:         document.title || '',
-              url:           location.href,
-              description:   gm('meta[name="description"]') || gm('meta[property="og:description"]') || '',
-              ogTitle:       gm('meta[property="og:title"]') || '',
-              ogSiteName:    gm('meta[property="og:site_name"]') || '',
-              author:        gm('meta[name="author"]') || gm('meta[property="article:author"]') || '',
-              keywords:      gm('meta[name="keywords"]') || '',
-              publishedTime: gm('meta[property="article:published_time"]') || '',
-              twitterCard:   gm('meta[name="twitter:card"]') || '',
-              capturedAt:    new Date().toISOString(),
-            };
-          });
-          const buf = await page.screenshot({ type: 'jpeg', quality: 78, fullPage: false });
-          const screenshot = buf.toString('base64');
+          await page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
+
+          // Extract metadata — catch independently so screenshot still works if DOM eval fails
+          let metadata = { title: '', url: rawUrl, description: '', capturedAt: new Date().toISOString() };
+          try {
+            metadata = await page.evaluate(() => {
+              function gm(sel) { const e = document.querySelector(sel); return e ? (e.getAttribute('content') || '') : ''; }
+              return {
+                title:         document.title || '',
+                url:           location.href,
+                description:   gm('meta[name="description"]') || gm('meta[property="og:description"]') || '',
+                ogTitle:       gm('meta[property="og:title"]') || '',
+                ogSiteName:    gm('meta[property="og:site_name"]') || '',
+                author:        gm('meta[name="author"]') || gm('meta[property="article:author"]') || '',
+                keywords:      gm('meta[name="keywords"]') || '',
+                publishedTime: gm('meta[property="article:published_time"]') || '',
+                twitterCard:   gm('meta[name="twitter:card"]') || '',
+                capturedAt:    new Date().toISOString(),
+              };
+            });
+          } catch (_) { /* DOM eval blocked — keep blank metadata */ }
+
+          // Screenshot — catch independently so metadata is still returned if screenshot fails
+          let screenshot = '';
+          let mimeType = 'image/jpeg';
+          try {
+            const buf = await page.screenshot({ type: 'jpeg', quality: 78, fullPage: false });
+            screenshot = buf.toString('base64');
+          } catch (_) { /* screenshot blocked — return metadata without image */ }
+
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: true, metadata, screenshot, mimeType: 'image/jpeg' }));
+          res.end(JSON.stringify({ ok: true, metadata, screenshot, mimeType }));
         } finally {
           await page.close().catch(() => {});
         }
@@ -1780,7 +1792,7 @@ const server = http.createServer((req, res) => {
         console.error('[snapshot]', err.message);
         if (!res.headersSent) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: false, error: err.message.slice(0, 120) }));
+          res.end(JSON.stringify({ ok: false, error: err.message.slice(0, 200) }));
         }
       } finally {
         if (context) await context.close().catch(() => {});
