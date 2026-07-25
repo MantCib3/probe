@@ -296,5 +296,17 @@
   </div>
 
   <script src="script.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+
+  <!-- Metadata preview modal -->
+  <div id="metaPreviewOverlay" style="display:none">
+    <div id="metaPreviewPanel" role="dialog" aria-modal="true" aria-label="Metadata preview">
+      <div id="metaPreviewHeader">
+        <span id="metaPreviewDomain">metadata</span>
+        <button id="metaPreviewClose" title="Close">✕</button>
+      </div>
+      <div id="metaPreviewBody"></div>
+    </div>
+  </div>
 </body>
 </html>

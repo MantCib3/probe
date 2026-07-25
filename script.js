@@ -399,10 +399,23 @@ async function capturePin(idx, btn) {
   btn.textContent = '↻';
   btn.disabled = true;
   try {
-    const resp = await fetch(`/api/snapshot?url=${encodeURIComponent(pin.url)}`);
+    // Fetch HTML + cheerio metadata from server
+    const resp = await fetch(`/api/fetch-page?url=${encodeURIComponent(pin.url)}`);
     const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Snapshot failed');
-    captures[pin.url] = { metadata: data.metadata, screenshot: data.screenshot, mimeType: data.mimeType, name: pin.name };
+    if (!data.ok) throw new Error(data.error || 'Fetch failed');
+
+    // Client-side silent iframe render + html2canvas capture
+    let screenshotB64 = '';
+    if (data.html && typeof html2canvas !== 'undefined') {
+      screenshotB64 = await silentCapture(pin.url, data.html);
+    }
+
+    captures[pin.url] = {
+      metadata: data.metadata,
+      screenshot: screenshotB64,
+      mimeType: 'image/png',
+      name: pin.name,
+    };
 
     // Insert thumbnail + metadata block into the notes editor
     const npEditor = $('npEditor');
@@ -411,14 +424,14 @@ async function capturePin(idx, btn) {
       const domain = (() => { try { return new URL(pin.url).hostname; } catch (_) { return pin.url; } })();
       const pageTitle = (m.title || m.ogTitle || '').slice(0, 90);
       const desc = (m.description || '').slice(0, 150);
-      const thumbHtml = data.screenshot
-        ? `<img class="np-meta-thumb" src="data:${data.mimeType};base64,${data.screenshot}" alt="${escHtml(domain)}">`
+      const thumbHtml = screenshotB64
+        ? `<img class="np-meta-thumb" src="data:image/png;base64,${screenshotB64}" alt="${escHtml(domain)}">`
         : '';
       const metaLines = [
         `<strong>${escHtml(pageTitle || domain)}</strong>`,
         desc ? `<em>${escHtml(desc)}</em>` : '',
         m.author ? `Author: ${escHtml(m.author)}` : '',
-        `<span class="np-meta-ts">${escHtml(domain)} · ${escHtml((m.capturedAt || '').slice(0,10))}</span>`,
+        `<span class="np-meta-ts">${escHtml(domain)} · ${escHtml((m.capturedAt || '').slice(0, 10))}</span>`,
       ].filter(Boolean).join('<br>');
       npEditor.insertAdjacentHTML('beforeend',
         `<div class="np-meta-embed">${thumbHtml}<div class="np-meta-detail">${metaLines}</div></div><p></p>`);
@@ -426,7 +439,7 @@ async function capturePin(idx, btn) {
     }
 
     renderCaptures();
-    updateNotepad(); // refresh button to ✓
+    updateNotepad();
     const imgBtn  = $('npExportImg');
     const jsonBtn = $('npExportJson');
     if (imgBtn)  imgBtn.style.display = '';
@@ -438,6 +451,63 @@ async function capturePin(idx, btn) {
     btn.disabled = false;
     setTimeout(() => { btn.textContent = '📷'; btn.title = 'Capture screenshot & metadata'; }, 3000);
   }
+}
+
+/* Silently render a URL's HTML in a sandboxed iframe and capture via html2canvas */
+async function silentCapture(pageUrl, html) {
+  return new Promise((resolve) => {
+    try {
+      let origin = pageUrl;
+      try { origin = new URL(pageUrl).origin; } catch (_) { /* keep raw */ }
+      // Inject base href so relative resources resolve to the original host
+      const injected = html.replace(/<head(\s[^>]*)?>/i,
+        m => `${m}<base href="${origin}">`);
+      const blob = new Blob([injected], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = [
+        'position:fixed', 'top:-9999px', 'left:-9999px',
+        'width:1280px', 'height:800px', 'border:none',
+        'pointer-events:none', 'opacity:0', 'z-index:-1',
+      ].join(';');
+      iframe.sandbox = 'allow-same-origin';
+      document.body.appendChild(iframe);
+
+      const cleanup = () => {
+        try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+        try { iframe.remove(); } catch (_) {}
+      };
+      const safetyTimer = setTimeout(() => { cleanup(); resolve(''); }, 15000);
+
+      iframe.onload = async () => {
+        clearTimeout(safetyTimer);
+        try {
+          const doc = iframe.contentDocument;
+          const canvas = await html2canvas(doc.documentElement, {
+            useCORS: false,
+            allowTaint: true,
+            width: 1280,
+            height: 800,
+            scale: 0.75,
+            logging: false,
+            windowWidth: 1280,
+            windowHeight: 800,
+          });
+          const b64 = canvas.toDataURL('image/png').replace('data:image/png;base64,', '');
+          cleanup();
+          resolve(b64);
+        } catch (_) {
+          cleanup();
+          resolve('');
+        }
+      };
+      iframe.onerror = () => { clearTimeout(safetyTimer); cleanup(); resolve(''); };
+      iframe.src = blobUrl;
+    } catch (_) {
+      resolve('');
+    }
+  });
 }
 
 function renderCaptures() {
@@ -467,7 +537,8 @@ function renderCaptures() {
         ${desc ? `<div class="np-capture-desc">${safeDesc}</div>` : ''}
         <div class="np-capture-dl-row">
           <button class="np-capture-dl" data-dl-img="${escHtml(url)}" title="Download screenshot">↓ image</button>
-          <button class="np-capture-dl" data-dl-meta="${escHtml(url)}" title="Download metadata">↓ meta</button>
+          <button class="np-capture-dl" data-dl-meta="${escHtml(url)}" title="Download metadata JSON">↓ meta</button>
+          <button class="np-capture-dl np-preview-btn" data-preview-url="${escHtml(url)}" title="Preview metadata">👁 preview</button>
         </div>
       </div>
     </div>`;
@@ -483,6 +554,9 @@ function renderCaptures() {
   });
   container.querySelectorAll('[data-dl-meta]').forEach(btn => {
     btn.addEventListener('click', () => downloadCaptureMeta(btn.dataset.dlMeta));
+  });
+  container.querySelectorAll('[data-preview-url]').forEach(btn => {
+    btn.addEventListener('click', () => previewMeta(btn.dataset.previewUrl));
   });
 }
 
@@ -510,7 +584,67 @@ function downloadCaptureMeta(url) {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
-function exportMarkdown() {
+function previewMeta(url) {
+  const c = captures[url];
+  if (!c) return;
+  const m = c.metadata || {};
+  const overlay = document.getElementById('metaPreviewOverlay');
+  const body    = document.getElementById('metaPreviewBody');
+  const domainEl = document.getElementById('metaPreviewDomain');
+  if (!overlay || !body) return;
+
+  const domain = (() => { try { return new URL(url).hostname; } catch (_) { return url; } })();
+  domainEl.textContent = domain;
+
+  const fields = [
+    ['Title',        m.title],
+    ['URL',          m.url],
+    ['Description',  m.description],
+    ['OG Title',     m.ogTitle],
+    ['Site Name',    m.ogSiteName],
+    ['OG Image',     m.ogImage],
+    ['Author',       m.author],
+    ['Keywords',     m.keywords],
+    ['Published',    m.publishedTime],
+    ['Twitter Card', m.twitterCard],
+    ['Canonical',    m.canonical],
+    ['Captured At',  m.capturedAt],
+  ].filter(([, v]) => v);
+
+  const isLink = k => k === 'URL' || k === 'Canonical' || k === 'OG Image';
+  body.innerHTML = fields.map(([k, v]) => {
+    const safeV = escHtml(v);
+    const val = isLink(k)
+      ? `<a href="${safeV}" target="_blank" rel="noopener noreferrer">${safeV}</a>`
+      : safeV;
+    return `<div class="meta-preview-row">
+      <span class="meta-preview-key">${escHtml(k)}</span>
+      <span class="meta-preview-val">${val}</span>
+    </div>`;
+  }).join('');
+
+  // Add screenshot preview at top if available
+  if (c.screenshot) {
+    body.insertAdjacentHTML('afterbegin',
+      `<div class="meta-preview-screenshot">
+        <img src="data:${c.mimeType};base64,${c.screenshot}" alt="Page screenshot" style="width:100%;border-radius:6px;margin-bottom:10px;">
+       </div>`);
+  }
+
+  overlay.style.display = 'flex';
+}
+
+// Wire up preview modal close (runs once)
+document.addEventListener('DOMContentLoaded', () => {
+  const overlay = document.getElementById('metaPreviewOverlay');
+  const closeBtn = document.getElementById('metaPreviewClose');
+  if (overlay) {
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.style.display = 'none'; });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => { if (overlay) overlay.style.display = 'none'; });
+  }
+});
   const title   = ($('npTitle') || {}).value || '';
   const content = ($('npEditor') || {}).innerText || '';
   const lines   = [];

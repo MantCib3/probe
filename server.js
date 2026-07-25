@@ -1487,6 +1487,59 @@ function httpSnapshotFallback(rawUrl, res) {
   req.setTimeout(8000, () => req.destroy());
 }
 
+/* ── Cheerio metadata + raw HTML fetch (for client-side capture) ────── */
+async function fetchPageCheerio(rawUrl, res) {
+  try {
+    const https = require('https');
+    const httpMod = require('http');
+    const mod = rawUrl.startsWith('https') ? https : httpMod;
+    const html = await new Promise((resolve, reject) => {
+      const req = mod.get(rawUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+        timeout: 12000,
+      }, (r) => {
+        let body = '';
+        r.setEncoding('utf8');
+        r.on('data', d => { if (body.length < 800000) body += d; });
+        r.on('end', () => resolve(body));
+        r.on('error', reject);
+      });
+      req.on('error', reject);
+      req.setTimeout(12000, () => req.destroy());
+    });
+    const cheerio = require('cheerio');
+    const $c = cheerio.load(html);
+    const gm = name =>
+      ($c(`meta[name="${name}"]`).attr('content') ||
+       $c(`meta[property="${name}"]`).attr('content') || '').trim();
+    const metadata = {
+      title:         ($c('title').text().trim() || gm('og:title')).slice(0, 200),
+      url:           rawUrl,
+      description:   gm('description') || gm('og:description'),
+      ogTitle:       gm('og:title'),
+      ogSiteName:    gm('og:site_name'),
+      ogImage:       gm('og:image'),
+      author:        gm('author') || gm('article:author'),
+      keywords:      gm('keywords'),
+      publishedTime: gm('article:published_time'),
+      twitterCard:   gm('twitter:card'),
+      canonical:     $c('link[rel="canonical"]').attr('href') || '',
+      capturedAt:    new Date().toISOString(),
+    };
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, metadata, html }));
+  } catch (err) {
+    if (!res.headersSent) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: err.message.slice(0, 200) }));
+    }
+  }
+}
+
 /* ── Static file helper ───────────────────────────────────────────────── */
 function serveStatic(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -1755,6 +1808,31 @@ const server = http.createServer((req, res) => {
         res.end();
       }
     });
+    return;
+  }
+
+  /* ── Fetch page HTML + cheerio metadata (for client-side capture) ──── */
+  if (pathname === '/api/fetch-page') {
+    const rawUrl = (urlObj.searchParams.get('url') || '').trim();
+    let parsedFP;
+    try {
+      parsedFP = new URL(rawUrl);
+      if (!['http:', 'https:'].includes(parsedFP.protocol)) throw new Error('bad protocol');
+    } catch (_) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Invalid URL' }));
+    }
+    const hFP = parsedFP.hostname.toLowerCase();
+    if (
+      hFP === 'localhost' || hFP === '127.0.0.1' || hFP === '::1' ||
+      /^10\./.test(hFP) || /^192\.168\./.test(hFP) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(hFP) ||
+      /^169\.254\./.test(hFP) || hFP.endsWith('.local')
+    ) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
+    }
+    fetchPageCheerio(rawUrl, res);
     return;
   }
 
