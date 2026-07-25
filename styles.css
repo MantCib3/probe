@@ -1147,8 +1147,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .float-panel.minimised .float-panel-body { display: none; }
 .float-panel.minimised { border-radius: 10px; }
-.dork-wide.minimised .dork-view,
-.dork-wide.minimised .dork-bottom-bar { display: none; }
+.float-panel.minimised .np-drag-bar { border-radius: 10px; border-bottom: none; }
 
 /* ── FABs ────────────────────────────────────────────────────────────── */
 .fab-group {
@@ -1196,94 +1195,56 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .pin-btn.pinned { opacity: 0.85; filter: grayscale(0); }
 
 /* ── Dork panel ──────────────────────────────────────────────────────── */
-.dork-wide { width: 520px; }
-
-.dork-tab-header { padding: 0; gap: 0; align-items: stretch; }
-.dork-tab-bar { display: flex; flex: 1; }
-
-.dork-tab {
-  flex: 1;
-  background: none;
-  border: none;
-  border-right: 1px solid rgba(255,255,255,0.08);
-  padding: 0.5rem 0.2rem;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.38);
-  cursor: pointer;
-  letter-spacing: 0.02em;
-  transition: color 0.15s, background 0.15s;
-  white-space: nowrap;
-}
-.dork-tab:last-of-type { border-right: none; }
-.dork-tab:hover { color: rgba(255,255,255,0.75); }
-.dork-tab.active { color: #fff; background: rgba(255,255,255,0.12); }
-
-.dork-view { position: relative; height: 420px; background: #f8f8f8; }
-.dork-frame { width: 100%; height: 100%; border: none; display: block; }
-
-.dork-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #f8f8f8;
-  gap: 0.5rem;
-}
-.dork-overlay-txt { font-size: 0.75rem; color: #bbb; }
-
-.dork-bottom-bar {
+.dork-hdr-left {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0.4rem 0.7rem;
-  border-top: 1px solid #f0f0f0;
 }
 
-.dork-open-btn {
-  display: inline-block;
+.dork-hdr-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: #bbb;
+}
+
+.dork-body { padding: 0.7rem 0.8rem 0.8rem; }
+
+.dork-query {
   font-size: 0.72rem;
+  color: #ccc;
+  text-align: center;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #f2f2f2;
+  min-height: 1.3em;
+  margin-bottom: 0.65rem;
+}
+.dork-query strong { color: #444; font-weight: 600; }
+
+.dork-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.dork-tab {
+  background: #f7f7f7;
+  border: 1.5px solid #ebebeb;
+  border-radius: 7px;
+  padding: 0.48rem 0.4rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  color: #fff;
-  background: #111;
-  padding: 0.25rem 0.7rem;
-  border-radius: 5px;
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-.dork-open-btn:hover { background: #333; }
-.dork-open-btn.disabled { background: #e0e0e0; color: #aaa; pointer-events: none; }
-
-.dork-add-input {
-  flex: 1;
-  border: none;
-  border-bottom: 1px solid #ebebeb;
-  outline: none;
-  font-size: 0.72rem;
-  color: #444;
-  padding: 0.25rem 0;
-  background: transparent;
-  min-width: 0;
-  transition: border-color 0.15s;
-}
-.dork-add-input:focus { border-bottom-color: #bbb; }
-.dork-add-input::placeholder { color: #ccc; }
-
-.dork-add-btn {
-  background: none;
-  border: none;
+  color: #888;
   cursor: pointer;
-  font-size: 0.8rem;
-  opacity: 0.45;
-  flex-shrink: 0;
-  padding: 0 3px;
-  transition: opacity 0.15s;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
-.dork-add-btn:hover { opacity: 1; }
+.dork-tab:hover { background: #111; border-color: #111; color: #fff; }
+.dork-tab:disabled { opacity: 0.4; cursor: default; }
+.dork-tab:disabled:hover { background: #f7f7f7; border-color: #ebebeb; color: #888; }
+.dork-tab.visited { border-color: #d6ecd6; color: #5a9060; background: #f5fbf5; }
 
 /* ── Case Notepad ────────────────────────────────────────────────────── */
 .np-panel { width: 320px; }

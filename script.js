@@ -86,7 +86,7 @@ let quickCheckAbort = null;
 let caseEvents = [];
 let pinnedItems = [];       // cards pinned to case notepad
 let lastScannedTarget = ''; // current dork panel target
-let activeDorkEngine  = 'ddg'; // active tab in dork panel
+let activeDorkEngine  = 'google'; // active tab in dork panel
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -306,7 +306,7 @@ const DORK_URLS = {
 function makeDraggable(panel, handle) {
   let dragging = false, ox = 0, oy = 0;
   handle.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.fp-btn') || e.target.closest('.np-icon-btn') || e.target.closest('.dork-tab')) return;
+    if (e.target.closest('.fp-btn') || e.target.closest('.np-icon-btn')) return;
     dragging = true;
     const rect = panel.getBoundingClientRect();
     panel.style.right  = 'auto';
@@ -327,29 +327,15 @@ function makeDraggable(panel, handle) {
 
 function updateDorkPanel(target) {
   lastScannedTarget = target || '';
-  const openLink  = $('dorkOpenLink');
-  const dorkFrame = $('dorkFrame');
-  const overlay   = $('dorkOverlay');
-  if (!openLink) return;
-  const isEmbeddable = activeDorkEngine === 'ddg';
+  const queryEl = $('dorkEngineQuery');
+  const tabs    = $('dorkTabs');
+  if (!queryEl) return;
   if (target) {
-    const url = DORK_URLS[activeDorkEngine] ? DORK_URLS[activeDorkEngine](target) : '#';
-    openLink.href = url;
-    openLink.classList.remove('disabled');
-    if (dorkFrame) {
-      if (isEmbeddable) {
-        dorkFrame.src = `https://html.duckduckgo.com/html/?q=${encodeURIComponent('"' + target + '"')}`;
-        if (overlay) overlay.style.display = 'none';
-      } else {
-        dorkFrame.src = 'about:blank';
-        if (overlay) overlay.style.display = 'flex';
-      }
-    }
+    queryEl.innerHTML = `"<strong>${escHtml(target)}</strong>"`;
+    if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = false);
   } else {
-    openLink.href = '#';
-    openLink.classList.add('disabled');
-    if (dorkFrame) dorkFrame.src = 'about:blank';
-    if (overlay) overlay.style.display = 'none';
+    queryEl.textContent = 'run a scan first';
+    if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = true);
   }
 }
 
@@ -450,19 +436,16 @@ function initFloatingPanels() {
   });
   $('notepadCloseBtn').addEventListener('click', () => hidePanel(caseNotepad, fabNotepad));
 
-  // Dork tabs — DDG embeds in iframe; other engines auto-open in new tab
+  // Dork tabs — each button opens that engine’s search in a new tab
   const dorkTabs = $('dorkTabs');
   if (dorkTabs) {
     dorkTabs.addEventListener('click', (e) => {
       const tab = e.target.closest('.dork-tab');
-      if (!tab) return;
-      dorkTabs.querySelectorAll('.dork-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      activeDorkEngine = tab.dataset.engine;
-      updateDorkPanel(lastScannedTarget);
-      // Auto-open non-embeddable engines in a new tab
-      if (lastScannedTarget && activeDorkEngine !== 'ddg' && DORK_URLS[activeDorkEngine]) {
-        window.open(DORK_URLS[activeDorkEngine](lastScannedTarget), '_blank', 'noopener,noreferrer');
+      if (!tab || tab.disabled) return;
+      const engine = tab.dataset.engine;
+      if (lastScannedTarget && DORK_URLS[engine]) {
+        window.open(DORK_URLS[engine](lastScannedTarget), '_blank', 'noopener,noreferrer');
+        tab.classList.add('visited');
       }
     });
   }
@@ -478,11 +461,6 @@ function initFloatingPanels() {
     updateNotepad();
     return true;
   }
-
-  const dorkAddBtn   = $('dorkAddBtn');
-  const dorkAddInput = $('dorkAddInput');
-  if (dorkAddBtn)   dorkAddBtn.addEventListener('click', () => { if (addPinFromUrl(dorkAddInput.value, 'dork')) dorkAddInput.value = ''; });
-  if (dorkAddInput) dorkAddInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && addPinFromUrl(dorkAddInput.value, 'dork')) dorkAddInput.value = ''; });
 
   // Notepad — title + contenteditable editor
   const npTitle  = $('npTitle');
