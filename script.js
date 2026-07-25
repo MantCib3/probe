@@ -1,3 +1,4 @@
+const CF_WORKER_URL = 'https://divine-dust-5526.noviss-osint.workers.dev/';
 'use strict';
 
 /* ── Constants ───────────────────────────────────────────────────────── */
