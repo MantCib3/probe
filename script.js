@@ -896,11 +896,19 @@ function makeCard(r, animDelay = 0) {
 
   // Queue client-side verification based on what the server sent
   if (r.cors && r.status === 'unknown' && r.checkUrl) {
-    _cvQueue.push({ type: 'cors',    card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
-  } else if (r.cfProxy && (r.status === 'unknown' || r.status === 'blocked') && r.checkUrl) {
-    _cvQueue.push({ type: 'cfProxy', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
+    // Tier 1: direct CORS fetch from browser (API endpoints with open CORS)
+    _cvQueue.push({ type: 'cors', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
   } else if (r.auth && r.status === 'auth_required') {
-    _cvQueue.push({ type: 'auth',    card, checkUrl: r.url || r.checkUrl });
+    // Tier 2: no-cors redirect detect with user cookies
+    _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
+  }
+
+  // Tier 3: CF Worker retry for ANY blocked/unknown result (regardless of cfProxy flag)
+  // The server IP was blocked → try from CF Worker's IP range as fallback
+  const needsCfRetry = (r.status === 'blocked' || (r.cfProxy && r.status === 'unknown'))
+    && !r.cors && !r.auth && r.checkUrl;
+  if (needsCfRetry) {
+    _cvQueue.push({ type: 'cfProxy', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
   }
 
   return card;

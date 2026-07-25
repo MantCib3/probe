@@ -26,7 +26,7 @@ const SITE_PROBE_TIMEOUT_MS = 45000;
 const STEALTH_CONCURRENCY = 4;
 const STEALTH_TIMEOUT_MS  = 16000;
 const ENABLE_USERNAME_BROWSER_FALLBACK = false;
-const ENABLE_UNDETECTABLE_STEALTH = true;
+const ENABLE_UNDETECTABLE_STEALTH = false;
 
 const QUICK_SITE_NAMES = [
   'github', 'instagram', 'tiktok', 'x', 'twitter', 'reddit', 'youtube', 'twitch'
