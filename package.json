@@ -12,10 +12,9 @@
   "engines": {
     "node": ">=16.0.0"
   },
-  "devDependencies": {
-    "playwright": "^1.60.0"
-  },
+  "devDependencies": {},
   "dependencies": {
+    "playwright": "^1.60.0",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   }

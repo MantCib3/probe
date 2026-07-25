@@ -1438,6 +1438,55 @@ function toQuickStatus(status) {
   return 'unknown';
 }
 
+/* ── HTTP-only snapshot fallback (no browser — parses raw HTML) ─────── */
+function httpSnapshotFallback(rawUrl, res) {
+  const https = require('https');
+  const http2 = require('http');
+  const mod = rawUrl.startsWith('https') ? https : http2;
+  const req = mod.get(rawUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+    timeout: 8000,
+  }, (r) => {
+    let body = '';
+    r.on('data', d => { if (body.length < 80000) body += d; });
+    r.on('end', () => {
+      function gmRx(name) {
+        const rx = new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]+content=["']([^"']+)["']`, 'i');
+        const rx2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:name|property)=["']${name}["']`, 'i');
+        const m = rx.exec(body) || rx2.exec(body);
+        return m ? m[1].trim() : '';
+      }
+      const titleM = /<title[^>]*>([^<]{1,200})<\/title>/i.exec(body);
+      const metadata = {
+        title:         titleM ? titleM[1].trim() : '',
+        url:           rawUrl,
+        description:   gmRx('description') || gmRx('og:description'),
+        ogTitle:       gmRx('og:title'),
+        ogSiteName:    gmRx('og:site_name'),
+        author:        gmRx('author') || gmRx('article:author'),
+        keywords:      gmRx('keywords'),
+        publishedTime: gmRx('article:published_time'),
+        twitterCard:   gmRx('twitter:card'),
+        capturedAt:    new Date().toISOString(),
+      };
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, metadata, screenshot: '', mimeType: 'image/jpeg', httpOnly: true }));
+    });
+  });
+  req.on('error', (err) => {
+    if (!res.headersSent) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      // Still return ok:true with empty metadata so UI doesn't show an error
+      res.end(JSON.stringify({ ok: true, metadata: { title: '', url: rawUrl, description: '', capturedAt: new Date().toISOString() }, screenshot: '', mimeType: 'image/jpeg', httpOnly: true, fetchError: err.message }));
+    }
+  });
+  req.setTimeout(8000, () => req.destroy());
+}
+
 /* ── Static file helper ───────────────────────────────────────────────── */
 function serveStatic(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -1732,8 +1781,9 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
     }
     if (!chromiumStealth) {
-      res.writeHead(503, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ ok: false, error: 'Browser unavailable' }));
+      // No browser available — fall back to HTTP-only metadata extraction
+      httpSnapshotFallback(rawUrl, res);
+      return;
     }
     if (_snapshotBusy) {
       res.writeHead(429, { 'Content-Type': 'application/json' });
@@ -1743,7 +1793,12 @@ const server = http.createServer((req, res) => {
     let context;
     (async () => {
       try {
-        const b = await ensureBrowser();
+        let b;
+        try { b = await ensureBrowser(); } catch (_) {
+          // Browser binary missing — degrade to HTTP-only
+          _snapshotBusy = false;
+          return httpSnapshotFallback(rawUrl, res);
+        }
         context = await b.newContext({
           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           locale: 'en-US',
