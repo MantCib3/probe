@@ -238,29 +238,29 @@
     <button class="fab" id="fabDork" title="Search Engine Dorks">🔍</button>
   </div>
 
-  <div class="float-panel" id="dorkPanel" style="display:none">
-    <div class="float-panel-header" id="dorkHandle">
-      <span class="fp-title">DORK</span>
+  <div class="float-panel dork-wide" id="dorkPanel" style="display:none">
+    <div class="float-panel-header dork-tab-header" id="dorkHandle">
+      <div class="dork-tab-bar" id="dorkTabs">
+        <button class="dork-tab active" data-engine="ddg">DDG</button>
+        <button class="dork-tab" data-engine="google">Google</button>
+        <button class="dork-tab" data-engine="bing">Bing</button>
+        <button class="dork-tab" data-engine="yandex">Yandex</button>
+      </div>
       <div class="fp-controls">
         <button class="fp-btn" id="dorkMinBtn">−</button>
         <button class="fp-btn" id="dorkCloseBtn">✕</button>
       </div>
     </div>
-    <div class="float-panel-body" id="dorkBody">
-      <div class="dork-tabs" id="dorkTabs">
-        <button class="dork-tab active" data-engine="google">Google</button>
-        <button class="dork-tab" data-engine="bing">Bing</button>
-        <button class="dork-tab" data-engine="ddg">DDG</button>
-        <button class="dork-tab" data-engine="yandex">Yandex</button>
+    <div class="dork-view" id="dorkView">
+      <iframe id="dorkFrame" class="dork-frame" src="about:blank" title="Search results" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-scripts"></iframe>
+      <div class="dork-overlay" id="dorkOverlay" style="display:none">
+        <span class="dork-overlay-txt">This engine blocks embedding.</span>
       </div>
-      <div class="dork-engine-area">
-        <div class="dork-engine-query" id="dorkEngineQuery">run a scan first</div>
-        <a class="dork-open-link disabled" id="dorkOpenLink" href="#" target="_blank" rel="noopener noreferrer">Open in new tab ↗</a>
-      </div>
-      <div class="dork-add-row">
-        <input class="dork-add-input" id="dorkAddInput" type="url" placeholder="Paste result URL to pin…" autocomplete="off">
-        <button class="dork-add-btn" id="dorkAddBtn" title="Pin URL">📌</button>
-      </div>
+    </div>
+    <div class="dork-bottom-bar">
+      <a class="dork-open-btn disabled" id="dorkOpenLink" href="#" target="_blank" rel="noopener noreferrer">Open ↗</a>
+      <input class="dork-add-input" id="dorkAddInput" type="url" placeholder="Paste URL to pin…" autocomplete="off">
+      <button class="dork-add-btn" id="dorkAddBtn" title="Pin URL">📌</button>
     </div>
   </div>
 

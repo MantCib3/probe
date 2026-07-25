@@ -86,7 +86,7 @@ let quickCheckAbort = null;
 let caseEvents = [];
 let pinnedItems = [];       // cards pinned to case notepad
 let lastScannedTarget = ''; // current dork panel target
-let activeDorkEngine  = 'google'; // active tab in dork panel
+let activeDorkEngine  = 'ddg'; // active tab in dork panel
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -306,7 +306,7 @@ const DORK_URLS = {
 function makeDraggable(panel, handle) {
   let dragging = false, ox = 0, oy = 0;
   handle.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.fp-btn') || e.target.closest('.np-icon-btn')) return;
+    if (e.target.closest('.fp-btn') || e.target.closest('.np-icon-btn') || e.target.closest('.dork-tab')) return;
     dragging = true;
     const rect = panel.getBoundingClientRect();
     panel.style.right  = 'auto';
@@ -327,18 +327,29 @@ function makeDraggable(panel, handle) {
 
 function updateDorkPanel(target) {
   lastScannedTarget = target || '';
-  const queryEl  = $('dorkEngineQuery');
-  const openLink = $('dorkOpenLink');
-  if (!queryEl || !openLink) return;
+  const openLink  = $('dorkOpenLink');
+  const dorkFrame = $('dorkFrame');
+  const overlay   = $('dorkOverlay');
+  if (!openLink) return;
+  const isEmbeddable = activeDorkEngine === 'ddg';
   if (target) {
-    queryEl.innerHTML = `"<strong>${escHtml(target)}</strong>"`;
     const url = DORK_URLS[activeDorkEngine] ? DORK_URLS[activeDorkEngine](target) : '#';
     openLink.href = url;
     openLink.classList.remove('disabled');
+    if (dorkFrame) {
+      if (isEmbeddable) {
+        dorkFrame.src = `https://html.duckduckgo.com/html/?q=${encodeURIComponent('"' + target + '"')}`;
+        if (overlay) overlay.style.display = 'none';
+      } else {
+        dorkFrame.src = 'about:blank';
+        if (overlay) overlay.style.display = 'flex';
+      }
+    }
   } else {
-    queryEl.textContent = 'run a scan first';
     openLink.href = '#';
     openLink.classList.add('disabled');
+    if (dorkFrame) dorkFrame.src = 'about:blank';
+    if (overlay) overlay.style.display = 'none';
   }
 }
 
@@ -439,7 +450,7 @@ function initFloatingPanels() {
   });
   $('notepadCloseBtn').addEventListener('click', () => hidePanel(caseNotepad, fabNotepad));
 
-  // Dork tabs — clicking a tab opens that search in a new browser tab
+  // Dork tabs — DDG embeds in iframe; other engines auto-open in new tab
   const dorkTabs = $('dorkTabs');
   if (dorkTabs) {
     dorkTabs.addEventListener('click', (e) => {
@@ -449,9 +460,9 @@ function initFloatingPanels() {
       tab.classList.add('active');
       activeDorkEngine = tab.dataset.engine;
       updateDorkPanel(lastScannedTarget);
-      if (lastScannedTarget && DORK_URLS[activeDorkEngine]) {
+      // Auto-open non-embeddable engines in a new tab
+      if (lastScannedTarget && activeDorkEngine !== 'ddg' && DORK_URLS[activeDorkEngine]) {
         window.open(DORK_URLS[activeDorkEngine](lastScannedTarget), '_blank', 'noopener,noreferrer');
-        tab.classList.add('visited');
       }
     });
   }

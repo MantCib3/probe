@@ -248,7 +248,7 @@
     "url": "https://codeberg.org/{}",
     "urlMain": "https://codeberg.org",
     "category": "developer",
-    "checkMethod": "status_code",
+    "checkMethod": "message",
     "allowBrowserFallback": true,
     "errorMsg": "Page not found - Codeberg"
   },
@@ -367,7 +367,9 @@
     "url": "https://rumble.com/c/{}",
     "urlMain": "https://rumble.com",
     "category": "gaming",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "allowBrowserFallback": true,
+    "notFoundStatus": 404
   },
   {
     "name": "Trakt.tv",
@@ -392,7 +394,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "404",
-    "allowBrowserFallback": true
+    "allowBrowserFallback": true,
+    "notFoundStatus": 404
   },
   {
     "name": "Substack",
@@ -554,7 +557,8 @@
     "category": "forum",
     "checkMethod": "message",
     "errorMsg": "Sorry, nobody on Reddit goes by that name.",
-    "allowBrowserFallback": true
+    "allowBrowserFallback": true,
+    "notFoundStatus": 404
   },
   {
     "name": "Quora",
@@ -672,8 +676,10 @@
     "url": "https://www.ebay.com/usr/{}",
     "urlMain": "https://www.ebay.com",
     "category": "shopping",
-    "checkMethod": "body",
-    "usernameInBody": true
+    "checkMethod": "status_code",
+    "usernameInBody": true,
+    "notFoundStatus": 404,
+    "allowBrowserFallback": true
   },
   {
     "name": "Society6",
@@ -706,7 +712,8 @@
     "checkMethod": "status_code",
     "needsBrowser": true,
     "errorMsg": "page 404 Page not found Depop About us Careers Blog News",
-    "allowBrowserFallback": true
+    "allowBrowserFallback": true,
+    "notFoundStatus": 404
   },
   {
     "name": "About.me",
@@ -833,7 +840,8 @@
     "urlMain": "https://genius.com",
     "category": "misc",
     "undetectable": true,
-    "allowBrowserFallback": true
+    "allowBrowserFallback": true,
+    "notFoundStatus": 404
   },
   {
     "name": "Pinterest",
@@ -965,11 +973,12 @@
   },
   {
     "name": "Steemit",
-    "url": "https://signup.steemit.com/api/check_username",
+    "url": "https://signup.steemit.com/api/check_username?username={}",
     "urlMain": "https://signup.steemit.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"success\":true"
+    "errorMsg": "\"success\":true",
+    "positiveMsg": "\"success\":false"
   },
   {
     "name": "Tellonym",
@@ -987,7 +996,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Record not found\"",
-    "allowBrowserFallback": true
+    "allowBrowserFallback": true,
+    "notFoundStatus": 404
   },
   {
     "name": "Twitcasting",
@@ -1074,11 +1084,10 @@
   },
   {
     "name": "Anime-Planet",
-    "url": "https://www.anime-planet.com/api/validation/username",
-    "urlMain": "https://www.anime-planet.com",
+    "url": "https://www.anime-planet.com/users/{}",
+    "urlMain": "https://www.anime-planet.com/users/",
     "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "\"status\":\"ok\"",
+    "checkMethod": "status_code",
     "undetectable": true
   },
   {
@@ -1112,7 +1121,8 @@
     "urlMain": "https://solo.to",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you're looking for isn't here."
+    "errorMsg": "The page you're looking for isn't here.",
+    "allowBrowserFallback": true
   },
   {
     "name": "Geocaching",
@@ -1229,7 +1239,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
-    "allowBrowserFallback": true
+    "allowBrowserFallback": true,
+    "notFoundStatus": 404
   },
   {
     "name": "OPGG",
@@ -1457,7 +1468,8 @@
     "urlMain": "https://hub.docker.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"User not found\""
+    "errorMsg": "\"message\":\"User not found\"",
+    "allowBrowserFallback": true
   },
   {
     "name": "GeeksForGeeks",
@@ -1482,7 +1494,8 @@
     "urlMain": "https://jsfiddle.net",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "That page doesn't exist."
+    "errorMsg": "That page doesn't exist.",
+    "allowBrowserFallback": true
   },
   {
     "name": "Monkeytype",
@@ -1535,12 +1548,12 @@
   },
   {
     "name": "Hackernoon",
-    "url": "https://hackernoon.com/_next/data/foL6JC7ro2FEEMD-gMKgQ/u/{}.json",
+    "url": "https://hackernoon.com/u/{}",
     "urlMain": "https://hackernoon.com",
     "category": "developer",
-    "checkMethod": "message",
-    "errorMsg": "__N_REDIRECT",
-    "allowBrowserFallback": true
+    "checkMethod": "status_code",
+    "allowBrowserFallback": true,
+    "undetectable": false
   },
   {
     "name": "TryHackMe",
@@ -1582,7 +1595,8 @@
     "urlMain": "https://www.dotafire.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": ">No results found</span>"
+    "errorMsg": ">No results found</span>",
+    "allowBrowserFallback": true
   },
   {
     "name": "sporcle",
@@ -1607,7 +1621,8 @@
     "urlMain": "https://diablo2.io",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "The requested user does not exist"
+    "errorMsg": "The requested user does not exist",
+    "allowBrowserFallback": true
   },
   {
     "name": "SimplePlanes",
@@ -1623,7 +1638,7 @@
     "urlMain": "https://www.smule.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "code\": 65",
+    "errorMsg": "\"code\":",
     "allowBrowserFallback": true
   },
   {
@@ -1664,7 +1679,8 @@
     "urlMain": "https://{}.blogspot.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Blog not found"
+    "errorMsg": "Blog not found",
+    "allowBrowserFallback": true
   },
   {
     "name": "WordPress.com (Public)",
@@ -1698,7 +1714,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"success\":true",
-    "undetectable": true
+    "undetectable": true,
+    "positiveMsg": "\"success\":false"
   },
   {
     "name": "LibraryThing",
