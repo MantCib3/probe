@@ -213,7 +213,7 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
       if (loc.includes('.within.website') || loc.includes('/_/') ||
           loc.includes('/cdn-cgi/') || loc.includes('challenge') ||
           body.toLowerCase().includes('authorization required')) {
-        return makeClassifiedResult(base, 'unknown', ['redirect_bot_challenge'], 0.25);
+        return makeClassifiedResult(base, 'blocked', ['redirect_bot_challenge'], 0.9);
       }
     }
     return makeClassifiedResult(base, 'found', ['redirect_reachable'], 0.7);
@@ -224,7 +224,7 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
   }
 
   if (sc === 403 || sc === 401 || sc === 429 || sc === 999) {
-    return makeClassifiedResult(base, 'unknown', [`blocked_http_${sc}`], 0.2);
+    return makeClassifiedResult(base, 'blocked', [`blocked_http_${sc}`], 0.9);
   }
 
   if (site.notFoundStatus !== undefined && sc === site.notFoundStatus) {
@@ -247,7 +247,7 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
     const title = tm ? tm[1].replace(/&#039;/g, "'").replace(/&amp;/g, '&').toLowerCase().trim() : '';
 
     if (BLOCKED_TITLE_PATTERNS.some(p => title.includes(p))) {
-      return makeClassifiedResult(base, 'unknown', ['title_blocked_pattern'], 0.25);
+      return makeClassifiedResult(base, 'blocked', ['title_blocked_pattern'], 0.9);
     }
 
     if (NOT_FOUND_TITLE_PATTERNS.some(p => title.includes(p))) {
@@ -255,7 +255,7 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
     }
 
     if (BLOCKED_BODY_PATTERNS.some(p => lbody.includes(p))) {
-      return makeClassifiedResult(base, 'unknown', ['body_blocked_pattern'], 0.25);
+      return makeClassifiedResult(base, 'blocked', ['body_blocked_pattern'], 0.9);
     }
 
     if (DELETED_BODY_PATTERNS.some(p => lbody.includes(p))) {
@@ -1404,6 +1404,22 @@ function probe(site, username) {
     });
   }
 
+  // CORS-capable sites: client browser handles the actual check — don't waste
+  // Playwright browser slots on them (probeStealth would run for 30s).
+  if (site.cors && site.undetectable) {
+    return Promise.resolve({
+      name: site.name,
+      category: site.category,
+      url: (site.apiUrl || site.url).replace(/\{\}/g, encodeURIComponent(username)),
+      status: 'unknown',
+      statusCode: 0,
+      reasonCodes: ['client_side_check_pending'],
+      confidence: 0,
+      detectionMethod: 'http',
+      bodyHash: null,
+    });
+  }
+
   if (site.undetectable && !ENABLE_UNDETECTABLE_STEALTH) {
     return Promise.resolve({
       name: site.name,
@@ -1704,7 +1720,17 @@ const server = http.createServer((req, res) => {
       while (active < CONCURRENCY && idx < total) {
         const site = queue[idx++];
         active++;
-        probeWithBrowserFallback(site, username).then(result => {
+        const PROBE_DEADLINE_MS = 15000;
+        const probePromise  = probeWithBrowserFallback(site, username);
+        const timeoutResult = new Promise(resolve =>
+          setTimeout(() => resolve({
+            name: site.name, category: site.category,
+            url:  site.url.replace(/\{\}/g, encodeURIComponent(username)),
+            status: 'timeout', statusCode: 0,
+            reasonCodes: ['probe_timeout'], detectionMethod: 'http', bodyHash: null,
+          }), PROBE_DEADLINE_MS)
+        );
+        Promise.race([probePromise, timeoutResult]).then(result => {
           active--;
           done++;
           const normalized = normalizeResult(result);

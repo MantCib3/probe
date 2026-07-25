@@ -15,6 +15,13 @@ const STATUS_LABEL = {
 
 const REASON_LABEL = {
   requires_authentication: 'Requires login — manual check needed',
+  datacenter_ip_blocked: 'IP blocked by platform — check via CF Worker',
+  blocked_http_403: 'HTTP 403 — access denied from server IP',
+  blocked_http_429: 'Rate-limited from server IP',
+  title_blocked_pattern: 'CF/bot protection page detected',
+  body_blocked_pattern: 'CF/bot protection content detected',
+  client_side_check_pending: 'Server skipped — browser will verify directly',
+  probe_timeout: 'Site did not respond within 15 seconds',
   body_guard_username_match: 'Username matched on page',
   body_guard_no_username_match: 'Profile loaded but username was not confirmed',
   site_positive_message: 'Site-specific positive signal matched',
@@ -884,14 +891,16 @@ function makeCard(r, animDelay = 0) {
     ${manualLink}
   `;
 
+  // Store profile URL for archive.org fallback
+  card.dataset.profileUrl = r.url || '';
+
   // Queue client-side verification based on what the server sent
   if (r.cors && r.status === 'unknown' && r.checkUrl) {
-    _cvQueue.push({ type: 'cors', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
-  } else if (r.cfProxy && (r.status === 'unknown') && r.checkUrl) {
+    _cvQueue.push({ type: 'cors',    card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
+  } else if (r.cfProxy && (r.status === 'unknown' || r.status === 'blocked') && r.checkUrl) {
     _cvQueue.push({ type: 'cfProxy', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
   } else if (r.auth && r.status === 'auth_required') {
-    // No-cors redirect detection using user's browser cookies
-    _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
+    _cvQueue.push({ type: 'auth',    card, checkUrl: r.url || r.checkUrl });
   }
 
   return card;
@@ -958,23 +967,25 @@ function makeNameCard(r, animDelay = 0) {
 }
 
 /* ── Client-side verification ─────────────────────────────────────────
- *
  *  Three job types — all run after the SSE scan ends:
- *
- *  'cors'    → direct browser fetch (CORS-enabled API; uses residential IP)
+ *  'cors'    → direct browser fetch (CORS-enabled API, residential IP)
  *  'cfProxy' → fetch via Cloudflare Worker proxy (CF-blocked HTML sites)
- *  'auth'    → no-cors redirect-detect (auth-gated sites; uses user's cookies)
- *
- *  Set CF_WORKER_URL to your deployed worker URL to enable cfProxy jobs.
- *  Leave empty to skip CF proxying (cors/auth still run).
+ *  'auth'    → no-cors redirect-detect (auth-gated; uses user's cookies)
+ *  After all three, archive.org CDX fallback runs on any remaining unknowns.
  * ─────────────────────────────────────────────────────────────────── */
-const CF_WORKER_URL = ''; // e.g. 'https://probe-proxy.xxx.workers.dev'
+
+// CF challenge page fingerprints — a 200 with these is NOT a profile
+const CF_CHALLENGE = [
+  'just a moment', 'checking your browser', 'please stand by',
+  'enable javascript and cookies', 'cf-spinner', 'challenge-running',
+  'cloudflare ray id', 'ddos-guard', 'under attack mode',
+];
 
 const _cvQueue = [];
 
 function _applyVerdict(card, verdict, label) {
   const prevStatus = card.dataset.status;
-  const removals = [prevStatus, 'cv-verifying', 'auth_required', 'unknown'];
+  const removals = [prevStatus, 'cv-verifying', 'auth_required', 'unknown', 'blocked'];
   card.classList.remove(...removals);
   card.classList.add(verdict);
   card.dataset.status = verdict;
@@ -988,13 +999,19 @@ function _applyVerdict(card, verdict, label) {
 }
 
 async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg) {
-  if (checkMethod === 'status_code' || (!errorMsg && !positiveMsg)) {
-    return resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
-  }
-  const body = await resp.text();
+  if (resp.status === 403 || resp.status === 401 || resp.status === 429) return 'blocked';
+  if (resp.status === 404 || resp.status === 410) return 'not_found';
+  if (resp.status !== 200) return 'unknown';
+
+  // Always read body for 200 responses: detect CF challenge pages (false-positive guard)
+  let body = '';
+  try { body = await resp.text(); } catch (_) { return 'found'; }
+  const lbody = body.toLowerCase();
+  if (CF_CHALLENGE.some(p => lbody.includes(p))) return 'blocked';
+
   if (positiveMsg && body.includes(positiveMsg)) return 'found';
-  if (errorMsg && body.includes(errorMsg)) return 'not_found';
-  return resp.status === 200 ? 'found' : resp.status === 404 ? 'not_found' : 'unknown';
+  if (errorMsg   && body.includes(errorMsg))     return 'not_found';
+  return 'found'; // 200 with no specific pattern = found (status_code mode)
 }
 
 async function _clientVerifyOne(job) {
@@ -1066,6 +1083,41 @@ async function runClientVerifyQueue() {
   }
 }
 
+/* ── Archive.org CDX fallback ────────────────────────────────────────────
+ * For any card still 'unknown' or 'blocked' after all other checks,
+ * query the Wayback Machine CDX API (open CORS, no key needed) to see
+ * if the profile URL was ever archived with a 200 status since 2022.
+ * If it was, the profile almost certainly existed at that point in time.
+ * ─────────────────────────────────────────────────────────────────────── */
+async function runArchiveFallback() {
+  const cards = [...resultsGrid.querySelectorAll('.result-card.unknown, .result-card.blocked')]
+    .filter(c => c.dataset.profileUrl && !c.classList.contains('cv-verifying'));
+  if (!cards.length) return;
+
+  const BATCH = 5; // CDX API has no hard rate-limit but be polite
+  for (let i = 0; i < cards.length; i += BATCH) {
+    await Promise.all(cards.slice(i, i + BATCH).map(async card => {
+      const profileUrl = card.dataset.profileUrl;
+      if (!profileUrl) return;
+      try {
+        // Strip leading https:// for CDX URL matching (more inclusive)
+        const cdxTarget = profileUrl.replace(/^https?:\/\//, '');
+        const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(cdxTarget)}&output=json&limit=2&filter=statuscode:200&from=20220101&fl=timestamp&matchType=prefix`;
+        const resp = await fetch(cdxUrl, { signal: AbortSignal.timeout(9000) });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        // data[0] = header row, data[1] = first result (if any)
+        if (Array.isArray(data) && data.length > 1 && data[1]) {
+          const ts  = String(data[1][0] || '');
+          const yr  = ts.length >= 4 ? ts.slice(0, 4) : '?';
+          _applyVerdict(card, 'found', `FOUND (archived ${yr})`);
+          updateStats();
+        }
+      } catch (_) { /* timeout or network error — skip */ }
+    }));
+  }
+}
+
 /* ── Found-first insertion ───────────────────────────────────────────── */
 function insertCardSorted(card) {
   const isTop = card.dataset.status === 'found' || card.dataset.status === 'deleted';
@@ -1109,12 +1161,14 @@ function updateStats(done, total) {
   const deleted  = results.filter(r => r.status === 'deleted').length;
   const notFound = results.filter(r => r.status === 'not_found').length;
 
-  statChecked.textContent  = done;
-  statTotal.textContent    = total;
+  if (done  !== undefined) statChecked.textContent = done;
+  if (total !== undefined) statTotal.textContent   = total;
   statFound.textContent    = found;
   statDeleted.textContent  = deleted;
   statNotFound.textContent = notFound;
-  progressBarFill.style.width = total ? `${(done / total) * 100}%` : '0%';
+  if (done !== undefined && total !== undefined) {
+    progressBarFill.style.width = total ? `${(done / total) * 100}%` : '0%';
+  }
 }
 
 /* ── Main scan ───────────────────────────────────────────────────────── */
@@ -1480,8 +1534,12 @@ function finishScan(username, done, total) {
     progressStatus.innerHTML += ` &mdash; <span id="cvStatus">browser-verifying ${parts.join(', ')}…</span>`;
     runClientVerifyQueue().then(() => {
       const cvEl = document.getElementById('cvStatus');
-      if (cvEl) cvEl.remove();
-      updateStats();
+      if (cvEl) cvEl.textContent = 'archive check…';
+      runArchiveFallback().then(() => {
+        const cvEl2 = document.getElementById('cvStatus');
+        if (cvEl2) cvEl2.remove();
+        updateStats();
+      });
     });
   }
 }
