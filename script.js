@@ -645,6 +645,8 @@ document.addEventListener('DOMContentLoaded', () => {
     closeBtn.addEventListener('click', () => { if (overlay) overlay.style.display = 'none'; });
   }
 });
+
+function exportMarkdown() {
   const title   = ($('npTitle') || {}).value || '';
   const content = ($('npEditor') || {}).innerText || '';
   const lines   = [];
