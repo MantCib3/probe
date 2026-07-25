@@ -86,6 +86,7 @@ let quickCheckAbort = null;
 let caseEvents = [];
 let pinnedItems = [];       // cards pinned to case notepad
 let lastScannedTarget = ''; // current dork panel target
+let activeDorkEngine  = 'google'; // active tab in dork panel
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -294,22 +295,18 @@ function queueQuickCheck(username) {
 }
 
 /* ── Dork engines ────────────────────────────────────────────────────── */
-const DORK_ENGINES = [
-  { label: 'Google',     url: q => `https://www.google.com/search?q=${encodeURIComponent('"'+q+'"')}` },
-  { label: 'Bing',       url: q => `https://www.bing.com/search?q=${encodeURIComponent('"'+q+'"')}` },
-  { label: 'DuckDuckGo', url: q => `https://duckduckgo.com/?q=${encodeURIComponent('"'+q+'"')}` },
-  { label: 'Yandex',     url: q => `https://yandex.com/search/?text=${encodeURIComponent('"'+q+'"')}` },
-  { label: 'Images',     url: q => `https://www.google.com/search?q=${encodeURIComponent('"'+q+'"')}&tbm=isch` },
-  { label: 'Pastebin',   url: q => `https://www.google.com/search?q=${encodeURIComponent('site:pastebin.com "'+q+'"')}` },
-  { label: 'Reddit',     url: q => `https://www.reddit.com/search/?q=${encodeURIComponent('"'+q+'"')}` },
-  { label: 'GitHub',     url: q => `https://github.com/search?q=${encodeURIComponent('"'+q+'"')}&type=users` },
-];
+const DORK_URLS = {
+  google:  q => `https://www.google.com/search?q=${encodeURIComponent('"'+q+'"')}`,
+  bing:    q => `https://www.bing.com/search?q=${encodeURIComponent('"'+q+'"')}`,
+  ddg:     q => `https://duckduckgo.com/?q=${encodeURIComponent('"'+q+'"')}`,
+  yandex:  q => `https://yandex.com/search/?text=${encodeURIComponent('"'+q+'"')}`,
+};
 
 /* ── Floating panel utilities ────────────────────────────────────────── */
 function makeDraggable(panel, handle) {
   let dragging = false, ox = 0, oy = 0;
   handle.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.fp-btn')) return;
+    if (e.target.closest('.fp-btn') || e.target.closest('.np-icon-btn')) return;
     dragging = true;
     const rect = panel.getBoundingClientRect();
     panel.style.right  = 'auto';
@@ -330,17 +327,19 @@ function makeDraggable(panel, handle) {
 
 function updateDorkPanel(target) {
   lastScannedTarget = target || '';
-  const dorkTarget = $('dorkTarget');
-  const dorkGrid   = $('dorkGrid');
-  if (!dorkTarget || !dorkGrid) return;
-  dorkTarget.innerHTML = target
-    ? `Dorking: <strong>${escHtml(target)}</strong>`
-    : '<em style="color:#ccc">Run a scan first</em>';
-  dorkGrid.innerHTML = DORK_ENGINES.map(eng => {
-    const href = target ? escHtml(eng.url(target)) : '#';
-    const attrs = !target ? ' style="pointer-events:none;opacity:0.4"' : '';
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="dork-btn"${attrs}>${escHtml(eng.label)}</a>`;
-  }).join('');
+  const queryEl  = $('dorkEngineQuery');
+  const openLink = $('dorkOpenLink');
+  if (!queryEl || !openLink) return;
+  if (target) {
+    queryEl.innerHTML = `"<strong>${escHtml(target)}</strong>"`;
+    const url = DORK_URLS[activeDorkEngine] ? DORK_URLS[activeDorkEngine](target) : '#';
+    openLink.href = url;
+    openLink.classList.remove('disabled');
+  } else {
+    queryEl.textContent = 'run a scan first';
+    openLink.href = '#';
+    openLink.classList.add('disabled');
+  }
 }
 
 function togglePin(r, btn) {
@@ -433,33 +432,86 @@ function initFloatingPanels() {
     dorkPanel.classList.toggle('minimised');
     $('dorkMinBtn').textContent = dorkPanel.classList.contains('minimised') ? '+' : '−';
   });
+  $('dorkCloseBtn').addEventListener('click', () => hidePanel(dorkPanel, fabDork));
   $('notepadMinBtn').addEventListener('click', () => {
     caseNotepad.classList.toggle('minimised');
     $('notepadMinBtn').textContent = caseNotepad.classList.contains('minimised') ? '+' : '−';
   });
-  $('dorkCloseBtn').addEventListener('click',    () => hidePanel(dorkPanel,   fabDork));
   $('notepadCloseBtn').addEventListener('click', () => hidePanel(caseNotepad, fabNotepad));
 
-  const npText = $('npText');
-  if (npText) {
-    const saved = localStorage.getItem('probe_case_notes');
-    if (saved) npText.value = saved;
-    npText.addEventListener('input', () => localStorage.setItem('probe_case_notes', npText.value));
+  // Dork tabs — clicking a tab opens that search in a new browser tab
+  const dorkTabs = $('dorkTabs');
+  if (dorkTabs) {
+    dorkTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.dork-tab');
+      if (!tab) return;
+      dorkTabs.querySelectorAll('.dork-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeDorkEngine = tab.dataset.engine;
+      updateDorkPanel(lastScannedTarget);
+      if (lastScannedTarget && DORK_URLS[activeDorkEngine]) {
+        window.open(DORK_URLS[activeDorkEngine](lastScannedTarget), '_blank', 'noopener,noreferrer');
+        tab.classList.add('visited');
+      }
+    });
   }
 
+  // Dork panel — pin a URL from search results
+  function addPinFromUrl(url, source) {
+    const t = (url || '').trim();
+    if (!t) return false;
+    try { new URL(t); } catch (_) { return false; }
+    if (pinnedItems.some(p => p.url === t)) return false;
+    const label = t.replace(/^https?:\/\//, '').replace(/\/$/, '').substring(0, 55);
+    pinnedItems.push({ name: label, url: t, status: 'found', category: source || 'manual' });
+    updateNotepad();
+    return true;
+  }
+
+  const dorkAddBtn   = $('dorkAddBtn');
+  const dorkAddInput = $('dorkAddInput');
+  if (dorkAddBtn)   dorkAddBtn.addEventListener('click', () => { if (addPinFromUrl(dorkAddInput.value, 'dork')) dorkAddInput.value = ''; });
+  if (dorkAddInput) dorkAddInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && addPinFromUrl(dorkAddInput.value, 'dork')) dorkAddInput.value = ''; });
+
+  // Notepad — title + contenteditable editor
+  const npTitle  = $('npTitle');
+  const npEditor = $('npEditor');
+  if (npTitle) {
+    const sv = localStorage.getItem('probe_case_title');
+    if (sv) npTitle.value = sv;
+    npTitle.addEventListener('input', () => localStorage.setItem('probe_case_title', npTitle.value));
+  }
+  if (npEditor) {
+    const sv = localStorage.getItem('probe_case_content');
+    if (sv) npEditor.innerHTML = sv;
+    npEditor.addEventListener('input', () => localStorage.setItem('probe_case_content', npEditor.innerHTML));
+  }
+
+  $('npFmtBold').addEventListener('mousedown',   (e) => { e.preventDefault(); document.execCommand('bold'); });
+  $('npFmtUnder').addEventListener('mousedown',  (e) => { e.preventDefault(); document.execCommand('underline'); });
+  $('npFmtBullet').addEventListener('mousedown', (e) => { e.preventDefault(); document.execCommand('insertUnorderedList'); });
+
+  // Notepad — paste URL to pin
+  const npAddUrl   = $('npAddUrl');
+  const npUrlInput = $('npUrlInput');
+  if (npAddUrl)   npAddUrl.addEventListener('click', () => { if (addPinFromUrl(npUrlInput ? npUrlInput.value : '', 'manual')) { if (npUrlInput) npUrlInput.value = ''; } });
+  if (npUrlInput) npUrlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && addPinFromUrl(npUrlInput.value, 'manual')) npUrlInput.value = ''; });
+
+  // Copy all
   $('npCopyBtn').addEventListener('click', () => {
-    const txt      = $('npText');
+    const title    = npTitle  ? npTitle.value.trim()    : '';
+    const content  = npEditor ? npEditor.innerText.trim() : '';
     const pinLines = pinnedItems.map(p => `[${p.status.toUpperCase()}] ${p.name}: ${p.url || ''}`).join('\n');
-    const notes    = txt ? txt.value.trim() : '';
     const output   = [
-      pinLines ? '=== PINNED SOURCES ===\n' + pinLines : '',
-      notes    ? '=== NOTES ===\n'          + notes    : '',
-    ].filter(Boolean).join('\n\n');
+      title    ? '# ' + title                       : '',
+      content  ? content                            : '',
+      pinLines ? '\n--- PINNED ---\n' + pinLines   : '',
+    ].filter(Boolean).join('\n');
     navigator.clipboard.writeText(output || '(empty)').then(() => {
       const btn = $('npCopyBtn');
-      const orig = btn.textContent;
-      btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = orig; }, 1500);
+      const origColor = btn.style.color;
+      btn.style.color = '#22c55e';
+      setTimeout(() => { btn.style.color = origColor; }, 1400);
     }).catch(() => {});
   });
 

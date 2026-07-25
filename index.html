@@ -240,33 +240,55 @@
 
   <div class="float-panel" id="dorkPanel" style="display:none">
     <div class="float-panel-header" id="dorkHandle">
-      <span class="fp-title">DORK SEARCH</span>
+      <span class="fp-title">DORK</span>
       <div class="fp-controls">
         <button class="fp-btn" id="dorkMinBtn">−</button>
         <button class="fp-btn" id="dorkCloseBtn">✕</button>
       </div>
     </div>
     <div class="float-panel-body" id="dorkBody">
-      <div class="dork-target" id="dorkTarget"></div>
-      <div class="dork-grid" id="dorkGrid"></div>
+      <div class="dork-tabs" id="dorkTabs">
+        <button class="dork-tab active" data-engine="google">Google</button>
+        <button class="dork-tab" data-engine="bing">Bing</button>
+        <button class="dork-tab" data-engine="ddg">DDG</button>
+        <button class="dork-tab" data-engine="yandex">Yandex</button>
+      </div>
+      <div class="dork-engine-area">
+        <div class="dork-engine-query" id="dorkEngineQuery">run a scan first</div>
+        <a class="dork-open-link disabled" id="dorkOpenLink" href="#" target="_blank" rel="noopener noreferrer">Open in new tab ↗</a>
+      </div>
+      <div class="dork-add-row">
+        <input class="dork-add-input" id="dorkAddInput" type="url" placeholder="Paste result URL to pin…" autocomplete="off">
+        <button class="dork-add-btn" id="dorkAddBtn" title="Pin URL">📌</button>
+      </div>
     </div>
   </div>
 
-  <div class="float-panel" id="caseNotepad" style="display:none">
-    <div class="float-panel-header" id="notepadHandle">
-      <span class="fp-title">CASE NOTEPAD</span>
-      <div class="fp-controls">
-        <button class="fp-btn" id="notepadMinBtn">−</button>
-        <button class="fp-btn" id="notepadCloseBtn">✕</button>
+  <div class="float-panel np-panel" id="caseNotepad" style="display:none">
+    <div class="np-drag-bar" id="notepadHandle">
+      <span class="np-drag-icon">⋯</span>
+      <div class="np-bar-actions">
+        <button class="np-icon-btn" id="notepadMinBtn" title="Minimise">−</button>
+        <button class="np-icon-btn" id="notepadCloseBtn" title="Close">✕</button>
       </div>
     </div>
-    <div class="float-panel-body" id="notepadBody">
-      <div class="np-section-label">PINNED <span class="np-pin-count" id="npPinCount">0</span></div>
-      <div class="np-pins" id="npPins"><span class="np-empty">No pins yet — click 📌 on a result card</span></div>
-      <div class="np-divider"></div>
-      <div class="np-section-label">NOTES</div>
-      <textarea class="np-textarea" id="npText" placeholder="Type investigation notes…" spellcheck="false"></textarea>
-      <button class="btn btn-outline btn-xs" id="npCopyBtn">Copy to clipboard</button>
+    <div class="float-panel-body np-body" id="notepadBody">
+      <input class="np-title-input" id="npTitle" type="text" placeholder="Case title…" spellcheck="false" autocomplete="off">
+      <div class="np-format-bar">
+        <button class="np-fmt-btn" id="npFmtBold" title="Bold"><b>B</b></button>
+        <button class="np-fmt-btn" id="npFmtUnder" title="Underline"><u>U</u></button>
+        <button class="np-fmt-btn" id="npFmtBullet" title="Bullet list">•</button>
+        <button class="np-fmt-btn np-fmt-copy" id="npCopyBtn" title="Copy notes">⎘</button>
+      </div>
+      <div class="np-editor" id="npEditor" contenteditable="true" spellcheck="false"></div>
+      <div class="np-pins-section">
+        <span class="np-pins-label">pinned <span id="npPinCount">0</span></span>
+        <div class="np-pins" id="npPins"><span class="np-empty">No pins yet</span></div>
+        <div class="np-url-row">
+          <input class="np-url-input" id="npUrlInput" type="url" placeholder="+ paste URL to pin" autocomplete="off">
+          <button class="np-url-btn" id="npAddUrl" title="Add">↵</button>
+        </div>
+      </div>
     </div>
   </div>
 
