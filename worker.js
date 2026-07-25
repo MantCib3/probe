@@ -74,10 +74,34 @@ const EXACT = new Set([
   'udemy.com',
   'newgrounds.com',
   'kaggle.com',
+  // Signup/availability APIs (CORS-enabled, residential bypass)
+  'api.imgur.com',
+  'api.x.com',
+  'app.buymeacoffee.com',
+  'auth.roblox.com',
+  'www.wattpad.com',
+  // Auth-gated social — server IP blocked, CF edge gets through
+  'www.instagram.com',
+  'www.facebook.com',
+  'www.snapchat.com',
+  'www.threads.com',
+  'www.threads.net',
+  'www.pinterest.com',
+  // Additional platforms
+  'www.genius.com',
+  'genius.com',
+  'www.tiktok.com',
+  'open.spotify.com',
+  'www.spotify.com',
+  'letterboxd.com',
+  'trakt.tv',
+  'www.etsy.com',
+  'www.ebay.com',
+  'x.com',
 ]);
 
 // Hostname suffixes — allows subdomains (e.g. cerberus.newgrounds.com)
-const SUFFIXES = ['.newgrounds.com', '.fandom.com'];
+const SUFFIXES = ['.newgrounds.com', '.fandom.com', '.roblox.com'];
 
 function allowed(hostname) {
   if (EXACT.has(hostname)) return true;
@@ -129,6 +153,17 @@ export default {
     }
 
     try {
+      // Site-specific request headers (e.g. Instagram needs X-IG-App-ID)
+      const extraHeaders = {};
+      const h = targetUrl.hostname;
+      if (h === 'www.instagram.com' || h === 'instagram.com') {
+        extraHeaders['X-IG-App-ID'] = '936619743392459';
+        extraHeaders['X-Requested-With'] = 'XMLHttpRequest';
+      }
+      if (h === 'api.x.com' || h === 'x.com') {
+        extraHeaders['Authorization'] = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+      }
+
       const upstream = await fetch(targetUrl.toString(), {
         headers: {
           'User-Agent':
@@ -136,6 +171,7 @@ export default {
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
           'Cache-Control': 'no-cache',
+          ...extraHeaders,
         },
         redirect: 'follow',
         // 10 s timeout via AbortSignal
