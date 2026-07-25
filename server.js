@@ -34,6 +34,7 @@ const QUICK_SITE_NAMES = [
 
 let _browser     = null;
 let _browserTask = null;
+let _snapshotBusy = false;
 let _bSlots      = 0;
 const _bQueue    = [];
 
@@ -1705,6 +1706,87 @@ const server = http.createServer((req, res) => {
         res.end();
       }
     });
+    return;
+  }
+
+  /* ── Snapshot / metadata endpoint ──────────────────────────────────── */
+  if (pathname === '/api/snapshot') {
+    const rawUrl = (urlObj.searchParams.get('url') || '').trim();
+    let targetUrl;
+    try {
+      targetUrl = new URL(rawUrl);
+      if (!['http:', 'https:'].includes(targetUrl.protocol)) throw new Error('bad protocol');
+    } catch (_) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Invalid URL' }));
+    }
+    // SSRF guard — block private/loopback ranges
+    const h = targetUrl.hostname.toLowerCase();
+    if (
+      h === 'localhost' || h === '127.0.0.1' || h === '::1' ||
+      /^10\./.test(h) || /^192\.168\./.test(h) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+      /^169\.254\./.test(h) || h.endsWith('.local')
+    ) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
+    }
+    if (!chromiumStealth) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Browser unavailable' }));
+    }
+    if (_snapshotBusy) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Another snapshot in progress — please wait a moment' }));
+    }
+    _snapshotBusy = true;
+    let context;
+    (async () => {
+      try {
+        const b = await ensureBrowser();
+        context = await b.newContext({
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          locale: 'en-US',
+          viewport: { width: 1280, height: 900 },
+          extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
+        });
+        const page = await context.newPage();
+        try {
+          await page.goto(rawUrl, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {});
+          await page.waitForTimeout(1000);
+          const metadata = await page.evaluate(() => {
+            function gm(sel) { const e = document.querySelector(sel); return e ? (e.getAttribute('content') || '') : ''; }
+            return {
+              title:         document.title || '',
+              url:           location.href,
+              description:   gm('meta[name="description"]') || gm('meta[property="og:description"]') || '',
+              ogTitle:       gm('meta[property="og:title"]') || '',
+              ogSiteName:    gm('meta[property="og:site_name"]') || '',
+              author:        gm('meta[name="author"]') || gm('meta[property="article:author"]') || '',
+              keywords:      gm('meta[name="keywords"]') || '',
+              publishedTime: gm('meta[property="article:published_time"]') || '',
+              twitterCard:   gm('meta[name="twitter:card"]') || '',
+              capturedAt:    new Date().toISOString(),
+            };
+          });
+          const buf = await page.screenshot({ type: 'jpeg', quality: 78, fullPage: false });
+          const screenshot = buf.toString('base64');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, metadata, screenshot, mimeType: 'image/jpeg' }));
+        } finally {
+          await page.close().catch(() => {});
+        }
+      } catch (err) {
+        console.error('[snapshot]', err.message);
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: err.message.slice(0, 120) }));
+        }
+      } finally {
+        if (context) await context.close().catch(() => {});
+        _snapshotBusy = false;
+      }
+    })();
     return;
   }
 

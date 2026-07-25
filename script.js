@@ -85,6 +85,7 @@ let quickCheckTimer = null;
 let quickCheckAbort = null;
 let caseEvents = [];
 let pinnedItems = [];       // cards pinned to case notepad
+let captures    = {};       // { [url]: { metadata, screenshot, mimeType } }
 let lastScannedTarget = ''; // current dork panel target
 let activeDorkEngine  = 'google'; // active tab in dork panel
 /* ── DOM refs ────────────────────────────────────────────────────────── */
@@ -365,9 +366,14 @@ function updateNotepad() {
     const linkHtml = (href !== '#' && p.url)
       ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${escHtml(p.name)}</a>`
       : `<span>${escHtml(p.name)}</span>`;
+    const captured = p.url && captures[p.url];
+    const capBtnClass = captured ? 'np-capture-btn done' : 'np-capture-btn';
+    const capBtnTitle = captured ? 'Re-capture page' : 'Capture screenshot & metadata';
+    const capBtnLabel = captured ? '✓' : '📷';
     return `<div class="np-pin-item">
       <span class="np-pin-status ${escHtml(p.status)}">${escHtml(p.status)}</span>
       ${linkHtml}
+      ${p.url ? `<button class="${capBtnClass}" data-cap-idx="${i}" title="${capBtnTitle}">${capBtnLabel}</button>` : ''}
       <button class="np-unpin" data-unpin-idx="${i}" title="Remove">✕</button>
     </div>`;
   }).join('');
@@ -381,6 +387,156 @@ function updateNotepad() {
       updateNotepad();
     });
   });
+  npPins.querySelectorAll('.np-capture-btn').forEach(btn => {
+    btn.addEventListener('click', () => capturePin(Number(btn.dataset.capIdx), btn));
+  });
+}
+
+async function capturePin(idx, btn) {
+  const pin = pinnedItems[idx];
+  if (!pin || !pin.url) return;
+  btn.classList.add('loading');
+  btn.textContent = '↻';
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`/api/snapshot?url=${encodeURIComponent(pin.url)}`);
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Snapshot failed');
+    captures[pin.url] = { metadata: data.metadata, screenshot: data.screenshot, mimeType: data.mimeType, name: pin.name };
+    renderCaptures();
+    updateNotepad(); // refresh button to ✓
+    // Show export buttons
+    const imgBtn  = $('npExportImg');
+    const jsonBtn = $('npExportJson');
+    if (imgBtn)  imgBtn.style.display = '';
+    if (jsonBtn) jsonBtn.style.display = '';
+  } catch (err) {
+    btn.classList.remove('loading');
+    btn.textContent = '⚠';
+    btn.title = err.message;
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = '📷'; btn.title = 'Capture screenshot & metadata'; }, 3000);
+  }
+}
+
+function renderCaptures() {
+  const section = $('npCapturesSection');
+  const container = $('npCaptures');
+  const count = $('npCaptureCount');
+  if (!section || !container) return;
+  const keys = Object.keys(captures);
+  count.textContent = keys.length;
+  section.style.display = keys.length ? '' : 'none';
+  container.innerHTML = keys.map(url => {
+    const c = captures[url];
+    const m = c.metadata || {};
+    const imgSrc = `data:${c.mimeType};base64,${c.screenshot}`;
+    const domain = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+    const title = m.title || m.ogTitle || domain;
+    const desc  = m.description || '';
+    const safeImgSrc = escHtml(imgSrc);
+    const safeDomain = escHtml(domain);
+    const safeTitle  = escHtml(title.slice(0, 80));
+    const safeDesc   = escHtml(desc.slice(0, 140));
+    return `<div class="np-capture-card" data-cap-url="${escHtml(url)}">
+      <img class="np-capture-thumb" src="${safeImgSrc}" alt="Screenshot of ${safeDomain}" title="Click to view full size">
+      <div class="np-capture-info">
+        <div class="np-capture-domain">${safeDomain}</div>
+        ${title !== domain ? `<div class="np-capture-title">${safeTitle}</div>` : ''}
+        ${desc ? `<div class="np-capture-desc">${safeDesc}</div>` : ''}
+        <div class="np-capture-dl-row">
+          <button class="np-capture-dl" data-dl-img="${escHtml(url)}" title="Download screenshot">↓ image</button>
+          <button class="np-capture-dl" data-dl-meta="${escHtml(url)}" title="Download metadata">↓ meta</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Thumbnail click → open full size
+  container.querySelectorAll('.np-capture-thumb').forEach(img => {
+    img.addEventListener('click', () => window.open(img.src, '_blank'));
+  });
+  // Per-capture downloads
+  container.querySelectorAll('[data-dl-img]').forEach(btn => {
+    btn.addEventListener('click', () => downloadCaptureImage(btn.dataset.dlImg));
+  });
+  container.querySelectorAll('[data-dl-meta]').forEach(btn => {
+    btn.addEventListener('click', () => downloadCaptureMeta(btn.dataset.dlMeta));
+  });
+}
+
+function downloadCaptureImage(url) {
+  const c = captures[url];
+  if (!c) return;
+  const ext = c.mimeType === 'image/jpeg' ? 'jpg' : 'png';
+  const domain = (() => { try { return new URL(url).hostname.replace(/\./g, '-'); } catch { return 'capture'; } })();
+  const a = document.createElement('a');
+  a.href = `data:${c.mimeType};base64,${c.screenshot}`;
+  a.download = `capture-${domain}.${ext}`;
+  a.click();
+}
+
+function downloadCaptureMeta(url) {
+  const c = captures[url];
+  if (!c) return;
+  const domain = (() => { try { return new URL(url).hostname.replace(/\./g, '-'); } catch { return 'meta'; } })();
+  const payload = JSON.stringify({ url, ...c.metadata }, null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `meta-${domain}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function exportMarkdown() {
+  const title   = ($('npTitle') || {}).value || '';
+  const content = ($('npEditor') || {}).innerText || '';
+  const lines   = [];
+  if (title)   lines.push(`# ${title}`, '');
+  if (content) lines.push(content, '');
+  if (pinnedItems.length) {
+    lines.push('## Pinned Sources', '');
+    pinnedItems.forEach(p => {
+      const capKey = p.url && captures[p.url] ? p.url : null;
+      lines.push(`- **[${p.status.toUpperCase()}]** ${p.name}: ${p.url || '(no url)'}`);
+      if (capKey) {
+        const m = captures[capKey].metadata || {};
+        const domain = (() => { try { return new URL(capKey).hostname.replace(/\./g, '-'); } catch { return 'capture'; } })();
+        const ext = captures[capKey].mimeType === 'image/jpeg' ? 'jpg' : 'png';
+        if (m.title)       lines.push(`  - Title: ${m.title}`);
+        if (m.description) lines.push(`  - Description: ${m.description}`);
+        if (m.author)      lines.push(`  - Author: ${m.author}`);
+        if (m.keywords)    lines.push(`  - Keywords: ${m.keywords}`);
+        if (m.publishedTime) lines.push(`  - Published: ${m.publishedTime}`);
+        if (m.capturedAt)  lines.push(`  - Captured: ${m.capturedAt}`);
+        lines.push(`  - Screenshot: ![${domain}](capture-${domain}.${ext})`);
+      }
+    });
+    lines.push('');
+  }
+  const md = lines.join('\n');
+  const blob = new Blob([md], { type: 'text/markdown; charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'case-notes'}.md`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function exportAllImages() {
+  Object.keys(captures).forEach(url => downloadCaptureImage(url));
+}
+
+function exportAllMeta() {
+  const all = {};
+  Object.keys(captures).forEach(url => { all[url] = captures[url].metadata; });
+  const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'captures-metadata.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 function initFloatingPanels() {
@@ -486,23 +642,13 @@ function initFloatingPanels() {
   if (npAddUrl)   npAddUrl.addEventListener('click', () => { if (addPinFromUrl(npUrlInput ? npUrlInput.value : '', 'manual')) { if (npUrlInput) npUrlInput.value = ''; } });
   if (npUrlInput) npUrlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && addPinFromUrl(npUrlInput.value, 'manual')) npUrlInput.value = ''; });
 
-  // Copy all
-  $('npCopyBtn').addEventListener('click', () => {
-    const title    = npTitle  ? npTitle.value.trim()    : '';
-    const content  = npEditor ? npEditor.innerText.trim() : '';
-    const pinLines = pinnedItems.map(p => `[${p.status.toUpperCase()}] ${p.name}: ${p.url || ''}`).join('\n');
-    const output   = [
-      title    ? '# ' + title                       : '',
-      content  ? content                            : '',
-      pinLines ? '\n--- PINNED ---\n' + pinLines   : '',
-    ].filter(Boolean).join('\n');
-    navigator.clipboard.writeText(output || '(empty)').then(() => {
-      const btn = $('npCopyBtn');
-      const origColor = btn.style.color;
-      btn.style.color = '#22c55e';
-      setTimeout(() => { btn.style.color = origColor; }, 1400);
-    }).catch(() => {});
-  });
+  // Export buttons
+  const npExportMd   = $('npExportMd');
+  const npExportImg  = $('npExportImg');
+  const npExportJson = $('npExportJson');
+  if (npExportMd)   npExportMd.addEventListener('click', exportMarkdown);
+  if (npExportImg)  npExportImg.addEventListener('click', exportAllImages);
+  if (npExportJson) npExportJson.addEventListener('click', exportAllMeta);
 
   updateDorkPanel('');
   updateNotepad();

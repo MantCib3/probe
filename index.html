@@ -274,9 +274,16 @@
         <button class="np-fmt-btn" id="npFmtBold" title="Bold"><b>B</b></button>
         <button class="np-fmt-btn" id="npFmtUnder" title="Underline"><u>U</u></button>
         <button class="np-fmt-btn" id="npFmtBullet" title="Bullet list">•</button>
-        <button class="np-fmt-btn np-fmt-copy" id="npCopyBtn" title="Copy notes">⎘</button>
+        <span class="np-fmt-sep"></span>
+        <button class="np-fmt-btn np-export-btn" id="npExportMd" title="Export as Markdown">↓ md</button>
+        <button class="np-fmt-btn np-export-btn" id="npExportImg" title="Export screenshots" style="display:none">↓ img</button>
+        <button class="np-fmt-btn np-export-btn" id="npExportJson" title="Export metadata JSON" style="display:none">↓ json</button>
       </div>
       <div class="np-editor" id="npEditor" contenteditable="true" spellcheck="false"></div>
+      <div class="np-captures-section" id="npCapturesSection" style="display:none">
+        <span class="np-pins-label">captures <span id="npCaptureCount">0</span></span>
+        <div class="np-captures" id="npCaptures"></div>
+      </div>
       <div class="np-pins-section">
         <span class="np-pins-label">pinned <span id="npPinCount">0</span></span>
         <div class="np-pins" id="npPins"><span class="np-empty">No pins yet</span></div>
