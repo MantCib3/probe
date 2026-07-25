@@ -275,9 +275,14 @@
         <button class="np-fmt-btn" id="npFmtUnder" title="Underline"><u>U</u></button>
         <button class="np-fmt-btn" id="npFmtBullet" title="Bullet list">•</button>
         <span class="np-fmt-sep"></span>
-        <button class="np-fmt-btn np-export-btn" id="npExportMd" title="Export as Markdown">↓ md</button>
-        <button class="np-fmt-btn np-export-btn" id="npExportImg" title="Export screenshots" style="display:none">↓ img</button>
-        <button class="np-fmt-btn np-export-btn" id="npExportJson" title="Export metadata JSON" style="display:none">↓ json</button>
+        <div class="np-export-wrap" id="npExportWrap">
+          <button class="np-fmt-btn np-export-btn" id="npExportBtn" title="Export options">↓ export ▾</button>
+          <div class="np-export-menu" id="npExportMenu" role="menu">
+            <button id="npExportMd" role="menuitem">↓ notes (.txt)</button>
+            <button id="npExportJson" role="menuitem">↓ metadata (.json)</button>
+            <button id="npExportImg" role="menuitem">↓ images</button>
+          </div>
+        </div>
       </div>
       <div class="np-editor" id="npEditor" contenteditable="true" spellcheck="false"></div>
       <div class="np-captures-section" id="npCapturesSection" style="display:none">
@@ -296,7 +301,6 @@
   </div>
 
   <script src="script.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 
   <!-- Metadata preview modal -->
   <div id="metaPreviewOverlay" style="display:none">

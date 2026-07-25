@@ -348,6 +348,8 @@ function togglePin(r, btn) {
   } else {
     pinnedItems.push({ name: r.name, url: r.url || '', status: r.status, category: r.category || '' });
     btn.classList.add('pinned');
+    // Auto-fetch metadata for newly pinned item
+    if (r.url) fetchPinMeta(pinnedItems.length - 1);
   }
   updateNotepad();
 }
@@ -366,15 +368,20 @@ function updateNotepad() {
     const linkHtml = (href !== '#' && p.url)
       ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${escHtml(p.name)}</a>`
       : `<span>${escHtml(p.name)}</span>`;
-    const captured = p.url && captures[p.url];
-    const capBtnClass = captured ? 'np-capture-btn done' : 'np-capture-btn';
-    const capBtnTitle = captured ? 'Re-capture page' : 'Capture screenshot & metadata';
-    const capBtnLabel = captured ? '✓' : '📷';
+    const cap = p.url && captures[p.url];
+    const m   = cap ? (cap.metadata || {}) : null;
+    const metaHtml = m ? (() => {
+      const title = (m.title || m.ogTitle || '').slice(0, 80);
+      const desc  = (m.description || '').slice(0, 120);
+      return `<div class="np-pin-meta">${title ? `<div class="np-pin-meta-title">${escHtml(title)}</div>` : ''}${desc ? `<div class="np-pin-meta-desc">${escHtml(desc)}</div>` : ''}</div>`;
+    })() : (p.url && !cap ? '<div class="np-pin-meta np-pin-meta-loading">◌ fetching…</div>' : '');
     return `<div class="np-pin-item">
-      <span class="np-pin-status ${escHtml(p.status)}">${escHtml(p.status)}</span>
-      ${linkHtml}
-      ${p.url ? `<button class="${capBtnClass}" data-cap-idx="${i}" title="${capBtnTitle}">${capBtnLabel}</button>` : ''}
-      <button class="np-unpin" data-unpin-idx="${i}" title="Remove">✕</button>
+      <div class="np-pin-row">
+        <span class="np-pin-status ${escHtml(p.status)}">${escHtml(p.status)}</span>
+        ${linkHtml}
+        <button class="np-unpin" data-unpin-idx="${i}" title="Remove">✕</button>
+      </div>
+      ${metaHtml}
     </div>`;
   }).join('');
   npPins.querySelectorAll('.np-unpin').forEach(btn => {
@@ -386,9 +393,6 @@ function updateNotepad() {
       }
       updateNotepad();
     });
-  });
-  npPins.querySelectorAll('.np-capture-btn').forEach(btn => {
-    btn.addEventListener('click', () => capturePin(Number(btn.dataset.capIdx), btn));
   });
 }
 
@@ -521,57 +525,36 @@ function renderCaptures() {
   container.innerHTML = keys.map(url => {
     const c = captures[url];
     const m = c.metadata || {};
-    const imgSrc = c.screenshot ? `data:${c.mimeType};base64,${c.screenshot}` : '';
     const domain = (() => { try { return new URL(url).hostname; } catch { return url; } })();
     const title = m.title || m.ogTitle || domain;
     const desc  = m.description || '';
-    const safeImgSrc = escHtml(imgSrc);
     const safeDomain = escHtml(domain);
     const safeTitle  = escHtml(title.slice(0, 80));
     const safeDesc   = escHtml(desc.slice(0, 140));
-    const thumbEl = imgSrc
-      ? `<img class="np-capture-thumb" src="${safeImgSrc}" alt="Screenshot of ${safeDomain}" title="Click to view full size">`
-      : `<div class="np-capture-thumb np-capture-thumb-empty" title="No image available">${safeDomain.slice(0,1).toUpperCase()}</div>`;
+    const extras = [
+      m.author        ? `<span class="np-cap-field"><b>Author</b> ${escHtml(m.author)}</span>` : '',
+      m.publishedTime ? `<span class="np-cap-field"><b>Published</b> ${escHtml(m.publishedTime.slice(0,10))}</span>` : '',
+      m.ogSiteName    ? `<span class="np-cap-field"><b>Site</b> ${escHtml(m.ogSiteName)}</span>` : '',
+    ].filter(Boolean).join('');
     return `<div class="np-capture-card" data-cap-url="${escHtml(url)}">
-      ${thumbEl}
       <div class="np-capture-info">
         <div class="np-capture-domain">${safeDomain}</div>
         ${title !== domain ? `<div class="np-capture-title">${safeTitle}</div>` : ''}
         ${desc ? `<div class="np-capture-desc">${safeDesc}</div>` : ''}
+        ${extras ? `<div class="np-cap-extras">${extras}</div>` : ''}
         <div class="np-capture-dl-row">
-          <button class="np-capture-dl" data-dl-img="${escHtml(url)}" title="Download screenshot">↓ image</button>
           <button class="np-capture-dl" data-dl-meta="${escHtml(url)}" title="Download metadata JSON">↓ meta</button>
           <button class="np-capture-dl np-preview-btn" data-preview-url="${escHtml(url)}" title="Preview metadata">👁 preview</button>
         </div>
       </div>
     </div>`;
   }).join('');
-
-  // Thumbnail click → open full size
-  container.querySelectorAll('.np-capture-thumb').forEach(img => {
-    img.addEventListener('click', () => window.open(img.src, '_blank'));
-  });
-  // Per-capture downloads
-  container.querySelectorAll('[data-dl-img]').forEach(btn => {
-    btn.addEventListener('click', () => downloadCaptureImage(btn.dataset.dlImg));
-  });
   container.querySelectorAll('[data-dl-meta]').forEach(btn => {
     btn.addEventListener('click', () => downloadCaptureMeta(btn.dataset.dlMeta));
   });
   container.querySelectorAll('[data-preview-url]').forEach(btn => {
     btn.addEventListener('click', () => previewMeta(btn.dataset.previewUrl));
   });
-}
-
-function downloadCaptureImage(url) {
-  const c = captures[url];
-  if (!c || !c.screenshot) return;
-  const ext = c.mimeType === 'image/jpeg' ? 'jpg' : 'png';
-  const domain = (() => { try { return new URL(url).hostname.replace(/\./g, '-'); } catch { return 'capture'; } })();
-  const a = document.createElement('a');
-  a.href = `data:${c.mimeType};base64,${c.screenshot}`;
-  a.download = `capture-${domain}.${ext}`;
-  a.click();
 }
 
 function downloadCaptureMeta(url) {
@@ -775,6 +758,7 @@ function initFloatingPanels() {
     const label = t.replace(/^https?:\/\//, '').replace(/\/$/, '').substring(0, 55);
     pinnedItems.push({ name: label, url: t, status: 'found', category: source || 'manual' });
     updateNotepad();
+    fetchPinMeta(pinnedItems.length - 1);
     return true;
   }
 
@@ -802,13 +786,22 @@ function initFloatingPanels() {
   if (npAddUrl)   npAddUrl.addEventListener('click', () => { if (addPinFromUrl(npUrlInput ? npUrlInput.value : '', 'manual')) { if (npUrlInput) npUrlInput.value = ''; } });
   if (npUrlInput) npUrlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && addPinFromUrl(npUrlInput.value, 'manual')) npUrlInput.value = ''; });
 
-  // Export buttons
+  // Export dropdown
+  const npExportBtn  = $('npExportBtn');
+  const npExportMenu = $('npExportMenu');
   const npExportMd   = $('npExportMd');
   const npExportImg  = $('npExportImg');
   const npExportJson = $('npExportJson');
-  if (npExportMd)   npExportMd.addEventListener('click', exportMarkdown);
-  if (npExportImg)  npExportImg.addEventListener('click', exportAllImages);
-  if (npExportJson) npExportJson.addEventListener('click', exportAllMeta);
+  if (npExportBtn && npExportMenu) {
+    npExportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = npExportMenu.classList.toggle('open');
+      if (open) document.addEventListener('click', () => npExportMenu.classList.remove('open'), { once: true });
+    });
+  }
+  if (npExportMd)   npExportMd.addEventListener('click', () => { exportMarkdown();  npExportMenu && npExportMenu.classList.remove('open'); });
+  if (npExportImg)  npExportImg.addEventListener('click', () => { exportAllImages(); npExportMenu && npExportMenu.classList.remove('open'); });
+  if (npExportJson) npExportJson.addEventListener('click', () => { exportAllMeta();   npExportMenu && npExportMenu.classList.remove('open'); });
 
   updateDorkPanel('');
   updateNotepad();

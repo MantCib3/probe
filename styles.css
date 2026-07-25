@@ -1955,3 +1955,67 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .np-preview-btn { color: #555; }
 .np-preview-btn:hover { background: #e8e8e8; color: #000; }
 
+/* ── Inline pin metadata ──────────────────────────────────────────────── */
+.np-pin-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.np-pin-meta {
+  font-size: 0.62rem;
+  color: #666;
+  margin: 2px 0 0 0;
+  padding-left: 2px;
+  line-height: 1.4;
+}
+.np-pin-meta-title {
+  color: #333;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.np-pin-meta-desc { color: #888; }
+.np-pin-meta-loading { color: #bbb; font-style: italic; }
+
+/* ── Capture card extras ──────────────────────────────────────────────── */
+.np-cap-extras { display: flex; flex-wrap: wrap; gap: 3px; margin: 3px 0; }
+.np-cap-field { font-size: 0.6rem; color: #888; }
+.np-cap-field b { color: #555; }
+
+/* ── Export dropdown ─────────────────────────────────────────────────── */
+.np-export-wrap {
+  position: relative;
+  display: inline-block;
+}
+.np-export-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 7px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  z-index: 10000;
+  min-width: 145px;
+  overflow: hidden;
+}
+.np-export-menu.open { display: block; }
+.np-export-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 13px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #444;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+.np-export-menu button:last-child { border-bottom: none; }
+.np-export-menu button:hover { background: #f5f5f5; color: #000; }
+
