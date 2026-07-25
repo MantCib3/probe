@@ -1089,3 +1089,243 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   .hero { padding: 2rem 1rem; }
   .container { padding: 0 1rem; }
 }
+
+/* ── Floating Panels ─────────────────────────────────────────────────── */
+.float-panel {
+  position: fixed;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.float-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.8rem;
+  background: #000;
+  color: #fff;
+  cursor: grab;
+  user-select: none;
+}
+.float-panel-header:active { cursor: grabbing; }
+
+.fp-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+.fp-controls { display: flex; gap: 4px; }
+
+.fp-btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.fp-btn:hover { background: rgba(255,255,255,0.3); }
+
+.float-panel-body {
+  padding: 0.8rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.float-panel.minimised .float-panel-body { display: none; }
+
+/* ── FABs ────────────────────────────────────────────────────────────── */
+.fab-group {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9998;
+}
+
+.fab {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid #e0e0e0;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.15s, transform 0.15s, background 0.15s, border-color 0.15s;
+}
+.fab:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.18); transform: scale(1.08); }
+.fab.active { background: #000; color: #fff; border-color: #000; }
+
+/* ── Pin button ──────────────────────────────────────────────────────── */
+.pin-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 1px 3px;
+  border-radius: 4px;
+  opacity: 0.22;
+  transition: opacity 0.15s, transform 0.15s;
+  line-height: 1;
+  margin-left: 3px;
+}
+.pin-btn:hover { opacity: 0.65; transform: scale(1.15); }
+.pin-btn.pinned { opacity: 1; }
+
+/* ── Dork panel content ──────────────────────────────────────────────── */
+.dork-target {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 0.65rem;
+  text-align: center;
+}
+.dork-target strong { color: #000; font-size: 0.9rem; }
+
+.dork-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.dork-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 8px;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 7px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: #222;
+  background: #fafafa;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+.dork-btn:hover { border-color: #000; background: #f0f0f0; color: #000; }
+
+/* ── Case notepad content ────────────────────────────────────────────── */
+.np-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.np-pin-count {
+  background: #000;
+  color: #fff;
+  border-radius: 9px;
+  padding: 0 5px;
+  font-size: 0.62rem;
+  line-height: 1.7;
+}
+
+.np-pins {
+  max-height: 130px;
+  overflow-y: auto;
+  margin-bottom: 0.4rem;
+}
+
+.np-empty {
+  font-size: 0.75rem;
+  color: #bbb;
+  font-style: italic;
+}
+
+.np-pin-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.8rem;
+}
+.np-pin-item:last-child { border-bottom: none; }
+.np-pin-item a {
+  color: #222;
+  text-decoration: none;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.np-pin-item a:hover { text-decoration: underline; }
+
+.np-pin-status {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.np-pin-status.found   { background: var(--found-bg);   color: var(--found); }
+.np-pin-status.deleted { background: var(--deleted-bg); color: var(--deleted); }
+.np-pin-status.unknown { background: #f4f4f4; color: #888; }
+
+.np-unpin {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.65rem;
+  opacity: 0.3;
+  flex-shrink: 0;
+  padding: 2px;
+}
+.np-unpin:hover { opacity: 1; }
+
+.np-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 0.6rem 0;
+}
+
+.np-textarea {
+  width: 100%;
+  height: 110px;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 7px;
+  padding: 0.45rem 0.6rem;
+  font-family: 'Inter', monospace, sans-serif;
+  font-size: 0.78rem;
+  color: #222;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+  margin-bottom: 0.5rem;
+  display: block;
+  box-sizing: border-box;
+}
+.np-textarea:focus { border-color: #000; }
+
+.btn-xs {
+  font-size: 0.72rem;
+  padding: 0.28rem 0.7rem;
+}
+

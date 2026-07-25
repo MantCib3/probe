@@ -232,6 +232,44 @@
     </div>
   </footer>
 
+  <!-- ── Floating Tool Panels ──────────────────────────────────────── -->
+  <div class="fab-group" id="fabGroup" style="display:none" aria-label="Investigation tools">
+    <button class="fab" id="fabNotepad" title="Case Notepad">📋</button>
+    <button class="fab" id="fabDork" title="Search Engine Dorks">🔍</button>
+  </div>
+
+  <div class="float-panel" id="dorkPanel" style="display:none">
+    <div class="float-panel-header" id="dorkHandle">
+      <span class="fp-title">DORK SEARCH</span>
+      <div class="fp-controls">
+        <button class="fp-btn" id="dorkMinBtn">−</button>
+        <button class="fp-btn" id="dorkCloseBtn">✕</button>
+      </div>
+    </div>
+    <div class="float-panel-body" id="dorkBody">
+      <div class="dork-target" id="dorkTarget"></div>
+      <div class="dork-grid" id="dorkGrid"></div>
+    </div>
+  </div>
+
+  <div class="float-panel" id="caseNotepad" style="display:none">
+    <div class="float-panel-header" id="notepadHandle">
+      <span class="fp-title">CASE NOTEPAD</span>
+      <div class="fp-controls">
+        <button class="fp-btn" id="notepadMinBtn">−</button>
+        <button class="fp-btn" id="notepadCloseBtn">✕</button>
+      </div>
+    </div>
+    <div class="float-panel-body" id="notepadBody">
+      <div class="np-section-label">PINNED <span class="np-pin-count" id="npPinCount">0</span></div>
+      <div class="np-pins" id="npPins"><span class="np-empty">No pins yet — click 📌 on a result card</span></div>
+      <div class="np-divider"></div>
+      <div class="np-section-label">NOTES</div>
+      <textarea class="np-textarea" id="npText" placeholder="Type investigation notes…" spellcheck="false"></textarea>
+      <button class="btn btn-outline btn-xs" id="npCopyBtn">Copy to clipboard</button>
+    </div>
+  </div>
+
   <script src="script.js" defer></script>
 </body>
 </html>

@@ -84,6 +84,8 @@ let currentMode   = 'username'; // 'username' | 'email' | 'phone' | 'domain' | '
 let quickCheckTimer = null;
 let quickCheckAbort = null;
 let caseEvents = [];
+let pinnedItems = [];       // cards pinned to case notepad
+let lastScannedTarget = ''; // current dork panel target
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -290,6 +292,181 @@ function queueQuickCheck(username) {
       .finally(() => { quickCheckAbort = null; });
   }, 400);
 }
+
+/* ── Dork engines ────────────────────────────────────────────────────── */
+const DORK_ENGINES = [
+  { label: 'Google',     url: q => `https://www.google.com/search?q=${encodeURIComponent('"'+q+'"')}` },
+  { label: 'Bing',       url: q => `https://www.bing.com/search?q=${encodeURIComponent('"'+q+'"')}` },
+  { label: 'DuckDuckGo', url: q => `https://duckduckgo.com/?q=${encodeURIComponent('"'+q+'"')}` },
+  { label: 'Yandex',     url: q => `https://yandex.com/search/?text=${encodeURIComponent('"'+q+'"')}` },
+  { label: 'Images',     url: q => `https://www.google.com/search?q=${encodeURIComponent('"'+q+'"')}&tbm=isch` },
+  { label: 'Pastebin',   url: q => `https://www.google.com/search?q=${encodeURIComponent('site:pastebin.com "'+q+'"')}` },
+  { label: 'Reddit',     url: q => `https://www.reddit.com/search/?q=${encodeURIComponent('"'+q+'"')}` },
+  { label: 'GitHub',     url: q => `https://github.com/search?q=${encodeURIComponent('"'+q+'"')}&type=users` },
+];
+
+/* ── Floating panel utilities ────────────────────────────────────────── */
+function makeDraggable(panel, handle) {
+  let dragging = false, ox = 0, oy = 0;
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.fp-btn')) return;
+    dragging = true;
+    const rect = panel.getBoundingClientRect();
+    panel.style.right  = 'auto';
+    panel.style.bottom = 'auto';
+    panel.style.left   = rect.left + 'px';
+    panel.style.top    = rect.top  + 'px';
+    ox = e.clientX - rect.left;
+    oy = e.clientY - rect.top;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    panel.style.left = Math.max(0, e.clientX - ox) + 'px';
+    panel.style.top  = Math.max(0, e.clientY - oy) + 'px';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+}
+
+function updateDorkPanel(target) {
+  lastScannedTarget = target || '';
+  const dorkTarget = $('dorkTarget');
+  const dorkGrid   = $('dorkGrid');
+  if (!dorkTarget || !dorkGrid) return;
+  dorkTarget.innerHTML = target
+    ? `Dorking: <strong>${escHtml(target)}</strong>`
+    : '<em style="color:#ccc">Run a scan first</em>';
+  dorkGrid.innerHTML = DORK_ENGINES.map(eng => {
+    const href = target ? escHtml(eng.url(target)) : '#';
+    const attrs = !target ? ' style="pointer-events:none;opacity:0.4"' : '';
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="dork-btn"${attrs}>${escHtml(eng.label)}</a>`;
+  }).join('');
+}
+
+function togglePin(r, btn) {
+  const idx = pinnedItems.findIndex(p => p.name === r.name);
+  if (idx >= 0) {
+    pinnedItems.splice(idx, 1);
+    btn.classList.remove('pinned');
+  } else {
+    pinnedItems.push({ name: r.name, url: r.url || '', status: r.status, category: r.category || '' });
+    btn.classList.add('pinned');
+  }
+  updateNotepad();
+}
+
+function updateNotepad() {
+  const npPins     = $('npPins');
+  const npPinCount = $('npPinCount');
+  if (!npPins) return;
+  npPinCount.textContent = pinnedItems.length;
+  if (!pinnedItems.length) {
+    npPins.innerHTML = '<span class="np-empty">No pins yet — click 📌 on a result card</span>';
+    return;
+  }
+  npPins.innerHTML = pinnedItems.map((p, i) => {
+    const href = p.url ? escHtml(safeUrl(p.url)) : '#';
+    const linkHtml = (href !== '#' && p.url)
+      ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${escHtml(p.name)}</a>`
+      : `<span>${escHtml(p.name)}</span>`;
+    return `<div class="np-pin-item">
+      <span class="np-pin-status ${escHtml(p.status)}">${escHtml(p.status)}</span>
+      ${linkHtml}
+      <button class="np-unpin" data-unpin-idx="${i}" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+  npPins.querySelectorAll('.np-unpin').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const removed = pinnedItems.splice(Number(btn.dataset.unpinIdx), 1)[0];
+      if (removed) {
+        const pb = resultsGrid.querySelector(`.pin-btn[data-pin-name="${CSS.escape(removed.name)}"]`);
+        if (pb) pb.classList.remove('pinned');
+      }
+      updateNotepad();
+    });
+  });
+}
+
+function initFloatingPanels() {
+  const dorkPanel   = $('dorkPanel');
+  const caseNotepad = $('caseNotepad');
+  const fabGrp      = $('fabGroup');
+  const fabDork     = $('fabDork');
+  const fabNotepad  = $('fabNotepad');
+  if (!dorkPanel || !caseNotepad || !fabGrp) return;
+
+  makeDraggable(dorkPanel,   $('dorkHandle'));
+  makeDraggable(caseNotepad, $('notepadHandle'));
+
+  function hidePanel(panel, fab) {
+    panel.style.display = 'none';
+    if (fab) fab.classList.remove('active');
+  }
+
+  fabDork.addEventListener('click', () => {
+    if (dorkPanel.style.display === 'block') { hidePanel(dorkPanel, fabDork); return; }
+    if (!dorkPanel.dataset.positioned) {
+      dorkPanel.style.right  = '80px';
+      dorkPanel.style.bottom = '80px';
+      dorkPanel.style.left   = 'auto';
+      dorkPanel.style.top    = 'auto';
+      dorkPanel.dataset.positioned = '1';
+    }
+    dorkPanel.style.display = 'block';
+    fabDork.classList.add('active');
+  });
+
+  fabNotepad.addEventListener('click', () => {
+    if (caseNotepad.style.display === 'block') { hidePanel(caseNotepad, fabNotepad); return; }
+    if (!caseNotepad.dataset.positioned) {
+      caseNotepad.style.left   = '20px';
+      caseNotepad.style.bottom = '80px';
+      caseNotepad.style.right  = 'auto';
+      caseNotepad.style.top    = 'auto';
+      caseNotepad.dataset.positioned = '1';
+    }
+    caseNotepad.style.display = 'block';
+    fabNotepad.classList.add('active');
+  });
+
+  $('dorkMinBtn').addEventListener('click', () => {
+    dorkPanel.classList.toggle('minimised');
+    $('dorkMinBtn').textContent = dorkPanel.classList.contains('minimised') ? '+' : '−';
+  });
+  $('notepadMinBtn').addEventListener('click', () => {
+    caseNotepad.classList.toggle('minimised');
+    $('notepadMinBtn').textContent = caseNotepad.classList.contains('minimised') ? '+' : '−';
+  });
+  $('dorkCloseBtn').addEventListener('click',    () => hidePanel(dorkPanel,   fabDork));
+  $('notepadCloseBtn').addEventListener('click', () => hidePanel(caseNotepad, fabNotepad));
+
+  const npText = $('npText');
+  if (npText) {
+    const saved = localStorage.getItem('probe_case_notes');
+    if (saved) npText.value = saved;
+    npText.addEventListener('input', () => localStorage.setItem('probe_case_notes', npText.value));
+  }
+
+  $('npCopyBtn').addEventListener('click', () => {
+    const txt      = $('npText');
+    const pinLines = pinnedItems.map(p => `[${p.status.toUpperCase()}] ${p.name}: ${p.url || ''}`).join('\n');
+    const notes    = txt ? txt.value.trim() : '';
+    const output   = [
+      pinLines ? '=== PINNED SOURCES ===\n' + pinLines : '',
+      notes    ? '=== NOTES ===\n'          + notes    : '',
+    ].filter(Boolean).join('\n\n');
+    navigator.clipboard.writeText(output || '(empty)').then(() => {
+      const btn = $('npCopyBtn');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    }).catch(() => {});
+  });
+
+  updateDorkPanel('');
+  updateNotepad();
+}
+
 /* ── Platforms grid (static, rendered on load) ───────────────────────── */
 function initPlatformsGrid(sites) {
   const frag = document.createDocumentFragment();
@@ -344,10 +521,11 @@ function makeCard(r, animDelay = 0) {
     ? `<div class="reason-codes" title="Classification signals">${escHtml(reasons.join(' · '))}</div>`
     : '';
 
+  const isPinned = pinnedItems.some(p => p.name === r.name);
   card.innerHTML = `
     <div class="card-top">
       <span class="status-badge ${r.status}">${STATUS_LABEL[r.status] || r.status.toUpperCase()}</span>
-      <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge">${escHtml(r.category)}</span></div>
+      <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge">${escHtml(r.category)}</span><button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button></div>
     </div>
     <div class="site-name">${escHtml(r.name)}</div>
     ${displayNameHtml}
@@ -496,6 +674,8 @@ function startScan(username) {
 
   // Update UI
   currentUsername.textContent = username;
+  updateDorkPanel(username);
+  const fabGrpA = $('fabGroup'); if (fabGrpA) fabGrpA.style.display = 'flex';
   pushCaseEvent(`Username investigation started for ${username}`, 'start');
   scanProgressSec.style.display = 'block';
   resultsSec.style.display = 'block';
@@ -561,6 +741,8 @@ function startNameScan(fullName, filters = {}) {
 
   // Update UI
   currentUsername.textContent = fullName;
+  updateDorkPanel(fullName);
+  const fabGrpB = $('fabGroup'); if (fabGrpB) fabGrpB.style.display = 'flex';
   const parts = [];
   if (filters.city) parts.push(`city=${filters.city}`);
   if (filters.state) parts.push(`state=${filters.state}`);
@@ -638,6 +820,8 @@ function startEmailScan(email) {
   resetScanState();
 
   currentUsername.textContent = email;
+  updateDorkPanel(email);
+  const fabGrpC = $('fabGroup'); if (fabGrpC) fabGrpC.style.display = 'flex';
   pushCaseEvent(`Email investigation started for ${email}`, 'start');
   scanProgressSec.style.display = 'block';
   resultsSec.style.display = 'block';
@@ -691,6 +875,8 @@ function startPhoneScan(phone) {
   resetScanState();
 
   currentUsername.textContent = phone;
+  updateDorkPanel(phone);
+  const fabGrpD = $('fabGroup'); if (fabGrpD) fabGrpD.style.display = 'flex';
   pushCaseEvent(`Phone investigation started for ${phone}`, 'start');
   scanProgressSec.style.display = 'block';
   resultsSec.style.display = 'block';
@@ -746,6 +932,8 @@ function startDomainScan(domain) {
   resetScanState();
 
   currentUsername.textContent = domain;
+  updateDorkPanel(domain);
+  const fabGrpE = $('fabGroup'); if (fabGrpE) fabGrpE.style.display = 'flex';
   pushCaseEvent(`Domain investigation started for ${domain}`, 'start');
   scanProgressSec.style.display = 'block';
   resultsSec.style.display = 'block';
@@ -1244,6 +1432,13 @@ function initEvents() {
   });
 
   resultsGrid.addEventListener('click', (e) => {
+    const pinBtn = e.target.closest('.pin-btn');
+    if (pinBtn) {
+      const name = pinBtn.dataset.pinName;
+      const r = results.find(res => res.name === name);
+      if (r) togglePin(r, pinBtn);
+      return;
+    }
     const card = e.target.closest('.result-card');
     if (!card) return;
     const idx = Number(card.dataset.resultIndex);
@@ -1265,6 +1460,8 @@ function initEvents() {
   hamburger.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') hamburger.click();
   });
+
+  initFloatingPanels();
 }
 
 /* ── Bootstrap ───────────────────────────────────────────────────────── */
