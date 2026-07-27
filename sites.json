@@ -17,10 +17,7 @@
     "urlMain": "https://www.instagram.com",
     "category": "social",
     "checkMethod": "status_code",
-    "positiveMsg": "\"username\":",
-    "errorMsg": "\"routePath\":null",
-    "checkUrl": "https://www.instagram.com/api/v1/users/web_profile_info/?username={}",
-    "cfProxy": true
+    "checkUrl": "https://www.instagram.com/{}/"
   },
   {
     "name": "Facebook",
@@ -718,11 +715,8 @@
     "url": "https://www.linkedin.com/in/{}/",
     "urlMain": "https://www.linkedin.com",
     "category": "professional",
-    "checkMethod": "message",
-    "checkUrl": "https://www.linkedin.com/in/{}/",
-    "cfProxy": true,
-    "positiveMsg": "public_profile_v3_desktop",
-    "errorMsg": "window.onload"
+    "checkMethod": "status_code",
+    "checkUrl": "https://www.linkedin.com/in/{}/"
   },
   {
     "name": "Wellfound",

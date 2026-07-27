@@ -100,8 +100,6 @@ const EXACT = new Set([
   'x.com',
   // Twitter oEmbed (CORS, no auth needed)
   'publish.twitter.com',
-  // LinkedIn (Googlebot UA injected by worker)
-  'www.linkedin.com',
 ]);
 
 // Hostname suffixes — allows subdomains (e.g. cerberus.newgrounds.com)
@@ -167,10 +165,6 @@ export default {
       if (h === 'api.x.com' || h === 'x.com') {
         extraHeaders['Authorization'] = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
       }
-      if (h === 'www.linkedin.com' || h === 'linkedin.com') {
-        // Googlebot UA causes LinkedIn to serve public profiles instead of redirecting to login
-        extraHeaders['User-Agent'] = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
-      }
 
       const upstream = await fetch(targetUrl.toString(), {
         headers: {
@@ -208,7 +202,12 @@ export default {
         }, new Uint8Array(0))
       );
 
-      return corsResp(body, upstream.status, { 'X-Proxy-Status': String(upstream.status) });
+      // Cloudflare Workers only allow status codes 200-599.
+      // Sites like LinkedIn return 999 for bot-blocked/missing users — clamp to 200
+      // so the body (containing errorMsg patterns) still reaches the client.
+      const st = upstream.status;
+      const safeStatus = (st >= 200 && st <= 599) ? st : 200;
+      return corsResp(body, safeStatus, { 'X-Proxy-Status': String(st) });
     } catch (err) {
       return corsResp('Proxy error: ' + err.message, 502);
     }

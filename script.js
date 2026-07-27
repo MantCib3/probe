@@ -1,4 +1,4 @@
-const CF_WORKER_URL = 'https://divine-dust-5526.noviss-osint.workers.dev/';
+const CF_WORKER_URL = 'https://probe-proxy.noviss-osint.workers.dev/';
 'use strict';
 
 /* ── Constants ───────────────────────────────────────────────────────── */
