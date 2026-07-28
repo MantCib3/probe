@@ -224,14 +224,16 @@
     "category": "developer",
     "checkMethod": "message",
     "positiveMsg": "property=\"og:url\"",
-    "errorMsg": "data-test-id=\"text-404\""
+    "errorMsg": "data-test-id=\"text-404\"",
+    "cfProxy": true
   },
   {
     "name": "Replit",
     "url": "https://replit.com/@{}",
     "urlMain": "https://replit.com",
     "category": "developer",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cfProxy": true
   },
   {
     "name": "Keybase",
@@ -260,7 +262,8 @@
     "checkMethod": "message",
     "usernameInBody": true,
     "positiveMsg": "property=\"og:username\"",
-    "errorMsg": "Kaggle: Your Home for Data Science</title>"
+    "errorMsg": "Kaggle: Your Home for Data Science</title>",
+    "cfProxy": true
   },
   {
     "name": "Exercism",
@@ -276,7 +279,8 @@
     "category": "developer",
     "checkMethod": "message",
     "positiveMsg": "\"id\":",
-    "errorMsg": "\"user\":null"
+    "errorMsg": "\"user\":null",
+    "cfProxy": true
   },
   {
     "name": "Codeberg",
@@ -320,7 +324,8 @@
     "checkMethod": "message",
     "checkUrl": "https://sourceforge.net/rest/u/{}/profile",
     "positiveMsg": "\"username\":",
-    "errorMsg": "message-image-404"
+    "errorMsg": "message-image-404",
+    "cfProxy": true
   },
   {
     "name": "Steam",
@@ -377,7 +382,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "positiveMsg": "Newgrounds Profile",
-    "errorMsg": "Account Not Found"
+    "errorMsg": "Account Not Found",
+    "cfProxy": true
   },
   {
     "name": "Itch.io",
@@ -422,7 +428,8 @@
     "category": "gaming",
     "checkMethod": "status_code",
     "notFoundStatus": 404,
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true
   },
   {
     "name": "Trakt.tv",
@@ -431,7 +438,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "positiveMsg": "s profile - Trakt",
-    "errorMsg": "The page you were looking for doesn't exist"
+    "errorMsg": "The page you were looking for doesn't exist",
+    "cfProxy": true
   },
   {
     "name": "YouTube",
@@ -482,7 +490,8 @@
     "usernameInBody": true,
     "allowBrowserFallback": false,
     "positiveMsg": "id=\"profile-header\"",
-    "errorMsg": "<title>Object moved</title>"
+    "errorMsg": "<title>Object moved</title>",
+    "cfProxy": true
   },
   {
     "name": "Behance",
@@ -511,7 +520,8 @@
     "checkMethod": "message",
     "crawlerUA": "googlebot",
     "positiveMsg": "Portfolio",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "cfProxy": true
   },
   {
     "name": "DeviantArt",
@@ -695,7 +705,8 @@
     "category": "forum",
     "checkMethod": "message",
     "positiveMsg": "\"actor_id\":",
-    "errorMsg": "Page Not Found"
+    "errorMsg": "Page Not Found",
+    "cfProxy": true
   },
   {
     "name": "Lobste.rs",
@@ -712,7 +723,8 @@
     "category": "forum",
     "checkMethod": "message",
     "positiveMsg": "class=\"user-bio\"",
-    "errorMsg": "Page Not Found"
+    "errorMsg": "Page Not Found",
+    "cfProxy": true
   },
   {
     "name": "LinkedIn",
@@ -826,7 +838,8 @@
     "url": "https://www.threadless.com/{}",
     "urlMain": "https://www.threadless.com",
     "category": "shopping",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cfProxy": true
   },
   {
     "name": "Poshmark",
@@ -941,7 +954,8 @@
     "category": "misc",
     "checkMethod": "message",
     "positiveMsg": "'s profile on Letterboxd",
-    "errorMsg": "Sorry, we can't find the page you've requested."
+    "errorMsg": "Sorry, we can't find the page you've requested.",
+    "cfProxy": true
   },
   {
     "name": "Carrd",
@@ -974,7 +988,8 @@
     "checkMethod": "message",
     "allowBrowserFallback": false,
     "positiveMsg": "class=\"cont user_profile\"",
-    "errorMsg": "class=\"search_404\""
+    "errorMsg": "class=\"search_404\"",
+    "cfProxy": true
   },
   {
     "name": "Duolingo",
@@ -1121,7 +1136,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "404, File Not Found!",
-    "positiveMsg": "Contributions"
+    "positiveMsg": "Contributions",
+    "cfProxy": true
   },
   {
     "name": "Neocities",
@@ -1261,14 +1277,16 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Error in query",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true
   },
   {
     "name": "Anime-Planet",
     "url": "https://www.anime-planet.com/users/{}",
     "urlMain": "https://www.anime-planet.com/users/",
     "category": "social",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cfProxy": true
   },
   {
     "name": "Zepeto",
@@ -1295,7 +1313,8 @@
     "checkMethod": "message",
     "errorMsg": " (404)</title>",
     "allowBrowserFallback": false,
-    "positiveMsg": " on We Heart It</title>"
+    "positiveMsg": " on We Heart It</title>",
+    "cfProxy": true
   },
   {
     "name": "solo.to",
@@ -1305,7 +1324,8 @@
     "checkMethod": "message",
     "errorMsg": "Page not found",
     "allowBrowserFallback": false,
-    "positiveMsg": "solo.to"
+    "positiveMsg": "solo.to",
+    "cfProxy": true
   },
   {
     "name": "Geocaching",
@@ -1378,7 +1398,8 @@
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "checkUrl": "https://www.gamespot.com/profile/{}/summary/activity/?ajax",
-    "positiveMsg": "\"success\":true"
+    "positiveMsg": "\"success\":true",
+    "cfProxy": true
   },
   {
     "name": "GOG",
@@ -1524,7 +1545,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "We couldn't find the page",
-    "positiveMsg": "Armor Games Profile"
+    "positiveMsg": "Armor Games Profile",
+    "cfProxy": true
   },
   {
     "name": "speedrun",
@@ -1553,7 +1575,8 @@
     "checkMethod": "message",
     "positiveMsg": "\"identifier\":",
     "allowBrowserFallback": false,
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "cfProxy": true
   },
   {
     "name": "Wowhead",
@@ -1633,7 +1656,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": ">404 Page Not Found</h1>",
-    "positiveMsg": "<h3>Contest Status</h3>"
+    "positiveMsg": "<h3>Contest Status</h3>",
+    "cfProxy": true
   },
   {
     "name": "CodeChef",
@@ -1708,7 +1732,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "That page doesn't exist.",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true
   },
   {
     "name": "Monkeytype",
@@ -1811,7 +1836,8 @@
     "urlMain": "https://pcpartpicker.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "The page you requested could not be found."
+    "errorMsg": "The page you requested could not be found.",
+    "cfProxy": true
   },
   {
     "name": "DOTAFire",
@@ -1953,7 +1979,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Error: This user doesn't exist",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "cfProxy": true
   },
   {
     "name": "carrd.co",
