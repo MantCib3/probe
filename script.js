@@ -1,4 +1,3 @@
-const CF_WORKER_URL = 'https://probe-proxy.noviss-osint.workers.dev/';
 'use strict';
 
 /* ── Constants ───────────────────────────────────────────────────────── */
@@ -84,7 +83,8 @@ const REASON_LABEL = {
 /* ── State ───────────────────────────────────────────────────────────── */
 let results       = [];   // all result objects from this scan
 let manualResults = [];   // undetectable sites routed to manual panel
-let evtSource     = null; // active EventSource
+let evtSource     = null; // kept for cancelScan compat — not used in static mode
+let _sitesCache   = null; // sites.json loaded once on first scan
 let activeFilter  = 'all';
 let foundOnly     = false;
 let scanActive    = false;
@@ -281,29 +281,14 @@ function renderQuickChecks(items = []) {
   quickChecks.classList.add('active');
 }
 
-function queueQuickCheck(username) {
+function queueQuickCheck(_username) {
   if (quickCheckTimer) clearTimeout(quickCheckTimer);
-  if (quickCheckAbort) {
-    quickCheckAbort.abort();
-    quickCheckAbort = null;
-  }
-
-  if (!username || username.length < 3 || validateUsername(username)) {
-    renderQuickChecks([]);
-    return;
-  }
-
-  quickCheckTimer = setTimeout(() => {
-    quickCheckAbort = new AbortController();
-    fetch(`/api/quick-check?username=${encodeURIComponent(username)}`, { signal: quickCheckAbort.signal })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(payload => renderQuickChecks(payload.results || []))
-      .catch(() => {
-        // Ignore aborted requests and transient quick-check failures.
-      })
-      .finally(() => { quickCheckAbort = null; });
-  }, 400);
+  if (quickCheckAbort) { quickCheckAbort.abort(); quickCheckAbort = null; }
+  renderQuickChecks([]); /* static mode: no server-side quick-check */
 }
+
+/* fetchPinMeta is a no-op in static mode (metadata capture requires a server) */
+function fetchPinMeta(_idx) {}
 
 /* ── Dork engines ────────────────────────────────────────────────────── */
 const DORK_URLS = {
@@ -406,65 +391,12 @@ function updateNotepad() {
   });
 }
 
-async function capturePin(idx, btn) {
-  const pin = pinnedItems[idx];
-  if (!pin || !pin.url) return;
-  btn.classList.add('loading');
-  btn.textContent = '↻';
-  btn.disabled = true;
-  try {
-    // Fetch HTML + cheerio metadata from server
-    const resp = await fetch(`/api/fetch-page?url=${encodeURIComponent(pin.url)}`);
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Fetch failed');
-
-    // Client-side silent iframe render + html2canvas capture
-    let screenshotB64 = '';
-    if (data.html && typeof html2canvas !== 'undefined') {
-      screenshotB64 = await silentCapture(pin.url, data.html);
-    }
-
-    captures[pin.url] = {
-      metadata: data.metadata,
-      screenshot: screenshotB64,
-      mimeType: 'image/png',
-      name: pin.name,
-    };
-
-    // Insert thumbnail + metadata block into the notes editor
-    const npEditor = $('npEditor');
-    if (npEditor) {
-      const m = data.metadata || {};
-      const domain = (() => { try { return new URL(pin.url).hostname; } catch (_) { return pin.url; } })();
-      const pageTitle = (m.title || m.ogTitle || '').slice(0, 90);
-      const desc = (m.description || '').slice(0, 150);
-      const thumbHtml = screenshotB64
-        ? `<img class="np-meta-thumb" src="data:image/png;base64,${screenshotB64}" alt="${escHtml(domain)}">`
-        : '';
-      const metaLines = [
-        `<strong>${escHtml(pageTitle || domain)}</strong>`,
-        desc ? `<em>${escHtml(desc)}</em>` : '',
-        m.author ? `Author: ${escHtml(m.author)}` : '',
-        `<span class="np-meta-ts">${escHtml(domain)} · ${escHtml((m.capturedAt || '').slice(0, 10))}</span>`,
-      ].filter(Boolean).join('<br>');
-      npEditor.insertAdjacentHTML('beforeend',
-        `<div class="np-meta-embed">${thumbHtml}<div class="np-meta-detail">${metaLines}</div></div><p></p>`);
-      localStorage.setItem('probe_case_content', npEditor.innerHTML);
-    }
-
-    renderCaptures();
-    updateNotepad();
-    const imgBtn  = $('npExportImg');
-    const jsonBtn = $('npExportJson');
-    if (imgBtn)  imgBtn.style.display = '';
-    if (jsonBtn) jsonBtn.style.display = '';
-  } catch (err) {
-    btn.classList.remove('loading');
-    btn.textContent = '⚠';
-    btn.title = err.message;
-    btn.disabled = false;
-    setTimeout(() => { btn.textContent = '📷'; btn.title = 'Capture screenshot & metadata'; }, 3000);
-  }
+async function capturePin(_idx, btn) {
+  /* Metadata / screenshot capture requires a server-side renderer.
+   * Not available in static mode — show a brief error on the button. */
+  btn.textContent = '⚠';
+  btn.title = 'Capture is not available in static mode.';
+  setTimeout(() => { btn.textContent = '📷'; btn.title = 'Capture screenshot & metadata'; }, 3000);
 }
 
 /* Silently render a URL's HTML in a sandboxed iframe and capture via html2canvas */
@@ -903,14 +835,6 @@ function makeCard(r, animDelay = 0) {
     _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
   }
 
-  // Tier 3: CF Worker retry for ANY blocked/unknown result (regardless of cfProxy flag)
-  // The server IP was blocked → try from CF Worker's IP range as fallback
-  const needsCfRetry = (r.status === 'blocked' || (r.cfProxy && r.status === 'unknown'))
-    && !r.cors && !r.auth && r.checkUrl;
-  if (needsCfRetry) {
-    _cvQueue.push({ type: 'cfProxy', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
-  }
-
   return card;
 }
 
@@ -975,11 +899,10 @@ function makeNameCard(r, animDelay = 0) {
 }
 
 /* ── Client-side verification ─────────────────────────────────────────
- *  Three job types — all run after the SSE scan ends:
- *  'cors'    → direct browser fetch (CORS-enabled API, residential IP)
- *  'cfProxy' → fetch via Cloudflare Worker proxy (CF-blocked HTML sites)
- *  'auth'    → no-cors redirect-detect (auth-gated; uses user's cookies)
- *  After all three, archive.org CDX fallback runs on any remaining unknowns.
+ *  Two job types — run after all cards are created:
+ *  'cors' → direct browser fetch (CORS-enabled API endpoints, user's IP)
+ *  'auth' → no-cors redirect-detect (auth-gated; uses user's cookies)
+ *  Archive.org CDX fallback runs on any remaining unknowns afterwards.
  * ─────────────────────────────────────────────────────────────────── */
 
 // CF challenge page fingerprints — a 200 with these is NOT a profile
@@ -1055,21 +978,10 @@ async function _clientVerifyOne(job) {
       return;
     }
 
-    let fetchUrl = checkUrl;
-    if (type === 'cfProxy') {
-      if (!CF_WORKER_URL) {
-        card.classList.remove('cv-verifying');
-        if (statusEl) statusEl.textContent = prevText;
-        return;
-      }
-      fetchUrl = CF_WORKER_URL + '?url=' + encodeURIComponent(checkUrl);
-    }
-
-    const resp = await fetch(fetchUrl, { signal: AbortSignal.timeout(14000) });
+    const resp = await fetch(checkUrl, { signal: AbortSignal.timeout(14000) });
     const verdict = await _resolveBody(resp, checkMethod, errorMsg, positiveMsg);
     if (verdict !== 'unknown') {
-      const suffix = type === 'cfProxy' ? ' (CF)' : ' (browser)';
-      _applyVerdict(card, verdict, (STATUS_LABEL[verdict] || verdict.toUpperCase()) + suffix);
+      _applyVerdict(card, verdict, (STATUS_LABEL[verdict] || verdict.toUpperCase()) + ' (browser)');
       updateStats();
     } else {
       card.classList.remove('cv-verifying');
@@ -1199,14 +1111,14 @@ function resetScanState() {
   progressBarFill.parentElement.classList.add('scanning');
 }
 
-function startScan(username) {
+/* ── Main scan (client-side static — no server required) ─────────────── */
+async function startScan(username) {
   if (scanActive) return;
   scanActive = true;
 
   resetScanState();
   renderQuickChecks([]);
 
-  // Update UI
   currentUsername.textContent = username;
   updateDorkPanel(username);
   const fabGrpA = $('fabGroup'); if (fabGrpA) fabGrpA.style.display = 'flex';
@@ -1217,339 +1129,130 @@ function startScan(username) {
   scanBtn.textContent = 'SCANNING…';
   searchError.style.display = 'none';
   filterCategories.style.display = '';
-
-  // Scroll to results
   resultsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Open SSE stream
-  const url = `/api/check?username=${encodeURIComponent(username)}`;
-  evtSource = new EventSource(url);
-
-  evtSource.onmessage = (e) => {
-    let data;
-    try { data = JSON.parse(e.data); }
-    catch (_) { return; }
-
-    if (data.type === 'start') {
-      updateStats(0, data.total);
-      progressStatus.innerHTML = `Scanning <strong>${escHtml(username)}</strong>…`;
+  /* Load sites.json once; reuse cache on subsequent scans */
+  if (!_sitesCache) {
+    try {
+      const r = await fetch('./sites.json');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      _sitesCache = (await r.json()).filter(s => !s.defunct);
+    } catch (_) {
+      progressStatus.textContent = 'Could not load platforms list — check connection and reload.';
+      progressBarFill.parentElement.classList.remove('scanning');
+      resetScanControls();
+      return;
     }
-
-    if (data.type === 'result') {
-      results.push(data);
-      const resultIndex = results.length - 1;
-      pushCaseEvent(`${data.name}: ${STATUS_LABEL[data.status] || data.status}`);
-      if (data.status === 'unknown') {
-        manualResults.push(data);
-        manualLinksList.appendChild(makeManualItem(data));
-        manualCheckCount.textContent = manualResults.length;
-        manualCheckPanel.style.display = 'block';
-      } else {
-        const card = makeCard(data, 0);
-        card.dataset.resultIndex = String(resultIndex);
-        insertCardSorted(card);
-        applyFilters();
-      }
-      updateStats(data.done, data.total);
-    }
-
-    if (data.type === 'done') {
-      finishScan(username, data.done, data.total);
-    }
-  };
-
-  evtSource.onerror = () => {
-    if (evtSource) evtSource.close();
-    progressStatus.textContent = 'Connection error — please try again.';
-    progressBarFill.parentElement.classList.remove('scanning');
-    resetScanControls();
-  };
-}
-
-/* ── Name scan ───────────────────────────────────────────────────────── */
-function startNameScan(fullName, filters = {}) {
-  if (scanActive) return;
-  scanActive = true;
-
-  resetScanState();
-
-  // Update UI
-  currentUsername.textContent = fullName;
-  updateDorkPanel(fullName);
-  const fabGrpB = $('fabGroup'); if (fabGrpB) fabGrpB.style.display = 'flex';
-  const parts = [];
-  if (filters.city) parts.push(`city=${filters.city}`);
-  if (filters.state) parts.push(`state=${filters.state}`);
-  if (filters.ageMin) parts.push(`minAge=${filters.ageMin}`);
-  if (filters.ageMax) parts.push(`maxAge=${filters.ageMax}`);
-  const filterNote = parts.length ? ` with filters (${parts.join(', ')})` : '';
-  pushCaseEvent(`Name investigation started for ${fullName}${filterNote}`, 'start');
-  scanProgressSec.style.display = 'block';
-  resultsSec.style.display = 'block';
-  nameScanBtn.disabled = true;
-  nameScanBtn.textContent = 'SEARCHING…';
-  searchError.style.display = 'none';
-  filterCategories.style.display = 'none';
-
-  resultsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  const qs = new URLSearchParams({ q: fullName });
-  if (filters.city) qs.set('city', filters.city);
-  if (filters.state) qs.set('state', filters.state);
-  if (filters.ageMin) qs.set('ageMin', filters.ageMin);
-  if (filters.ageMax) qs.set('ageMax', filters.ageMax);
-  const url = `/api/name-check?${qs.toString()}`;
-  evtSource = new EventSource(url);
-
-  evtSource.onmessage = (e) => {
-    let data;
-    try { data = JSON.parse(e.data); }
-    catch (_) { return; }
-
-    if (data.type === 'start') {
-      updateStats(0, data.total);
-      const startFilters = data.filters || {};
-      const startParts = [];
-      if (startFilters.city) startParts.push(`city: ${escHtml(startFilters.city)}`);
-      if (startFilters.state) startParts.push(`state: ${escHtml(startFilters.state)}`);
-      if (startFilters.ageMin) startParts.push(`min age: ${escHtml(startFilters.ageMin)}`);
-      if (startFilters.ageMax) startParts.push(`max age: ${escHtml(startFilters.ageMax)}`);
-      const suffix = startParts.length ? ` (${startParts.join(' | ')})` : '';
-      progressStatus.innerHTML = `Searching name <strong>${escHtml(fullName)}</strong>${suffix}…`;
-    }
-
-    if (data.type === 'result') {
-      results.push(data);
-      const resultIndex = results.length - 1;
-      pushCaseEvent(`${data.name}: ${STATUS_LABEL[data.status] || data.status}`);
-      if (data.status === 'unknown') {
-        manualResults.push(data);
-        manualLinksList.appendChild(makeManualItem(data));
-        manualCheckCount.textContent = manualResults.length;
-        manualCheckPanel.style.display = 'block';
-      }
-      const card = makeNameCard(data, 0);
-      card.dataset.resultIndex = String(resultIndex);
-      insertCardSorted(card);
-      updateStats(data.done, data.total);
-    }
-
-    if (data.type === 'done') {
-      finishNameScan(fullName, data.done, data.total);
-    }
-  };
-
-  evtSource.onerror = () => {
-    if (evtSource) evtSource.close();
-    progressStatus.textContent = 'Connection error — please try again.';
-    progressBarFill.parentElement.classList.remove('scanning');
-    resetNameScanControls();
-  };
-}
-
-function startEmailScan(email) {
-  if (scanActive) return;
-  scanActive = true;
-
-  resetScanState();
-
-  currentUsername.textContent = email;
-  updateDorkPanel(email);
-  const fabGrpC = $('fabGroup'); if (fabGrpC) fabGrpC.style.display = 'flex';
-  pushCaseEvent(`Email investigation started for ${email}`, 'start');
-  scanProgressSec.style.display = 'block';
-  resultsSec.style.display = 'block';
-  emailScanBtn.disabled = true;
-  emailScanBtn.textContent = 'INVESTIGATING…';
-  searchError.style.display = 'none';
-  filterCategories.style.display = 'none';
-
-  resultsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  const url = `/api/email-check?q=${encodeURIComponent(email)}`;
-  evtSource = new EventSource(url);
-
-  evtSource.onmessage = (e) => {
-    let data;
-    try { data = JSON.parse(e.data); }
-    catch (_) { return; }
-
-    if (data.type === 'start') {
-      updateStats(0, data.total);
-      progressStatus.innerHTML = `Investigating email <strong>${escHtml(email)}</strong>…`;
-    }
-
-    if (data.type === 'result') {
-      results.push(data);
-      const resultIndex = results.length - 1;
-      pushCaseEvent(`${data.name}: ${STATUS_LABEL[data.status] || data.status}`);
-      const card = makeIntelCard(data, 0);
-      card.dataset.resultIndex = String(resultIndex);
-      resultsGrid.appendChild(card);
-      updateStats(data.done, data.total);
-    }
-
-    if (data.type === 'done') {
-      finishEmailScan(email, data.done, data.total);
-    }
-  };
-
-  evtSource.onerror = () => {
-    if (evtSource) evtSource.close();
-    progressStatus.textContent = 'Connection error — please try again.';
-    progressBarFill.parentElement.classList.remove('scanning');
-    resetEmailScanControls();
-  };
-}
-
-function startPhoneScan(phone) {
-  if (scanActive) return;
-  scanActive = true;
-
-  resetScanState();
-
-  currentUsername.textContent = phone;
-  updateDorkPanel(phone);
-  const fabGrpD = $('fabGroup'); if (fabGrpD) fabGrpD.style.display = 'flex';
-  pushCaseEvent(`Phone investigation started for ${phone}`, 'start');
-  scanProgressSec.style.display = 'block';
-  resultsSec.style.display = 'block';
-  if (phoneScanBtn) {
-    phoneScanBtn.disabled = true;
-    phoneScanBtn.textContent = 'SCANNING…';
   }
-  searchError.style.display = 'none';
-  filterCategories.style.display = 'none';
 
-  resultsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const sites = _sitesCache;
+  updateStats(0, sites.length);
+  progressStatus.innerHTML = `Scanning <strong>${escHtml(username)}</strong>…`;
 
-  const url = `/api/phone-check?q=${encodeURIComponent(phone)}`;
-  evtSource = new EventSource(url);
-
-  evtSource.onmessage = (e) => {
-    let data;
-    try { data = JSON.parse(e.data); }
-    catch (_) { return; }
-
-    if (data.type === 'start') {
-      updateStats(0, data.total);
-      progressStatus.innerHTML = `Investigating phone <strong>${escHtml(phone)}</strong>…`;
+  /* Build result objects and create cards for every site up-front.
+   * makeCard() auto-queues cors=true sites into _cvQueue for direct
+   * browser verification (user IP → avoids datacenter blocks).
+   * Non-CORS sites stay 'unknown' and are handled by runArchiveFallback(). */
+  let done = 0;
+  for (const site of sites) {
+    const profileUrl = site.url.replace(/\{\}/g, username);
+    const checkUrl   = (site.checkUrl || site.apiUrl || site.url).replace(/\{\}/g, username);
+    const result = {
+      name           : site.name,
+      category       : site.category,
+      url            : profileUrl,
+      checkUrl,
+      cors           : !!site.cors,
+      auth           : !!site.auth,
+      cfProxy        : false,
+      status         : 'unknown',
+      statusCode     : null,
+      reasonCodes    : [],
+      checkMethod    : site.checkMethod    || 'status_code',
+      positiveMsg    : site.positiveMsg    || null,
+      errorMsg       : site.errorMsg       || null,
+      notFoundStatus : site.notFoundStatus || null,
+      caveat         : site.caveat         || null,
+    };
+    results.push(result);
+    const card = makeCard(result, 0);
+    card.dataset.resultIndex = String(results.length - 1);
+    resultsGrid.appendChild(card);
+    done++;
+    if (done % 30 === 0) {
+      updateStats(done, sites.length);
+      await new Promise(resolve => setTimeout(resolve, 0)); /* yield so UI stays responsive */
     }
+  }
+  updateStats(sites.length, sites.length);
 
-    if (data.type === 'result') {
-      results.push(data);
-      const resultIndex = results.length - 1;
-      pushCaseEvent(`${data.name}: ${STATUS_LABEL[data.status] || data.status}`);
-      const card = makeIntelCard(data, 0);
-      card.dataset.resultIndex = String(resultIndex);
-      resultsGrid.appendChild(card);
-      updateStats(data.done, data.total);
-    }
-
-    if (data.type === 'done') {
-      finishPhoneScan(phone, data.done, data.total);
-    }
-  };
-
-  evtSource.onerror = () => {
-    if (evtSource) evtSource.close();
-    progressStatus.textContent = 'Connection error — please try again.';
-    progressBarFill.parentElement.classList.remove('scanning');
-    resetPhoneScanControls();
-  };
+  finishScan(username, sites.length, sites.length);
 }
 
-function startDomainScan(domain) {
-  if (scanActive) return;
-  scanActive = true;
-
-  resetScanState();
-
-  currentUsername.textContent = domain;
-  updateDorkPanel(domain);
-  const fabGrpE = $('fabGroup'); if (fabGrpE) fabGrpE.style.display = 'flex';
-  pushCaseEvent(`Domain investigation started for ${domain}`, 'start');
-  scanProgressSec.style.display = 'block';
-  resultsSec.style.display = 'block';
-  if (domainScanBtn) {
-    domainScanBtn.disabled = true;
-    domainScanBtn.textContent = 'SCANNING…';
-  }
-  searchError.style.display = 'none';
-  filterCategories.style.display = 'none';
-
-  resultsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  const url = `/api/domain-check?q=${encodeURIComponent(domain)}`;
-  evtSource = new EventSource(url);
-
-  evtSource.onmessage = (e) => {
-    let data;
-    try { data = JSON.parse(e.data); }
-    catch (_) { return; }
-
-    if (data.type === 'start') {
-      updateStats(0, data.total);
-      progressStatus.innerHTML = `Investigating domain <strong>${escHtml(domain)}</strong>…`;
-    }
-
-    if (data.type === 'result') {
-      results.push(data);
-      const resultIndex = results.length - 1;
-      pushCaseEvent(`${data.name}: ${STATUS_LABEL[data.status] || data.status}`);
-      const card = makeIntelCard(data, 0);
-      card.dataset.resultIndex = String(resultIndex);
-      resultsGrid.appendChild(card);
-      updateStats(data.done, data.total);
-    }
-
-    if (data.type === 'done') {
-      finishDomainScan(domain, data.done, data.total);
-    }
-  };
-
-  evtSource.onerror = () => {
-    if (evtSource) evtSource.close();
-    progressStatus.textContent = 'Connection error — please try again.';
-    progressBarFill.parentElement.classList.remove('scanning');
-    resetDomainScanControls();
-  };
+/* ── Name / Email / Phone / Domain scans (not available in static mode) ─ */
+function startNameScan(_fullName) {
+  scanActive = false;
+  if (nameScanBtn) { nameScanBtn.disabled = false; nameScanBtn.textContent = 'SCAN'; }
+}
+function startEmailScan(_email) {
+  scanActive = false;
+  if (emailScanBtn) { emailScanBtn.disabled = false; emailScanBtn.textContent = 'SCAN'; }
+}
+function startPhoneScan(_phone) {
+  scanActive = false;
+  if (phoneScanBtn) { phoneScanBtn.disabled = false; phoneScanBtn.textContent = 'SCAN'; }
+}
+function startDomainScan(_domain) {
+  scanActive = false;
+  if (domainScanBtn) { domainScanBtn.disabled = false; domainScanBtn.textContent = 'SCAN'; }
 }
 
 function finishScan(username, done, total) {
-  if (evtSource) { evtSource.close(); evtSource = null; }
   progressBarFill.parentElement.classList.remove('scanning');
   progressBarFill.style.width = '100%';
 
-  const found   = results.filter(r => r.status === 'found').length;
-
+  const found = results.filter(r => r.status === 'found').length;
   progressStatus.innerHTML = `Scan complete — <strong>${escHtml(username)}</strong>`;
   completionText.textContent = `${found} profile${found !== 1 ? 's' : ''} found across ${total} platforms`;
   completionBar.style.display = 'flex';
   pushCaseEvent(`Username investigation complete: ${found} found across ${total} sources`, 'done');
-
   resetScanControls();
 
-  // Run client-side verification for CORS-capable unknowns
-  if (_cvQueue.length > 0) {
-    const n = _cvQueue.length;
-    const cfCount = _cvQueue.filter(j => j.type === 'cfProxy').length;
-    const corsCount = _cvQueue.filter(j => j.type === 'cors').length;
-    const authCount = _cvQueue.filter(j => j.type === 'auth').length;
-    const parts = [];
-    if (corsCount) parts.push(`${corsCount} API`);
-    if (cfCount) parts.push(cfCount + ' CF' + (CF_WORKER_URL ? '' : ' (no worker URL)'));
-    if (authCount) parts.push(`${authCount} auth`);
-    progressStatus.innerHTML += ` &mdash; <span id="cvStatus">browser-verifying ${parts.join(', ')}…</span>`;
-    runClientVerifyQueue().then(() => {
-      const cvEl = document.getElementById('cvStatus');
-      if (cvEl) cvEl.textContent = 'archive check…';
-      runArchiveFallback().then(() => {
-        const cvEl2 = document.getElementById('cvStatus');
-        if (cvEl2) cvEl2.remove();
-        updateStats();
-      });
-    });
+  /* Run CORS browser verification then Archive.org CDX, then populate manual panel */
+  const corsCount = _cvQueue.filter(j => j.type === 'cors').length;
+  const authCount = _cvQueue.filter(j => j.type === 'auth').length;
+  const parts = [];
+  if (corsCount) parts.push(`${corsCount} API`);
+  if (authCount) parts.push(`${authCount} auth`);
+  progressStatus.innerHTML += ` &mdash; <span id="cvStatus">verifying ${parts.length ? parts.join(', ') : 'sources'}…</span>`;
+
+  const runCV = _cvQueue.length > 0 ? runClientVerifyQueue() : Promise.resolve();
+  runCV.then(() => {
+    const cvEl = document.getElementById('cvStatus');
+    if (cvEl) cvEl.textContent = 'archive check…';
+    return runArchiveFallback();
+  }).then(() => {
+    const cvEl2 = document.getElementById('cvStatus');
+    if (cvEl2) cvEl2.remove();
+    populateManualPanel();
+    updateStats();
+  });
+}
+
+/* Add sites still 'unknown' after all verification to the manual check panel */
+function populateManualPanel() {
+  const unknownCards = [...resultsGrid.querySelectorAll('.result-card.unknown, .result-card.blocked')]
+    .filter(c => !manualResults.some(m => m.name === c.dataset.site));
+  unknownCards.forEach(card => {
+    const r = results.find(res => res.name === card.dataset.site);
+    if (r) {
+      manualResults.push(r);
+      manualLinksList.appendChild(makeManualItem(r));
+    }
+  });
+  if (manualResults.length) {
+    manualCheckCount.textContent = manualResults.length;
+    manualCheckPanel.style.display = 'block';
   }
 }
 
@@ -2023,7 +1726,7 @@ function initEvents() {
 /* ── Bootstrap ───────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   // Load sites.json to populate platforms grid + update counts
-  fetch('/sites.json')
+  fetch('./sites.json')
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(sites => initPlatformsGrid(sites))
     .catch(() => {
