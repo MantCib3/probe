@@ -829,7 +829,7 @@ function makeCard(r, animDelay = 0) {
   // Queue client-side verification based on what the server sent
   if (r.cors && r.status === 'unknown' && r.checkUrl) {
     // Tier 1: direct CORS fetch from browser (API endpoints with open CORS)
-    _cvQueue.push({ type: 'cors', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null });
+    _cvQueue.push({ type: 'cors', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null });
   } else if (r.auth && r.status === 'auth_required') {
     // Tier 2: no-cors redirect detect with user cookies
     _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
@@ -929,10 +929,11 @@ function _applyVerdict(card, verdict, label) {
   if (idx !== -1) results[idx].status = verdict;
 }
 
-async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg) {
+async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg, notFoundStatus) {
   const st = resp.status;
   if (st === 403 || st === 401 || st === 429) return 'blocked';
   if (st === 404 || st === 410) return 'not_found';
+  if (notFoundStatus && st === notFoundStatus) return 'not_found';
 
   // Read body for all non-hard-error responses so errorMsg/positiveMsg can fire
   // even on non-200 status codes (e.g. LinkedIn returns 999 for missing users)
@@ -947,7 +948,7 @@ async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg) {
 }
 
 async function _clientVerifyOne(job) {
-  const { type, card, checkUrl, checkMethod, errorMsg, positiveMsg } = job;
+  const { type, card, checkUrl, checkMethod, errorMsg, positiveMsg, notFoundStatus } = job;
   if (!card || !card.isConnected) return;
 
   card.classList.add('cv-verifying');
@@ -979,7 +980,7 @@ async function _clientVerifyOne(job) {
     }
 
     const resp = await fetch(checkUrl, { signal: AbortSignal.timeout(14000) });
-    const verdict = await _resolveBody(resp, checkMethod, errorMsg, positiveMsg);
+    const verdict = await _resolveBody(resp, checkMethod, errorMsg, positiveMsg, notFoundStatus);
     if (verdict !== 'unknown') {
       _applyVerdict(card, verdict, (STATUS_LABEL[verdict] || verdict.toUpperCase()) + ' (browser)');
       updateStats();
@@ -1241,7 +1242,8 @@ function finishScan(username, done, total) {
 
 /* Add sites still 'unknown' after all verification to the manual check panel */
 function populateManualPanel() {
-  const unknownCards = [...resultsGrid.querySelectorAll('.result-card.unknown, .result-card.blocked')]
+  /* Only add cards still truly 'unknown' (unresolvable) — 'blocked' stays in the grid */
+  const unknownCards = [...resultsGrid.querySelectorAll('.result-card.unknown')]
     .filter(c => !manualResults.some(m => m.name === c.dataset.site));
   unknownCards.forEach(card => {
     const r = results.find(res => res.name === card.dataset.site);

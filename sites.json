@@ -75,7 +75,8 @@
     "urlMain": "https://bsky.app",
     "category": "social",
     "checkMethod": "status_code",
-    "apiUrl": "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor={}.bsky.social",
+    "cors": true,
+    "checkUrl": "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor={}.bsky.social",
     "notFoundStatus": 400,
     "caveat": "Only detects accounts on the default bsky.social domain, not custom handles"
   },
@@ -339,14 +340,17 @@
     "urlMain": "https://www.chess.com",
     "category": "gaming",
     "checkMethod": "status_code",
-    "cors": true
+    "cors": true,
+    "checkUrl": "https://api.chess.com/pub/player/{}"
   },
   {
     "name": "Lichess",
     "url": "https://lichess.org/@/{}",
     "urlMain": "https://lichess.org",
     "category": "gaming",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "cors": true,
+    "checkUrl": "https://lichess.org/api/user/{}"
   },
   {
     "name": "Speedrun.com",
