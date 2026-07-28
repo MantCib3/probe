@@ -1029,13 +1029,21 @@ async function _clientVerifyOne(job) {
 }
 
 // Kick off all queued verify jobs after SSE scan ends.
-// Batched: 8 concurrent to avoid overwhelming the browser / CF Worker.
+// Proxy jobs (type='proxy') all hit the same CF Worker hostname, so the browser's
+// HTTP/1.1 per-host connection limit (6) applies — keep their batch ≤ 4.
+// CORS/auth jobs hit different origins so a wider batch is fine.
 async function runClientVerifyQueue() {
-  const BATCH = 8;
-  const q = [..._cvQueue];
+  const proxyJobs = _cvQueue.filter(j => j.type === 'proxy');
+  const otherJobs = _cvQueue.filter(j => j.type !== 'proxy');
   _cvQueue.length = 0;
-  for (let i = 0; i < q.length; i += BATCH) {
-    await Promise.all(q.slice(i, i + BATCH).map(_clientVerifyOne));
+
+  // CORS + auth — different origins, batch of 8
+  for (let i = 0; i < otherJobs.length; i += 8) {
+    await Promise.all(otherJobs.slice(i, i + 8).map(_clientVerifyOne));
+  }
+  // Proxy — same CF Worker origin, batch of 4 (stays under browser 6-conn limit)
+  for (let i = 0; i < proxyJobs.length; i += 4) {
+    await Promise.all(proxyJobs.slice(i, i + 4).map(_clientVerifyOne));
   }
 }
 
