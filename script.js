@@ -830,8 +830,11 @@ function makeCard(r, animDelay = 0) {
   if (r.cors && r.status === 'unknown' && r.checkUrl) {
     // Tier 1: direct CORS fetch from browser (API endpoints with open CORS)
     _cvQueue.push({ type: 'cors', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null });
+  } else if (r.cfProxy && r.status === 'unknown') {
+    // Tier 2: CF Worker edge proxy — allowlisted social/CF-protected sites
+    _cvQueue.push({ type: 'proxy', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null });
   } else if (r.auth && r.status === 'auth_required') {
-    // Tier 2: no-cors redirect detect with user cookies
+    // Tier 3: no-cors redirect detect with user cookies
     _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
   }
 
@@ -905,6 +908,9 @@ function makeNameCard(r, animDelay = 0) {
  *  Archive.org CDX fallback runs on any remaining unknowns afterwards.
  * ─────────────────────────────────────────────────────────────────── */
 
+// CF Worker proxy URL — handles cfProxy:true sites (edge-network, allowlisted hosts)
+const CF_WORKER_URL = 'https://probe-proxy.noviss-osint.workers.dev';
+
 // CF challenge page fingerprints — a 200 with these is NOT a profile
 const CF_CHALLENGE = [
   'just a moment', 'checking your browser', 'please stand by',
@@ -973,6 +979,34 @@ async function _clientVerifyOne(job) {
         updateStats();
       } else {
         // Redirected or error → keep auth_required
+        card.classList.remove('cv-verifying');
+        if (statusEl) statusEl.textContent = prevText;
+      }
+      return;
+    }
+
+    if (type === 'proxy') {
+      if (!CF_WORKER_URL) {
+        card.classList.remove('cv-verifying');
+        if (statusEl) statusEl.textContent = prevText;
+        return;
+      }
+      const proxyTarget = CF_WORKER_URL + '?url=' + encodeURIComponent(checkUrl);
+      const proxyResp = await fetch(proxyTarget, { signal: AbortSignal.timeout(16000) });
+      if (proxyResp.status === 403) {
+        // Host not in allowlist — leave unknown so archive fallback runs
+        card.classList.remove('cv-verifying');
+        if (statusEl) statusEl.textContent = prevText;
+        return;
+      }
+      // Use X-Proxy-Status if set (real upstream code, e.g. 999→200 clamped by worker)
+      const realStatus = Number(proxyResp.headers.get('X-Proxy-Status') || proxyResp.status) || proxyResp.status;
+      const proxyRespWithRealStatus = { ...proxyResp, status: realStatus, text: () => proxyResp.text() };
+      const verdict = await _resolveBody(proxyRespWithRealStatus, checkMethod, errorMsg, positiveMsg, notFoundStatus);
+      if (verdict !== 'unknown') {
+        _applyVerdict(card, verdict, (STATUS_LABEL[verdict] || verdict.toUpperCase()) + ' (proxy)');
+        updateStats();
+      } else {
         card.classList.remove('cv-verifying');
         if (statusEl) statusEl.textContent = prevText;
       }
@@ -1165,7 +1199,7 @@ async function startScan(username) {
       checkUrl,
       cors           : !!site.cors,
       auth           : !!site.auth,
-      cfProxy        : false,
+      cfProxy        : !!site.cfProxy,
       status         : 'unknown',
       statusCode     : null,
       reasonCodes    : [],
