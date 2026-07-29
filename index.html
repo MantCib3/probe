@@ -179,6 +179,55 @@
     </div>
   </section>
 
+  <!-- ── Pivots ─────────────────────────────────────────────────────── -->
+  <section id="pivots" class="pivots-section">
+    <div class="container">
+      <h2 class="section-heading sm">Pivots</h2>
+      <p class="section-intro">Use lightweight client-side pivots for email, phone, and name checks. These stay outside the main username scan so they can be retried independently when the hosted backend is unstable.</p>
+
+      <div class="pivot-grid">
+        <div class="pivot-card">
+          <div class="pivot-title">Email pivot</div>
+          <input id="pivotEmailInput" class="pivot-input" type="email" placeholder="name@example.com" autocomplete="off" spellcheck="false">
+          <button class="btn btn-outline" id="pivotEmailBtn">Run email pivot</button>
+          <div class="pivot-hint" id="pivotEmailHint">Uses the local WMN catalog and opens matching sources in new tabs.</div>
+        </div>
+
+        <div class="pivot-card">
+          <div class="pivot-title">Phone pivot</div>
+          <input id="pivotPhoneInput" class="pivot-input" type="text" placeholder="+1 555 123 4567" autocomplete="off" spellcheck="false">
+          <button class="btn btn-outline" id="pivotPhoneBtn">Run phone pivot</button>
+          <div class="pivot-hint" id="pivotPhoneHint">Good for quick reverse lookups when the main scan path is noisy.</div>
+        </div>
+
+        <div class="pivot-card">
+          <div class="pivot-title">Name pivot</div>
+          <input id="pivotNameInput" class="pivot-input" type="text" placeholder="Jane Doe" autocomplete="off" spellcheck="false">
+          <button class="btn btn-outline" id="pivotNameBtn">Run name pivot</button>
+          <div class="pivot-hint" id="pivotNameHint">Scans the WMN source catalog for likely people-finder targets.</div>
+        </div>
+      </div>
+
+      <div class="wmn-panel">
+        <div class="wmn-panel-header">
+          <div>
+            <h3>WhatsMyName source catalog</h3>
+            <p>Static client-side source list for fallback reordering and manual reprobe workflows.</p>
+          </div>
+          <div class="wmn-controls">
+            <input id="wmnQueryInput" class="pivot-input" type="text" placeholder="Filter sources…" autocomplete="off" spellcheck="false">
+            <select id="wmnCategoryFilter" class="pivot-select">
+              <option value="all">All categories</option>
+            </select>
+            <button class="btn btn-secondary" id="wmnRefreshBtn">Reload</button>
+          </div>
+        </div>
+        <div class="wmn-summary" id="wmnSummary">Loading WMN sources…</div>
+        <div class="wmn-list" id="wmnSourceList"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── How It Works ───────────────────────────────────────────────── -->
   <section id="how-it-works" class="how-section">
     <div class="container">

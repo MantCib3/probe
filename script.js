@@ -98,6 +98,9 @@ let pinnedItems = [];       // cards pinned to case notepad
 let captures    = {};       // { [url]: { metadata, screenshot, mimeType } }
 let lastScannedTarget = ''; // current dork panel target
 let activeDorkEngine  = 'google'; // active tab in dork panel
+let wmnSources = [];
+let wmnSearchTerm = '';
+let wmnCategoryFilter = 'all';
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -137,27 +140,17 @@ const filterCategories  = $('filterCategories');
 const navbar            = $('navbar');
 const hamburger         = $('hamburger');
 const navMenu           = $('navMenu');
-const searchBoxEmail    = $('searchBoxEmail');
-const emailInput        = $('emailInput');
-const emailScanBtn      = $('emailScanBtn');
-const searchBoxPhone    = $('searchBoxPhone');
-const phoneInput        = $('phoneInput');
-const phoneScanBtn      = $('phoneScanBtn');
-const searchBoxDomain   = $('searchBoxDomain');
-const domainInput       = $('domainInput');
-const domainScanBtn     = $('domainScanBtn');
-const searchBoxName     = $('searchBoxName');
-const nameInput         = $('nameInput');
-const nameScanBtn       = $('nameScanBtn');
-const nameFilters       = $('nameFilters');
-const nameCityInput     = $('nameCityInput');
-const nameStateInput    = $('nameStateInput');
-const nameAgeMinInput   = $('nameAgeMinInput');
-const nameAgeMaxInput   = $('nameAgeMaxInput');
-const emailHint         = $('emailHint');
-const phoneHint         = $('phoneHint');
-const domainHint        = $('domainHint');
-const nameHint          = $('nameHint');
+const pivotEmailInput   = $('pivotEmailInput');
+const pivotEmailBtn     = $('pivotEmailBtn');
+const pivotPhoneInput   = $('pivotPhoneInput');
+const pivotPhoneBtn     = $('pivotPhoneBtn');
+const pivotNameInput    = $('pivotNameInput');
+const pivotNameBtn      = $('pivotNameBtn');
+const wmnQueryInput     = $('wmnQueryInput');
+const wmnCategoryFilterSelect = $('wmnCategoryFilter');
+const wmnRefreshBtn     = $('wmnRefreshBtn');
+const wmnSummary        = $('wmnSummary');
+const wmnSourceList     = $('wmnSourceList');
 const searchHint        = $('searchHint');
 
 /* ── Security helpers ────────────────────────────────────────────────── */
@@ -622,6 +615,133 @@ function exportAllMeta() {
   a.download = 'captures-metadata.json';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function normalizePivotQuery(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getWmnSourceUrl(source, query) {
+  const q = String(query || '').trim();
+  if (!source || !source.uri_check) return '#';
+  let url = source.uri_check;
+  if (q) {
+    url = url
+      .replace(/\{account\}/gi, encodeURIComponent(q))
+      .replace(/\{username\}/gi, encodeURIComponent(q))
+      .replace(/\{query\}/gi, encodeURIComponent(q))
+      .replace(/\{email\}/gi, encodeURIComponent(q))
+      .replace(/\{phone\}/gi, encodeURIComponent(q))
+      .replace(/\{name\}/gi, encodeURIComponent(q));
+  }
+  return url;
+}
+
+function getFilteredWmnSources(query = '', category = 'all') {
+  const q = normalizePivotQuery(query);
+  const cat = String(category || 'all').toLowerCase();
+  return (wmnSources || []).filter(source => {
+    const name = (source.name || '').toLowerCase();
+    const catName = (source.cat || '').toLowerCase();
+    const uri = (source.uri_check || '').toLowerCase();
+    const categoryMatch = cat === 'all' || catName === cat;
+    const searchMatch = !q || name.includes(q) || catName.includes(q) || uri.includes(q);
+    return categoryMatch && searchMatch;
+  });
+}
+
+function renderWmnSources() {
+  if (!wmnSourceList || !wmnSummary) return;
+  const filtered = getFilteredWmnSources(wmnSearchTerm, wmnCategoryFilter);
+  const total = filtered.length;
+  const shown = filtered.slice(0, 60);
+  const categories = [...new Set((wmnSources || []).map(s => (s.cat || '').toLowerCase()).filter(Boolean))].sort();
+  if (wmnCategoryFilterSelect) {
+    const current = wmnCategoryFilterSelect.value;
+    wmnCategoryFilterSelect.innerHTML = '<option value="all">All categories</option>' + categories.map(cat => `<option value="${escHtml(cat)}">${escHtml(cat)}</option>`).join('');
+    if (categories.includes(current)) wmnCategoryFilterSelect.value = current;
+    else wmnCategoryFilterSelect.value = 'all';
+  }
+  wmnSummary.textContent = `${total} WMN sources available · showing ${shown.length}`;
+  if (!shown.length) {
+    wmnSourceList.innerHTML = '<div class="wmn-empty">No WMN sources match that filter.</div>';
+    return;
+  }
+  wmnSourceList.innerHTML = shown.map(source => {
+    const url = getWmnSourceUrl(source, wmnSearchTerm || '');
+    return `
+      <div class="wmn-source-card">
+        <div class="wmn-source-row">
+          <div>
+            <div class="wmn-source-name">${escHtml(source.name || 'Untitled source')}</div>
+            <div class="wmn-source-meta">${escHtml((source.cat || 'misc').toLowerCase())} · ${escHtml((source.protection || []).join(', ') || 'no special protection noted')}</div>
+          </div>
+          <a class="wmn-source-link" href="${escHtml(url)}" target="_blank" rel="noopener noreferrer">Open</a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadWmnSources(force = false) {
+  if (wmnSources.length && !force) return wmnSources;
+  if (!wmnSummary) return [];
+  try {
+    const res = await fetch('./wmn-data.json');
+    if (!res.ok) throw new Error('WMN fetch failed');
+    const data = await res.json();
+    wmnSources = Array.isArray(data && data.sites) ? data.sites : [];
+    renderWmnSources();
+    return wmnSources;
+  } catch (_) {
+    if (wmnSummary) wmnSummary.textContent = 'WMN source catalog could not be loaded in this session.';
+    if (wmnSourceList) wmnSourceList.innerHTML = '<div class="wmn-empty">Unable to load the WMN source catalog.</div>';
+    return [];
+  }
+}
+
+async function runPivotQuery(mode, value) {
+  const query = String(value || '').trim();
+  if (!query) {
+    if (mode === 'email' && pivotEmailHint) pivotEmailHint.textContent = 'Enter an email address to build a light WMN pivot list.';
+    if (mode === 'phone' && pivotPhoneHint) pivotPhoneHint.textContent = 'Enter a phone number to build a light WMN pivot list.';
+    if (mode === 'name' && pivotNameHint) pivotNameHint.textContent = 'Enter a full name to build a light WMN pivot list.';
+    return;
+  }
+
+  await loadWmnSources();
+  const mapped = {
+    email: ['email', 'mail', 'pwned', 'breach', 'intel', 'contact'],
+    phone: ['phone', 'mobile', 'tel', 'contact'],
+    name: ['people', 'person', 'profile', 'name', 'social'],
+  }[mode] || [];
+
+  const filtered = (wmnSources || []).filter(source => {
+    const name = (source.name || '').toLowerCase();
+    const cat = (source.cat || '').toLowerCase();
+    const uri = (source.uri_check || '').toLowerCase();
+    const queryMatch = name.includes(query.toLowerCase()) || cat.includes(query.toLowerCase()) || uri.includes(query.toLowerCase());
+    const typeMatch = !mapped.length || mapped.some(token => name.includes(token) || cat.includes(token) || uri.includes(token));
+    return queryMatch || typeMatch;
+  }).slice(0, 12);
+
+  if (!filtered.length) {
+    const fallback = `https://www.google.com/search?q=${encodeURIComponent(`${mode} ${query}`)}`;
+    window.open(fallback, '_blank', 'noopener,noreferrer');
+    if (mode === 'email' && pivotEmailHint) pivotEmailHint.textContent = 'No direct WMN source matched; opened a general web search instead.';
+    if (mode === 'phone' && pivotPhoneHint) pivotPhoneHint.textContent = 'No direct WMN source matched; opened a general web search instead.';
+    if (mode === 'name' && pivotNameHint) pivotNameHint.textContent = 'No direct WMN source matched; opened a general web search instead.';
+    return;
+  }
+
+  filtered.forEach((source, idx) => {
+    const url = getWmnSourceUrl(source, query);
+    setTimeout(() => window.open(url, '_blank', 'noopener,noreferrer'), idx * 140);
+  });
+
+  if (mode === 'email' && pivotEmailHint) pivotEmailHint.textContent = `Opened ${filtered.length} WMN-backed sources for ${query}.`;
+  if (mode === 'phone' && pivotPhoneHint) pivotPhoneHint.textContent = `Opened ${filtered.length} WMN-backed sources for ${query}.`;
+  if (mode === 'name' && pivotNameHint) pivotNameHint.textContent = `Opened ${filtered.length} WMN-backed sources for ${query}.`;
 }
 
 function initFloatingPanels() {
@@ -1233,17 +1353,41 @@ async function startScan(username) {
 }
 
 /* ── Name / Email / Phone / Domain scans (not available in static mode) ─ */
-function startNameScan(_fullName) {
+async function startNameScan(fullName) {
   scanActive = false;
-  if (nameScanBtn) { nameScanBtn.disabled = false; nameScanBtn.textContent = 'SCAN'; }
+  if (pivotNameBtn) {
+    pivotNameBtn.disabled = true;
+    pivotNameBtn.textContent = 'OPENING…';
+  }
+  await runPivotQuery('name', fullName);
+  if (pivotNameBtn) {
+    pivotNameBtn.disabled = false;
+    pivotNameBtn.textContent = 'Run name pivot';
+  }
 }
-function startEmailScan(_email) {
+async function startEmailScan(email) {
   scanActive = false;
-  if (emailScanBtn) { emailScanBtn.disabled = false; emailScanBtn.textContent = 'SCAN'; }
+  if (pivotEmailBtn) {
+    pivotEmailBtn.disabled = true;
+    pivotEmailBtn.textContent = 'OPENING…';
+  }
+  await runPivotQuery('email', email);
+  if (pivotEmailBtn) {
+    pivotEmailBtn.disabled = false;
+    pivotEmailBtn.textContent = 'Run email pivot';
+  }
 }
-function startPhoneScan(_phone) {
+async function startPhoneScan(phone) {
   scanActive = false;
-  if (phoneScanBtn) { phoneScanBtn.disabled = false; phoneScanBtn.textContent = 'SCAN'; }
+  if (pivotPhoneBtn) {
+    pivotPhoneBtn.disabled = true;
+    pivotPhoneBtn.textContent = 'OPENING…';
+  }
+  await runPivotQuery('phone', phone);
+  if (pivotPhoneBtn) {
+    pivotPhoneBtn.disabled = false;
+    pivotPhoneBtn.textContent = 'Run phone pivot';
+  }
 }
 function startDomainScan(_domain) {
   scanActive = false;
@@ -1502,73 +1646,6 @@ function initFadeIn() {
 
 /* ── Event wiring ────────────────────────────────────────────────────── */
 function initEvents() {
-  const modeButtons = ['modeUsername', 'modeEmail', 'modePhone', 'modeDomain', 'modeName'];
-  function activateMode(mode) {
-    currentMode = mode;
-    modeButtons.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const shouldActive = id === `mode${mode.charAt(0).toUpperCase()}${mode.slice(1)}`
-        || (mode === 'username' && id === 'modeUsername')
-        || (mode === 'email' && id === 'modeEmail')
-        || (mode === 'phone' && id === 'modePhone')
-        || (mode === 'domain' && id === 'modeDomain')
-        || (mode === 'name' && id === 'modeName');
-      el.classList.toggle('active', shouldActive);
-    });
-
-    document.getElementById('searchBox').style.display = mode === 'username' ? '' : 'none';
-    if (searchBoxEmail) searchBoxEmail.style.display = mode === 'email' ? '' : 'none';
-    if (searchBoxPhone) searchBoxPhone.style.display = mode === 'phone' ? '' : 'none';
-    if (searchBoxDomain) searchBoxDomain.style.display = mode === 'domain' ? '' : 'none';
-    if (searchBoxName) searchBoxName.style.display = mode === 'name' ? '' : 'none';
-    if (nameFilters) nameFilters.style.display = mode === 'name' ? '' : 'none';
-
-    if (searchHint) searchHint.style.display = mode === 'username' ? '' : 'none';
-    if (emailHint) emailHint.style.display = mode === 'email' ? '' : 'none';
-    if (phoneHint) phoneHint.style.display = mode === 'phone' ? '' : 'none';
-    if (domainHint) domainHint.style.display = mode === 'domain' ? '' : 'none';
-    if (nameHint) nameHint.style.display = mode === 'name' ? '' : 'none';
-
-    if (mode !== 'username') renderQuickChecks([]);
-  }
-
-  // Mode toggle
-  const modeUsernameBtn = document.getElementById('modeUsername');
-  if (modeUsernameBtn) {
-    modeUsernameBtn.addEventListener('click', () => {
-      activateMode('username');
-    });
-  }
-
-  const modeEmailBtn = document.getElementById('modeEmail');
-  if (modeEmailBtn) {
-    modeEmailBtn.addEventListener('click', () => {
-      activateMode('email');
-    });
-  }
-
-  const modePhoneBtn = document.getElementById('modePhone');
-  if (modePhoneBtn) {
-    modePhoneBtn.addEventListener('click', () => {
-      activateMode('phone');
-    });
-  }
-
-  const modeDomainBtn = document.getElementById('modeDomain');
-  if (modeDomainBtn) {
-    modeDomainBtn.addEventListener('click', () => {
-      activateMode('domain');
-    });
-  }
-
-  const modeNameBtn = document.getElementById('modeName');
-  if (modeNameBtn) {
-    modeNameBtn.addEventListener('click', () => {
-      activateMode('name');
-    });
-  }
-
   // Scan button
   scanBtn.addEventListener('click', () => {
     const val = usernameInput.value.trim();
@@ -1591,36 +1668,30 @@ function initEvents() {
     queueQuickCheck(e.target.value.trim());
   });
 
-  // Name scan button
-  if (nameScanBtn) {
-    nameScanBtn.addEventListener('click', () => {
-      const val = nameInput ? nameInput.value.trim() : '';
+  // Pivot buttons
+  if (pivotNameBtn) {
+    pivotNameBtn.addEventListener('click', () => {
+      const val = pivotNameInput ? pivotNameInput.value.trim() : '';
       const err = validateName(val);
       if (err) {
         searchError.textContent = err;
         searchError.style.display = 'block';
-        if (nameInput) nameInput.focus();
+        if (pivotNameInput) pivotNameInput.focus();
         return;
       }
       searchError.style.display = 'none';
-      const filters = {
-        city: nameCityInput ? nameCityInput.value.trim() : '',
-        state: nameStateInput ? nameStateInput.value.trim() : '',
-        ageMin: nameAgeMinInput && nameAgeMinInput.value ? nameAgeMinInput.value.trim() : '',
-        ageMax: nameAgeMaxInput && nameAgeMaxInput.value ? nameAgeMaxInput.value.trim() : '',
-      };
-      startNameScan(val, filters);
+      startNameScan(val);
     });
   }
 
-  if (emailScanBtn) {
-    emailScanBtn.addEventListener('click', () => {
-      const val = emailInput ? emailInput.value.trim() : '';
+  if (pivotEmailBtn) {
+    pivotEmailBtn.addEventListener('click', () => {
+      const val = pivotEmailInput ? pivotEmailInput.value.trim() : '';
       const err = validateEmail(val);
       if (err) {
         searchError.textContent = err;
         searchError.style.display = 'block';
-        if (emailInput) emailInput.focus();
+        if (pivotEmailInput) pivotEmailInput.focus();
         return;
       }
       searchError.style.display = 'none';
@@ -1628,14 +1699,14 @@ function initEvents() {
     });
   }
 
-  if (phoneScanBtn) {
-    phoneScanBtn.addEventListener('click', () => {
-      const val = phoneInput ? phoneInput.value.trim() : '';
+  if (pivotPhoneBtn) {
+    pivotPhoneBtn.addEventListener('click', () => {
+      const val = pivotPhoneInput ? pivotPhoneInput.value.trim() : '';
       const err = validatePhone(val);
       if (err) {
         searchError.textContent = err;
         searchError.style.display = 'block';
-        if (phoneInput) phoneInput.focus();
+        if (pivotPhoneInput) pivotPhoneInput.focus();
         return;
       }
       searchError.style.display = 'none';
@@ -1643,44 +1714,40 @@ function initEvents() {
     });
   }
 
-  if (domainScanBtn) {
-    domainScanBtn.addEventListener('click', () => {
-      const val = domainInput ? domainInput.value.trim() : '';
-      const err = validateDomain(val);
-      if (err) {
-        searchError.textContent = err;
-        searchError.style.display = 'block';
-        if (domainInput) domainInput.focus();
-        return;
-      }
-      searchError.style.display = 'none';
-      startDomainScan(val);
+  if (pivotNameInput) {
+    pivotNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && pivotNameBtn) pivotNameBtn.click();
     });
   }
 
-  // Enter key in name input
-  if (nameInput) {
-    nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && nameScanBtn) nameScanBtn.click();
+  if (pivotEmailInput) {
+    pivotEmailInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && pivotEmailBtn) pivotEmailBtn.click();
     });
   }
 
-  if (emailInput) {
-    emailInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && emailScanBtn) emailScanBtn.click();
+  if (pivotPhoneInput) {
+    pivotPhoneInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && pivotPhoneBtn) pivotPhoneBtn.click();
     });
   }
 
-  if (phoneInput) {
-    phoneInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && phoneScanBtn) phoneScanBtn.click();
+  if (wmnQueryInput) {
+    wmnQueryInput.addEventListener('input', (e) => {
+      wmnSearchTerm = e.target.value.trim();
+      renderWmnSources();
     });
   }
 
-  if (domainInput) {
-    domainInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && domainScanBtn) domainScanBtn.click();
+  if (wmnCategoryFilterSelect) {
+    wmnCategoryFilterSelect.addEventListener('change', (e) => {
+      wmnCategoryFilter = e.target.value || 'all';
+      renderWmnSources();
     });
+  }
+
+  if (wmnRefreshBtn) {
+    wmnRefreshBtn.addEventListener('click', () => loadWmnSources(true));
   }
 
   // Cancel button
@@ -1780,6 +1847,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+  loadWmnSources();
   initEvents();
   initFadeIn();
 });
