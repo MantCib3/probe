@@ -86,7 +86,7 @@ let manualResults = [];   // undetectable sites routed to manual panel
 let evtSource     = null; // kept for cancelScan compat — not used in static mode
 let _sitesCache   = null; // sites.json loaded once on first scan
 let activeFilter  = 'all';
-let foundOnly     = false;
+let foundOnly     = true;
 let scanActive    = false;
 let foundInsertIdx = 0;   // grid insertion cursor for found/deleted cards
 let manualOpen    = false;
@@ -931,6 +931,11 @@ function makeCard(r, animDelay = 0) {
   } else if (r.auth && r.status === 'auth_required') {
     // Tier 3: no-cors redirect detect with user cookies
     _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
+  } else if (r.status === 'unknown' && r.checkUrl) {
+    // Tier 4: server-side /api/verify — for sites with no cors/cfProxy/auth
+    // flag (e.g. the merged WhatsMyName catalog). Our own backend fetches
+    // server-to-server, which isn't subject to browser CORS restrictions.
+    _cvQueue.push({ type: 'server', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null });
   }
 
   return card;
@@ -997,9 +1002,13 @@ function makeNameCard(r, animDelay = 0) {
 }
 
 /* ── Client-side verification ─────────────────────────────────────────
- *  Two job types — run after all cards are created:
- *  'cors' → direct browser fetch (CORS-enabled API endpoints, user's IP)
- *  'auth' → no-cors redirect-detect (auth-gated; uses user's cookies)
+ *  Four job types — run after all cards are created:
+ *  'cors'   → direct browser fetch (CORS-enabled API endpoints, user's IP)
+ *  'proxy'  → CF Worker edge proxy (allowlisted CF-protected/social sites)
+ *  'auth'   → no-cors redirect-detect (auth-gated; uses user's cookies)
+ *  'server' → our own backend's /api/verify (no cors/cfProxy/auth flag —
+ *             e.g. the merged WhatsMyName catalog; bypasses browser CORS
+ *             entirely since the fetch happens server-to-server)
  *  Archive.org CDX fallback runs on any remaining unknowns afterwards.
  * ─────────────────────────────────────────────────────────────────── */
 
@@ -1028,6 +1037,7 @@ function _applyVerdict(card, verdict, label) {
   }
   const idx = results.findIndex(r => r.name === card.dataset.site);
   if (idx !== -1) results[idx].status = verdict;
+  applyFilters();
 }
 
 async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg, notFoundStatus) {
@@ -1108,6 +1118,23 @@ async function _clientVerifyOne(job) {
       return;
     }
 
+    if (type === 'server') {
+      const qs = new URLSearchParams({ url: checkUrl, checkMethod: checkMethod || 'status_code' });
+      if (positiveMsg)    qs.set('positiveMsg', positiveMsg);
+      if (errorMsg)       qs.set('errorMsg', errorMsg);
+      if (notFoundStatus) qs.set('notFoundStatus', String(notFoundStatus));
+      const resp = await fetch('/api/verify?' + qs.toString(), { signal: AbortSignal.timeout(14000) });
+      const payload = await resp.json();
+      if (payload.ok && payload.verdict && payload.verdict !== 'unknown') {
+        _applyVerdict(card, payload.verdict, (STATUS_LABEL[payload.verdict] || payload.verdict.toUpperCase()) + ' (server)');
+        updateStats();
+      } else {
+        card.classList.remove('cv-verifying');
+        if (statusEl) statusEl.textContent = prevText;
+      }
+      return;
+    }
+
     const resp = await fetch(checkUrl, { signal: AbortSignal.timeout(14000) });
     const verdict = await _resolveBody(resp, checkMethod, errorMsg, positiveMsg, notFoundStatus);
     if (verdict !== 'unknown') {
@@ -1126,10 +1153,12 @@ async function _clientVerifyOne(job) {
 // Kick off all queued verify jobs after SSE scan ends.
 // Proxy jobs (type='proxy') all hit the same CF Worker hostname, so the browser's
 // HTTP/1.1 per-host connection limit (6) applies — keep their batch ≤ 4.
+// Server jobs (type='server') all hit our own origin — same per-host limit applies.
 // CORS/auth jobs hit different origins so a wider batch is fine.
 async function runClientVerifyQueue() {
-  const proxyJobs = _cvQueue.filter(j => j.type === 'proxy');
-  const otherJobs = _cvQueue.filter(j => j.type !== 'proxy');
+  const proxyJobs  = _cvQueue.filter(j => j.type === 'proxy');
+  const serverJobs = _cvQueue.filter(j => j.type === 'server');
+  const otherJobs  = _cvQueue.filter(j => j.type !== 'proxy' && j.type !== 'server');
   _cvQueue.length = 0;
 
   // CORS + auth — different origins, batch of 8
@@ -1139,6 +1168,10 @@ async function runClientVerifyQueue() {
   // Proxy — same CF Worker origin, batch of 4 (stays under browser 6-conn limit)
   for (let i = 0; i < proxyJobs.length; i += 4) {
     await Promise.all(proxyJobs.slice(i, i + 4).map(_clientVerifyOne));
+  }
+  // Server — same origin as our own app, batch of 6
+  for (let i = 0; i < serverJobs.length; i += 6) {
+    await Promise.all(serverJobs.slice(i, i + 6).map(_clientVerifyOne));
   }
 }
 
@@ -1351,6 +1384,7 @@ async function startScan(username) {
     }
   }
   updateStats(sites.length, sites.length);
+  applyFilters();
 
   finishScan(username, sites.length, sites.length);
 }
@@ -1411,11 +1445,15 @@ function finishScan(username, done, total) {
   resetScanControls();
 
   /* Run CORS browser verification then Archive.org CDX, then populate manual panel */
-  const corsCount = _cvQueue.filter(j => j.type === 'cors').length;
-  const authCount = _cvQueue.filter(j => j.type === 'auth').length;
+  const corsCount   = _cvQueue.filter(j => j.type === 'cors').length;
+  const authCount   = _cvQueue.filter(j => j.type === 'auth').length;
+  const proxyCount  = _cvQueue.filter(j => j.type === 'proxy').length;
+  const serverCount = _cvQueue.filter(j => j.type === 'server').length;
   const parts = [];
-  if (corsCount) parts.push(`${corsCount} API`);
-  if (authCount) parts.push(`${authCount} auth`);
+  if (corsCount)   parts.push(`${corsCount} API`);
+  if (authCount)   parts.push(`${authCount} auth`);
+  if (proxyCount)  parts.push(`${proxyCount} proxy`);
+  if (serverCount) parts.push(`${serverCount} server`);
   progressStatus.innerHTML += ` &mdash; <span id="cvStatus">verifying ${parts.length ? parts.join(', ') : 'sources'}…</span>`;
 
   const runCV = _cvQueue.length > 0 ? runClientVerifyQueue() : Promise.resolve();

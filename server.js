@@ -84,6 +84,62 @@ function fetchText(url, timeoutMs = 20000, maxRedirects = 5) {
   });
 }
 
+// Like fetchText() but also exposes the final HTTP status code — used by
+// /api/verify to classify found/not_found/blocked server-side (Node's http/
+// https client is not subject to browser CORS, so this works for any site
+// regardless of whether it sends Access-Control-Allow-Origin headers).
+// NOTE: named fetchStatusV (not fetchStatus) to avoid colliding with the
+// pre-existing single-arg fetchStatus(targetUrl) used by the legacy probe*
+// functions further down this file — function declarations hoist and the
+// later one wins, which silently broke /api/verify during initial testing.
+function fetchStatusV(url, timeoutMs = 10000, maxRedirects = 4) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const transport = parsed.protocol === 'https:' ? https : http;
+    let settled = false;
+    const finish = (fn, arg) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(hardDeadline);
+      fn(arg);
+    };
+    const hardDeadline = setTimeout(() => {
+      req.destroy(new Error('request timeout'));
+      finish(reject, new Error('request timeout'));
+    }, timeoutMs + 3000);
+
+    const req = transport.get(parsed, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && maxRedirects > 0) {
+        res.resume(); // discard body, follow redirect
+        finish(resolve, fetchStatusV(new URL(res.headers.location, parsed).toString(), timeoutMs, maxRedirects - 1));
+        return;
+      }
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => { if (body.length < 200000) body += chunk; });
+      res.on('end', () => finish(resolve, { status: res.statusCode, body }));
+      res.on('error', err => finish(reject, err));
+    });
+    req.on('error', err => finish(reject, err));
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error('request timeout'));
+    });
+  });
+}
+
+// SSRF guard shared by proxy endpoints that accept an arbitrary target URL.
+function isPrivateHost(hostname) {
+  const h = String(hostname || '').toLowerCase();
+  return (
+    h === 'localhost' || h === '127.0.0.1' || h === '::1' ||
+    /^10\./.test(h) || /^192\.168\./.test(h) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+    /^169\.254\./.test(h) || h.endsWith('.local')
+  );
+}
+
 // Auth/login redirect patterns — if a 3xx points here, account doesn't exist
 const AUTH_REDIRECT_PATTERNS = [
   '/login', '/signin', '/sign-in', '/signup', '/sign-up', '/register',
@@ -2012,6 +2068,64 @@ const server = http.createServer((req, res) => {
         if (res.writableEnded) return;
         res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: false, error: 'Dork lookup failed.' }));
+      });
+    return;
+  }
+
+  /* ── Server-side verify endpoint ─────────────────────────────────────
+   * Tier-4 fallback for the client-side username scan: sites merged in
+   * from the WhatsMyName catalog have no cors/cfProxy/auth flag, so the
+   * browser has no way to check them directly (most block cross-origin
+   * fetches). Node's http/https client isn't subject to browser CORS, so
+   * we do the GET here and hand back a computed verdict. */
+  if (pathname === '/api/verify') {
+    const rawUrl        = (urlObj.searchParams.get('url') || '').trim();
+    const checkMethod   = urlObj.searchParams.get('checkMethod') || 'status_code';
+    const positiveMsg   = urlObj.searchParams.get('positiveMsg') || '';
+    const errorMsg      = urlObj.searchParams.get('errorMsg') || '';
+    const notFoundStatus = Number(urlObj.searchParams.get('notFoundStatus')) || 0;
+
+    let parsedV;
+    try {
+      parsedV = new URL(rawUrl);
+      if (!['http:', 'https:'].includes(parsedV.protocol)) throw new Error('bad protocol');
+    } catch (_) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Invalid URL' }));
+    }
+    if (isPrivateHost(parsedV.hostname)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
+    }
+
+    fetchStatusV(rawUrl, 10000, 4)
+      .then(({ status, body }) => {
+        let verdict = 'unknown';
+        if (status === 403 || status === 401 || status === 429) {
+          verdict = 'blocked';
+        } else if (status === 404 || status === 410) {
+          verdict = 'not_found';
+        } else if (notFoundStatus && status === notFoundStatus) {
+          verdict = 'not_found';
+        } else {
+          const lbody = body.toLowerCase();
+          if (BLOCKED_BODY_PATTERNS.some(p => lbody.includes(p)) || BLOCKED_TITLE_PATTERNS.some(p => lbody.includes(p))) {
+            verdict = 'blocked';
+          } else if (checkMethod === 'message' && positiveMsg && body.includes(positiveMsg)) {
+            verdict = 'found';
+          } else if (checkMethod === 'message' && errorMsg && body.includes(errorMsg)) {
+            verdict = 'not_found';
+          } else {
+            verdict = status === 200 ? 'found' : 'unknown';
+          }
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, verdict, status }));
+      })
+      .catch(err => {
+        if (res.writableEnded) return;
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, verdict: 'unknown', error: err && err.message }));
       });
     return;
   }
