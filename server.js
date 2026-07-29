@@ -42,7 +42,7 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function fetchText(url, timeoutMs = 20000, maxRedirects = 5) {
+function fetchText(url, timeoutMs = 20000, maxRedirects = 5, headers = null) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const transport = parsed.protocol === 'https:' ? https : http;
@@ -60,15 +60,23 @@ function fetchText(url, timeoutMs = 20000, maxRedirects = 5) {
       finish(reject, new Error('request timeout'));
     }, timeoutMs + 3000);
 
+    // Default UA mimics a desktop Chrome browser for sites that need one.
+    // Pass headers = {} explicitly to send NO custom headers at all — some
+    // bot-protection (e.g. Cloudflare in front of r.jina.ai) challenges a
+    // spoofed-Chrome UA that's missing the rest of a real browser's header
+    // fingerprint (sec-ch-ua, Accept-Language, etc.) more aggressively than
+    // it challenges a plain/no UA request.
+    const reqHeaders = headers || { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' };
+
     const req = transport.get(parsed, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+      headers: reqHeaders,
     }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         if (maxRedirects <= 0) {
           finish(reject, new Error('too many redirects'));
           return;
         }
-        finish(resolve, fetchText(new URL(res.headers.location, parsed).toString(), timeoutMs, maxRedirects - 1));
+        finish(resolve, fetchText(new URL(res.headers.location, parsed).toString(), timeoutMs, maxRedirects - 1, headers));
         return;
       }
       let body = '';
@@ -2042,19 +2050,83 @@ const server = http.createServer((req, res) => {
     }
 
     const engineKey = ['google', 'bing', 'ddg', 'yandex'].includes(engine) ? engine : 'google';
+    const q = encodeURIComponent('"' + target + '"');
+    // Real Google search hits a consent/redirect interstitial when fetched
+    // through the r.jina.ai reader proxy (no cookies/JS), so it never
+    // yields usable content. Route it through DuckDuckGo's static HTML
+    // endpoint instead, which the proxy CAN render — DDG covers the same
+    // OSINT "dork" use case well enough as a drop-in for the Google tab.
     const searchUrl = {
-      google: `https://r.jina.ai/http://www.google.com/search?q=${encodeURIComponent('"' + target + '"')}`,
-      bing: `https://r.jina.ai/http://www.bing.com/search?q=${encodeURIComponent('"' + target + '"')}`,
-      ddg: `https://r.jina.ai/http://duckduckgo.com/?q=${encodeURIComponent('"' + target + '"')}`,
-      yandex: `https://r.jina.ai/http://yandex.com/search/?text=${encodeURIComponent('"' + target + '"')}`,
+      google: `https://r.jina.ai/https://duckduckgo.com/html/?q=${q}`,
+      bing: `https://r.jina.ai/http://www.bing.com/search?q=${q}`,
+      ddg: `https://r.jina.ai/https://duckduckgo.com/html/?q=${q}`,
+      yandex: `https://r.jina.ai/http://yandex.com/search/?text=${q}`,
     }[engineKey];
 
-    fetchText(searchUrl, 12000, 4)
+    // DuckDuckGo's HTML results wrap every organic link in a redirector:
+    //   https://duckduckgo.com/l/?uddg=<url-encoded target>&rut=...
+    function extractDdgUrls(text) {
+      const out = [];
+      const re = /duckduckgo\.com\/l\/\?uddg=([^&\s)]+)/gi;
+      let m;
+      while ((m = re.exec(text))) {
+        try { out.push(decodeURIComponent(m[1])); } catch (_) { /* skip malformed */ }
+      }
+      return out;
+    }
+    // Bing wraps results in a click-tracking redirector with a base64url-
+    // encoded target in the "u" param, prefixed with "a1":
+    //   https://www.bing.com/ck/a?...&u=a1<base64url>&...
+    function extractBingUrls(text) {
+      const out = [];
+      const re = /[?&]u=a1([A-Za-z0-9_-]+)/g;
+      let m;
+      while ((m = re.exec(text))) {
+        try {
+          const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+          const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
+          out.push(Buffer.from(b64 + pad, 'base64').toString('utf8'));
+        } catch (_) { /* skip malformed */ }
+      }
+      return out;
+    }
+    // Yandex's reader-mode markdown contains plain, unwrapped result URLs
+    // alongside its own nav/chrome links (login, translate, images, etc.)
+    // — extract all URLs generically and filter those out below.
+    function extractGenericUrls(text) {
+      return (text.match(/https?:\/\/[^\s"'<>()]+/gi) || []).map(u => u.replace(/[),.]+$/, ''));
+    }
+
+    const NAV_HOST_PATTERNS = [
+      'duckduckgo.com', 'bing.com', 'google.com', 'yandex.com', 'yandex.ru',
+      'passport.yandex', 'translate.yandex', 'challenges.cloudflare.com',
+      'r.jina.ai',
+    ];
+    function isNavLink(url) {
+      try {
+        const h = new URL(url).hostname.toLowerCase();
+        return NAV_HOST_PATTERNS.some(p => h.includes(p));
+      } catch (_) { return true; }
+    }
+
+    function extractByEngine(text, key) {
+      let urls;
+      if (key === 'bing') urls = extractBingUrls(text);
+      else if (key === 'ddg' || key === 'google') urls = extractDdgUrls(text);
+      else urls = extractGenericUrls(text);
+      const seen = new Set();
+      const out = [];
+      for (const u of urls) {
+        if (!u || !/^https?:\/\//i.test(u) || isNavLink(u) || seen.has(u)) continue;
+        seen.add(u);
+        out.push(u);
+      }
+      return out;
+    }
+
+    fetchText(searchUrl, 12000, 4, {})
       .then(text => {
-        const urls = [...new Set((text.match(/https?:\/\/[^\s"'<>]+/gi) || [])
-          .map(item => item.replace(/[),.]+$/, ''))
-          .filter(Boolean))];
-        const cleaned = urls.filter(url => !url.includes('challenges.cloudflare.com') && !url.includes('google.com/search?q=') && !url.includes('www.google.com/search'));
+        let cleaned = extractByEngine(text, engineKey);
         const results = cleaned.slice(0, 8).map((url, idx) => ({
           title: `Dork result ${idx + 1}`,
           url,
@@ -2084,6 +2156,7 @@ const server = http.createServer((req, res) => {
     const positiveMsg   = urlObj.searchParams.get('positiveMsg') || '';
     const errorMsg      = urlObj.searchParams.get('errorMsg') || '';
     const notFoundStatus = Number(urlObj.searchParams.get('notFoundStatus')) || 0;
+    const expectedStatus = Number(urlObj.searchParams.get('expectedStatus')) || 0;
 
     let parsedV;
     try {
@@ -2098,27 +2171,58 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
     }
 
-    fetchStatusV(rawUrl, 10000, 4)
+    // Sites merged from WhatsMyName carry BOTH an expected "found" status
+    // code (e_code) and a "missing" status code (m_code) — WMN's own check
+    // relies on the RAW response code (often a 3xx redirect for missing
+    // profiles) rather than wherever that redirect eventually lands, so we
+    // must not auto-follow redirects here or we lose that signal. Sites
+    // without an expectedStatus (older/simpler entries) keep the old
+    // follow-redirects + status-200-fallback behavior.
+    const useWmnAlgorithm = expectedStatus > 0;
+    const maxRedirects = useWmnAlgorithm ? 0 : 4;
+
+    fetchStatusV(rawUrl, 10000, maxRedirects)
       .then(({ status, body }) => {
         let verdict = 'unknown';
-        if (status === 403 || status === 401 || status === 429) {
+        const lbody = body.toLowerCase();
+        const isBlockedPage = BLOCKED_BODY_PATTERNS.some(p => lbody.includes(p)) || BLOCKED_TITLE_PATTERNS.some(p => lbody.includes(p));
+
+        if (useWmnAlgorithm) {
+          // WMN-style dual signal: status code decides found/not_found;
+          // e_string (positiveMsg) / m_string (errorMsg), if present, must
+          // also agree, otherwise the result is inconclusive. Explicit
+          // codes are checked BEFORE the generic 403/401/429→blocked
+          // shortcut below, since a handful of sites use one of those
+          // codes as their normal "not found" signal (e.g. m_code: 401).
+          if (notFoundStatus && status === notFoundStatus) {
+            verdict = 'not_found';
+          } else if (status === expectedStatus) {
+            if (positiveMsg && !body.includes(positiveMsg)) verdict = 'unknown';
+            else if (errorMsg && body.includes(errorMsg)) verdict = 'not_found';
+            else verdict = 'found';
+          } else if (status === 403 || status === 401 || status === 429) {
+            verdict = 'blocked';
+          } else if (isBlockedPage) {
+            verdict = 'blocked';
+          } else {
+            verdict = 'unknown';
+          }
+        } else if (status === 403 || status === 401 || status === 429) {
+          verdict = 'blocked';
+        } else if (isBlockedPage) {
           verdict = 'blocked';
         } else if (status === 404 || status === 410) {
           verdict = 'not_found';
         } else if (notFoundStatus && status === notFoundStatus) {
           verdict = 'not_found';
+        } else if (checkMethod === 'message' && positiveMsg && body.includes(positiveMsg)) {
+          verdict = 'found';
+        } else if (checkMethod === 'message' && errorMsg && body.includes(errorMsg)) {
+          verdict = 'not_found';
         } else {
-          const lbody = body.toLowerCase();
-          if (BLOCKED_BODY_PATTERNS.some(p => lbody.includes(p)) || BLOCKED_TITLE_PATTERNS.some(p => lbody.includes(p))) {
-            verdict = 'blocked';
-          } else if (checkMethod === 'message' && positiveMsg && body.includes(positiveMsg)) {
-            verdict = 'found';
-          } else if (checkMethod === 'message' && errorMsg && body.includes(errorMsg)) {
-            verdict = 'not_found';
-          } else {
-            verdict = status === 200 ? 'found' : 'unknown';
-          }
+          verdict = status === 200 ? 'found' : 'unknown';
         }
+
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: true, verdict, status }));
       })

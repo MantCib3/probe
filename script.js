@@ -935,7 +935,7 @@ function makeCard(r, animDelay = 0) {
     // Tier 4: server-side /api/verify — for sites with no cors/cfProxy/auth
     // flag (e.g. the merged WhatsMyName catalog). Our own backend fetches
     // server-to-server, which isn't subject to browser CORS restrictions.
-    _cvQueue.push({ type: 'server', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null });
+    _cvQueue.push({ type: 'server', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null, expectedStatus: r.expectedStatus || null });
   }
 
   return card;
@@ -1059,7 +1059,7 @@ async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg, notFoundSt
 }
 
 async function _clientVerifyOne(job) {
-  const { type, card, checkUrl, checkMethod, errorMsg, positiveMsg, notFoundStatus } = job;
+  const { type, card, checkUrl, checkMethod, errorMsg, positiveMsg, notFoundStatus, expectedStatus } = job;
   if (!card || !card.isConnected) return;
 
   card.classList.add('cv-verifying');
@@ -1123,6 +1123,7 @@ async function _clientVerifyOne(job) {
       if (positiveMsg)    qs.set('positiveMsg', positiveMsg);
       if (errorMsg)       qs.set('errorMsg', errorMsg);
       if (notFoundStatus) qs.set('notFoundStatus', String(notFoundStatus));
+      if (expectedStatus) qs.set('expectedStatus', String(expectedStatus));
       const resp = await fetch('/api/verify?' + qs.toString(), { signal: AbortSignal.timeout(14000) });
       const payload = await resp.json();
       if (payload.ok && payload.verdict && payload.verdict !== 'unknown') {
@@ -1370,6 +1371,7 @@ async function startScan(username) {
       positiveMsg    : site.positiveMsg    || null,
       errorMsg       : site.errorMsg       || null,
       notFoundStatus : site.notFoundStatus || null,
+      expectedStatus : site.expectedStatus || null,
       caveat         : site.caveat         || null,
     };
     results.push(result);

@@ -17,7 +17,8 @@
     "urlMain": "https://www.instagram.com",
     "category": "social",
     "checkMethod": "status_code",
-    "checkUrl": "https://www.instagram.com/{}/"
+    "checkUrl": "https://www.instagram.com/{}/",
+    "expectedStatus": 200
   },
   {
     "name": "Facebook",
@@ -27,7 +28,8 @@
     "checkMethod": "message",
     "positiveMsg": "__isProfile",
     "errorMsg": "<title>Facebook</title>",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200
   },
   {
     "name": "TikTok",
@@ -60,7 +62,9 @@
     "urlMain": "https://vk.com",
     "category": "social",
     "checkMethod": "status_code",
-    "skipBodyCheck": true
+    "skipBodyCheck": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon",
@@ -90,7 +94,9 @@
     "crawlerUA": "googlebot",
     "checkUrl": "https://www.threads.com/@{}",
     "positiveMsg": "\"username\":",
-    "errorMsg": "Page Not Found"
+    "errorMsg": "Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Ask.fm",
@@ -107,7 +113,8 @@
     "category": "social",
     "checkMethod": "body",
     "apiUrl": "https://www.minds.com/api/v1/channel/{}",
-    "errorMsg": "\"status\":\"error\""
+    "errorMsg": "\"status\":\"error\"",
+    "expectedStatus": 200
   },
   {
     "name": "Plurk",
@@ -116,14 +123,17 @@
     "category": "social",
     "checkMethod": "status_code",
     "needsBrowser": true,
-    "errorMsg": "User Not Found! - Plurk Sign in Register your plurk ac"
+    "errorMsg": "User Not Found! - Plurk Sign in Register your plurk ac",
+    "expectedStatus": 200
   },
   {
     "name": "LiveJournal",
     "url": "https://{}.livejournal.com/",
     "urlMain": "https://www.livejournal.com",
     "category": "social",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Flickr",
@@ -131,7 +141,9 @@
     "urlMain": "https://www.flickr.com",
     "category": "social",
     "checkMethod": "status_code",
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Myspace",
@@ -140,14 +152,18 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Oops! We couldnÃ¢â‚¬â„¢t find that page.",
-    "defunct": true
+    "defunct": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Foursquare",
     "url": "https://foursquare.com/{}",
     "urlMain": "https://foursquare.com",
     "category": "social",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 308
   },
   {
     "name": "GitHub",
@@ -167,7 +183,8 @@
     "checkMethod": "body",
     "apiUrl": "https://gitlab.com/api/v4/users?username={}",
     "positiveMsg": "\"id\":",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Bitbucket",
@@ -177,7 +194,9 @@
     "checkMethod": "status_code",
     "apiUrl": "https://api.bitbucket.org/2.0/users/{}",
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "npm",
@@ -187,7 +206,9 @@
     "checkMethod": "body",
     "apiUrl": "https://registry.npmjs.org/-/v1/search?text=maintainer:{}&size=1",
     "errorMsg": "\"total\":0,",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "PyPI",
@@ -208,14 +229,17 @@
     "checkMethod": "body",
     "apiUrl": "https://hacker-news.firebaseio.com/v0/user/{}.json",
     "positiveMsg": "\"id\":",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Dev.to",
     "url": "https://dev.to/{}",
     "urlMain": "https://dev.to",
     "category": "developer",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "CodePen",
@@ -225,7 +249,9 @@
     "checkMethod": "message",
     "positiveMsg": "property=\"og:url\"",
     "errorMsg": "data-test-id=\"text-404\"",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Replit",
@@ -233,7 +259,9 @@
     "urlMain": "https://replit.com",
     "category": "developer",
     "checkMethod": "status_code",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Keybase",
@@ -245,14 +273,17 @@
     "positiveMsg": "\"status\":{\"code\":0",
     "errorMsg": "\"status\":{\"code\":404",
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "HuggingFace",
     "url": "https://huggingface.co/{}",
     "urlMain": "https://huggingface.co",
     "category": "developer",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Kaggle",
@@ -263,7 +294,9 @@
     "usernameInBody": true,
     "positiveMsg": "property=\"og:username\"",
     "errorMsg": "Kaggle: Your Home for Data Science</title>",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Exercism",
@@ -280,7 +313,8 @@
     "checkMethod": "message",
     "positiveMsg": "\"id\":",
     "errorMsg": "\"user\":null",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200
   },
   {
     "name": "Codeberg",
@@ -290,14 +324,18 @@
     "checkMethod": "status_code",
     "apiUrl": "https://codeberg.org/api/v1/users/{}",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "CodeWars",
     "url": "https://www.codewars.com/users/{}",
     "urlMain": "https://www.codewars.com",
     "category": "developer",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "HackerEarth",
@@ -325,7 +363,9 @@
     "checkUrl": "https://sourceforge.net/rest/u/{}/profile",
     "positiveMsg": "\"username\":",
     "errorMsg": "message-image-404",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Steam",
@@ -337,7 +377,8 @@
     "errorMsg": "<error>",
     "positiveMsg": "<steamID64>",
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Chess.com",
@@ -346,7 +387,9 @@
     "category": "gaming",
     "checkMethod": "status_code",
     "cors": true,
-    "checkUrl": "https://api.chess.com/pub/player/{}"
+    "checkUrl": "https://api.chess.com/pub/player/{}",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Lichess",
@@ -373,7 +416,9 @@
     "category": "gaming",
     "checkMethod": "status_code",
     "needsBrowser": true,
-    "errorMsg": "n In Ã°Å¸â€¡ÂºÃ°Å¸â€¡Â¸ Account Not Found Sorry, no account with that name was f"
+    "errorMsg": "n In Ã°Å¸â€¡ÂºÃ°Å¸â€¡Â¸ Account Not Found Sorry, no account with that name was f",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Newgrounds",
@@ -383,14 +428,18 @@
     "checkMethod": "message",
     "positiveMsg": "Newgrounds Profile",
     "errorMsg": "Account Not Found",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Itch.io",
     "url": "https://{}.itch.io/",
     "urlMain": "https://itch.io",
     "category": "gaming",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "PSN Profiles",
@@ -408,7 +457,8 @@
     "errorMsg": "Username is valid",
     "checkUrl": "https://auth.roblox.com/v1/usernames/validate?username={}&birthday=2019-12-31T23:00:00.000Z",
     "cors": true,
-    "positiveMsg": "Username is already in use"
+    "positiveMsg": "Username is already in use",
+    "expectedStatus": 200
   },
   {
     "name": "Kick",
@@ -419,7 +469,9 @@
     "checkUrl": "https://kick.com/api/v2/channels/{}",
     "cors": true,
     "positiveMsg": "\"id\"",
-    "errorMsg": "Not Found"
+    "errorMsg": "Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Rumble",
@@ -468,7 +520,9 @@
     "category": "content",
     "checkMethod": "status_code",
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Patreon",
@@ -479,7 +533,9 @@
     "errorMsg": "errorCode\": 404,",
     "undetectable": true,
     "cfProxy": true,
-    "positiveMsg": "full_name\":"
+    "positiveMsg": "full_name\":",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Ko-fi",
@@ -491,7 +547,9 @@
     "allowBrowserFallback": false,
     "positiveMsg": "id=\"profile-header\"",
     "errorMsg": "<title>Object moved</title>",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Behance",
@@ -510,7 +568,9 @@
     "checkMethod": "message",
     "crawlerUA": "googlebot",
     "positiveMsg": " | Dribbble",
-    "errorMsg": "(404)</title>"
+    "errorMsg": "(404)</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "ArtStation",
@@ -521,7 +581,9 @@
     "crawlerUA": "googlebot",
     "positiveMsg": "Portfolio",
     "errorMsg": "Page not found",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "DeviantArt",
@@ -573,7 +635,9 @@
     "checkMethod": "message",
     "errorMsg": "There is no one here",
     "allowBrowserFallback": false,
-    "crawlerUA": "googlebot"
+    "crawlerUA": "googlebot",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Unsplash",
@@ -598,7 +662,9 @@
     "checkUrl": "https://www.wattpad.com/api/v3/users/{}",
     "cors": true,
     "positiveMsg": "\"username\":",
-    "errorMsg": "\"error_code\":"
+    "errorMsg": "\"error_code\":",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Vimeo",
@@ -626,7 +692,9 @@
     "checkUrl": "https://api.imgur.com/account/v1/accounts/{}?client_id=546c25a59c58ad7",
     "cors": true,
     "positiveMsg": "\"username\":",
-    "errorMsg": "\"code\":\"404\""
+    "errorMsg": "\"code\":\"404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Spotify",
@@ -635,7 +703,9 @@
     "category": "content",
     "checkMethod": "message",
     "positiveMsg": "content=\"profile\"",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Odysee",
@@ -677,14 +747,18 @@
     "crawlerUA": "googlebot",
     "cfProxy": true,
     "positiveMsg": "Credentials",
-    "errorMsg": "Page Not Found"
+    "errorMsg": "Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Disqus",
     "url": "https://disqus.com/by/{}/",
     "urlMain": "https://disqus.com",
     "category": "forum",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "ProductHunt",
@@ -696,7 +770,9 @@
     "cfProxy": true,
     "undetectable": true,
     "positiveMsg": "s profile on Product Hunt",
-    "errorMsg": "Product Hunt - All newest Products"
+    "errorMsg": "Product Hunt - All newest Products",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Lemmy",
@@ -714,7 +790,9 @@
     "urlMain": "https://lobste.rs",
     "category": "forum",
     "checkMethod": "message",
-    "errorMsg": "No such user"
+    "errorMsg": "No such user",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Slashdot",
@@ -754,14 +832,16 @@
     "undetectable": true,
     "cfProxy": true,
     "positiveMsg": "\"profile_image\"",
-    "errorMsg": "Page Not Found"
+    "errorMsg": "Page Not Found",
+    "expectedStatus": 201
   },
   {
     "name": "Freelancer",
     "url": "https://www.freelancer.com/u/{}",
     "urlMain": "https://www.freelancer.com",
     "category": "professional",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200
   },
   {
     "name": "Guru",
@@ -791,7 +871,9 @@
     "cfProxy": true,
     "checkUrl": "https://www.etsy.com/people/{}",
     "positiveMsg": "favorite items - Etsy</title>",
-    "errorMsg": "Sorry, the member you are looking for does not exist"
+    "errorMsg": "Sorry, the member you are looking for does not exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Redbubble",
@@ -850,7 +932,9 @@
     "undetectable": true,
     "cfProxy": true,
     "positiveMsg": "is using Poshmark to sell items from their closet.",
-    "errorMsg": "Page not found - Poshmark"
+    "errorMsg": "Page not found - Poshmark",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Depop",
@@ -871,7 +955,9 @@
     "url": "https://about.me/{}",
     "urlMain": "https://about.me",
     "category": "misc",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Linktree",
@@ -879,7 +965,9 @@
     "urlMain": "https://linktr.ee",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Sorry, this page isnÃ¢â‚¬â„¢t available"
+    "errorMsg": "Sorry, this page isnÃ¢â‚¬â„¢t available",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Gravatar",
@@ -918,7 +1006,8 @@
     "undetectable": true,
     "cfProxy": true,
     "positiveMsg": "data-testid=\"report-button\"",
-    "errorMsg": "id=\"username-available\""
+    "errorMsg": "id=\"username-available\"",
+    "expectedStatus": 200
   },
   {
     "name": "Scribd",
@@ -938,7 +1027,8 @@
     "urlMain": "https://t.me",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "subscribers"
+    "positiveMsg": "subscribers",
+    "expectedStatus": 200
   },
   {
     "name": "Goodreads",
@@ -955,7 +1045,9 @@
     "checkMethod": "message",
     "positiveMsg": "'s profile on Letterboxd",
     "errorMsg": "Sorry, we can't find the page you've requested.",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Carrd",
@@ -978,7 +1070,9 @@
     "url": "https://www.strava.com/athletes/{}",
     "urlMain": "https://www.strava.com",
     "category": "misc",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 301,
+    "notFoundStatus": 404
   },
   {
     "name": "Untappd",
@@ -989,7 +1083,9 @@
     "allowBrowserFallback": false,
     "positiveMsg": "class=\"cont user_profile\"",
     "errorMsg": "class=\"search_404\"",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Duolingo",
@@ -998,7 +1094,8 @@
     "category": "misc",
     "checkMethod": "body",
     "apiUrl": "https://www.duolingo.com/2017-06-30/users?username={}",
-    "errorMsg": "\"users\":[]"
+    "errorMsg": "\"users\":[]",
+    "expectedStatus": 200
   },
   {
     "name": "Genius",
@@ -1024,7 +1121,9 @@
     "undetectable": true,
     "crawlerUA": "googlebot",
     "positiveMsg": "- Profile | Pinterest",
-    "errorMsg": "id=\"home-main-title\""
+    "errorMsg": "id=\"home-main-title\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Snapchat",
@@ -1036,7 +1135,8 @@
     "crawlerUA": "googlebot",
     "checkUrl": "https://www.snapchat.com/@{}",
     "positiveMsg": "is on Snapchat!",
-    "errorMsg": "NOT_FOUND"
+    "errorMsg": "NOT_FOUND",
+    "expectedStatus": 200
   },
   {
     "name": "Docker Hub",
@@ -1064,7 +1164,8 @@
     "checkUrl": "https://app.buymeacoffee.com/api/v1/check_availability?username={}",
     "cors": true,
     "positiveMsg": "\"available\":false",
-    "errorMsg": "\"available\":true"
+    "errorMsg": "\"available\":true",
+    "expectedStatus": 200
   },
   {
     "name": "VSCO",
@@ -1075,14 +1176,18 @@
     "undetectable": true,
     "cfProxy": true,
     "positiveMsg": "permaSubdomain",
-    "errorMsg": "\"error\":\"site_not_found\"}"
+    "errorMsg": "\"error\":\"site_not_found\"}",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Pastebin",
     "url": "https://pastebin.com/u/{}",
     "urlMain": "https://pastebin.com",
     "category": "misc",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Clubhouse",
@@ -1100,7 +1205,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Not Found",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MyAnimeList",
@@ -1108,7 +1215,9 @@
     "urlMain": "https://myanimelist.net",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>404 Not Found"
+    "errorMsg": "<title>404 Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Discord (User)",
@@ -1117,7 +1226,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"taken\":false",
-    "defunct": true
+    "defunct": true,
+    "expectedStatus": 200
   },
   {
     "name": "Gettr",
@@ -1137,7 +1247,9 @@
     "checkMethod": "message",
     "errorMsg": "404, File Not Found!",
     "positiveMsg": "Contributions",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Neocities",
@@ -1145,7 +1257,9 @@
     "urlMain": "https://neocities.org",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "- Not Found</title>"
+    "errorMsg": "- Not Found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "OpenStreetMap",
@@ -1153,7 +1267,9 @@
     "urlMain": "https://www.openstreetmap.org",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "does not exist"
+    "errorMsg": "does not exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Speaker Deck",
@@ -1161,7 +1277,9 @@
     "urlMain": "https://speakerdeck.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "User Not Found - Speaker Deck"
+    "errorMsg": "User Not Found - Speaker Deck",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Steemit",
@@ -1171,7 +1289,8 @@
     "checkMethod": "message",
     "errorMsg": "\"success\":true",
     "positiveMsg": "\"success\":false",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Tellonym",
@@ -1181,7 +1300,9 @@
     "checkMethod": "message",
     "errorMsg": "\"code\":\"NOT_FOUND\"",
     "undetectable": true,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Truth Social",
@@ -1200,7 +1321,9 @@
     "urlMain": "https://twitcasting.tv",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Not Found"
+    "errorMsg": "Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Wikidot",
@@ -1208,7 +1331,8 @@
     "urlMain": "https://www.wikidot.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<div class=\"error-block\">User does not exist.</div>"
+    "errorMsg": "<div class=\"error-block\">User does not exist.</div>",
+    "expectedStatus": 200
   },
   {
     "name": "Xing",
@@ -1216,7 +1340,9 @@
     "urlMain": "https://www.xing.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "404 Not Found | XING"
+    "errorMsg": "404 Not Found | XING",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "YouNow",
@@ -1225,7 +1351,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"errorMsg\":\"No users found\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Zomato",
@@ -1233,7 +1360,9 @@
     "urlMain": "https://www.zomato.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "This is a 404 page and we think it's fairly clear"
+    "errorMsg": "This is a 404 page and we think it's fairly clear",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Trello",
@@ -1242,7 +1371,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "<h1>Oh no! 404!</h1>",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "tripadvisor",
@@ -1251,7 +1382,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "This page is on vacation",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "BuzzFeed",
@@ -1260,7 +1393,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "We can't find the page you're looking for",
-    "defunct": true
+    "defunct": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "postcrossing",
@@ -1268,7 +1403,9 @@
     "urlMain": "https://www.postcrossing.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "- Postcrossing"
+    "errorMsg": "- Postcrossing",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Destructoid",
@@ -1278,7 +1415,8 @@
     "checkMethod": "message",
     "errorMsg": "Error in query",
     "allowBrowserFallback": false,
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200
   },
   {
     "name": "Anime-Planet",
@@ -1286,7 +1424,9 @@
     "urlMain": "https://www.anime-planet.com/users/",
     "category": "social",
     "checkMethod": "status_code",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 400,
+    "notFoundStatus": 200
   },
   {
     "name": "Zepeto",
@@ -1295,7 +1435,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "errorCode\":",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "LINE",
@@ -1303,7 +1444,9 @@
     "urlMain": "https://line.me",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "404 Not Found"
+    "errorMsg": "404 Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "weheartit",
@@ -1314,7 +1457,9 @@
     "errorMsg": " (404)</title>",
     "allowBrowserFallback": false,
     "positiveMsg": " on We Heart It</title>",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "solo.to",
@@ -1325,7 +1470,9 @@
     "errorMsg": "Page not found",
     "allowBrowserFallback": false,
     "positiveMsg": "solo.to",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Geocaching",
@@ -1333,7 +1480,9 @@
     "urlMain": "https://www.geocaching.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "class=\"callout http-error\""
+    "errorMsg": "class=\"callout http-error\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "zhihu",
@@ -1341,7 +1490,9 @@
     "urlMain": "https://api.zhihu.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"name\": \"NotFoundException\""
+    "errorMsg": "\"name\": \"NotFoundException\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Parler",
@@ -1349,7 +1500,9 @@
     "urlMain": "https://parler.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "join Parler today"
+    "errorMsg": "join Parler today",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "FACEIT",
@@ -1358,7 +1511,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"user not found\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Fandom",
@@ -1369,7 +1524,9 @@
     "errorMsg": "Not Found",
     "allowBrowserFallback": false,
     "cfProxy": true,
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Fortnite Tracker",
@@ -1379,7 +1536,9 @@
     "checkMethod": "message",
     "errorMsg": "Fortnite Player Stats -",
     "undetectable": true,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Game Jolt",
@@ -1388,7 +1547,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "null,",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Gamespot",
@@ -1399,7 +1560,8 @@
     "errorMsg": "\"success\":false",
     "checkUrl": "https://www.gamespot.com/profile/{}/summary/activity/?ajax",
     "positiveMsg": "\"success\":true",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200
   },
   {
     "name": "GOG",
@@ -1407,7 +1569,9 @@
     "urlMain": "https://www.gog.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "href=\"http://www.gog.com/404\""
+    "errorMsg": "href=\"http://www.gog.com/404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Habbo.com",
@@ -1416,7 +1580,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MCUUID (Minecraft)",
@@ -1425,7 +1591,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "minecraft.api_failure",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Minecraft List",
@@ -1433,7 +1600,8 @@
     "urlMain": "https://minecraftlist.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "0 Minecraft servers recently"
+    "errorMsg": "0 Minecraft servers recently",
+    "expectedStatus": 200
   },
   {
     "name": "Mod DB",
@@ -1443,7 +1611,8 @@
     "checkMethod": "message",
     "errorMsg": "\"available\":true",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Moxfield",
@@ -1462,7 +1631,8 @@
     "urlMain": "https://eune.op.gg",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Guide - OP.GG"
+    "errorMsg": "Guide - OP.GG",
+    "expectedStatus": 200
   },
   {
     "name": "osu!",
@@ -1470,7 +1640,9 @@
     "urlMain": "https://osu.ppy.sh",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "User not found! ;_;"
+    "errorMsg": "User not found! ;_;",
+    "expectedStatus": 302,
+    "notFoundStatus": 404
   },
   {
     "name": "Playstation Network",
@@ -1480,7 +1652,8 @@
     "checkMethod": "message",
     "errorMsg": "We couldn't find anything",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "pokemonshowdown",
@@ -1489,7 +1662,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "(Unregistered)",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "BoardGameGeek",
@@ -1498,7 +1673,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "\"isValid\":true",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "BIGO Live",
@@ -1509,7 +1685,8 @@
     "errorMsg": "userInfo:{}",
     "cfProxy": true,
     "undetectable": true,
-    "positiveMsg": "userInfo:{nickName"
+    "positiveMsg": "userInfo:{nickName",
+    "expectedStatus": 200
   },
   {
     "name": "hiberworld",
@@ -1518,7 +1695,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "Looks like you got lost",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "expectedStatus": 200
   },
   {
     "name": "Apex Legends",
@@ -1528,7 +1706,9 @@
     "checkMethod": "message",
     "errorMsg": "CollectorResultStatus::NotFound",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Xbox Gamertag",
@@ -1536,7 +1716,9 @@
     "urlMain": "https://www.xboxgamertag.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Gamertag doesn't exist"
+    "errorMsg": "Gamertag doesn't exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "ArmorGames",
@@ -1546,7 +1728,9 @@
     "checkMethod": "message",
     "errorMsg": "We couldn't find the page",
     "positiveMsg": "Armor Games Profile",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "speedrun",
@@ -1556,7 +1740,9 @@
     "checkMethod": "message",
     "errorMsg": "<title>speedrun.com",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "TETR.IO",
@@ -1565,7 +1751,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "SteamGifts",
@@ -1576,7 +1764,9 @@
     "positiveMsg": "\"identifier\":",
     "allowBrowserFallback": false,
     "errorMsg": "Page not found",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Wowhead",
@@ -1585,7 +1775,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "Error - Wowhead",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "TruckersMP",
@@ -1594,7 +1786,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "<h4>Could not find any member using these credentials</h4>",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "lichess.org",
@@ -1603,7 +1796,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "false",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "LeetCode",
@@ -1612,7 +1806,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"matchedUser\":null",
-    "defunct": true
+    "defunct": true,
+    "expectedStatus": 200
   },
   {
     "name": "Gitea",
@@ -1621,7 +1816,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"user redirect does not exist",
-    "defunct": true
+    "defunct": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Wakatime",
@@ -1630,7 +1827,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"error\": \"Not found.\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "HackerRank",
@@ -1639,7 +1838,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Not Found\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Codecademy",
@@ -1647,7 +1848,8 @@
     "urlMain": "https://www.codecademy.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"type\":\"UserNotFound\""
+    "errorMsg": "\"type\":\"UserNotFound\"",
+    "expectedStatus": 200
   },
   {
     "name": "AtCoder",
@@ -1657,7 +1859,9 @@
     "checkMethod": "message",
     "errorMsg": ">404 Page Not Found</h1>",
     "positiveMsg": "<h3>Contest Status</h3>",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "CodeChef",
@@ -1665,7 +1869,9 @@
     "urlMain": "https://www.codechef.com",
     "category": "developer",
     "checkMethod": "message",
-    "positiveMsg": "class=\"user-profile-container\""
+    "positiveMsg": "class=\"user-profile-container\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Codeforces",
@@ -1685,7 +1891,9 @@
     "checkMethod": "message",
     "errorMsg": "Could not find user with username",
     "undetectable": true,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 422
   },
   {
     "name": "devRant",
@@ -1705,7 +1913,9 @@
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User not found\"",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "GeeksForGeeks",
@@ -1723,7 +1933,9 @@
     "urlMain": "https://www.hackster.io",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "id=\"error\""
+    "errorMsg": "id=\"error\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "JSFiddle",
@@ -1733,7 +1945,9 @@
     "checkMethod": "message",
     "errorMsg": "That page doesn't exist.",
     "allowBrowserFallback": false,
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Monkeytype",
@@ -1742,7 +1956,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User not found\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "RubyGems.org",
@@ -1751,7 +1967,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Not Found\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Scratch",
@@ -1760,7 +1978,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"msg\":\"valid username\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Topcoder",
@@ -1769,7 +1988,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"Member with handle:",
-    "defunct": true
+    "defunct": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Bugcrowd",
@@ -1778,7 +1999,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Not Found\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "HackerOne",
@@ -1786,7 +2009,8 @@
     "urlMain": "https://hackerone.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"type\":\"NOT_FOUND\""
+    "errorMsg": "\"type\":\"NOT_FOUND\"",
+    "expectedStatus": 200
   },
   {
     "name": "Hackernoon",
@@ -1808,7 +2032,8 @@
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "Udemy",
@@ -1820,7 +2045,9 @@
     "allowBrowserFallback": false,
     "cfProxy": true,
     "undetectable": true,
-    "positiveMsg": "| Udemy</title>"
+    "positiveMsg": "| Udemy</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Chocolatey",
@@ -1828,7 +2055,9 @@
     "urlMain": "https://community.chocolatey.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "id=\"error404Message\""
+    "errorMsg": "id=\"error404Message\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "PCPartPicker",
@@ -1837,7 +2066,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "The page you requested could not be found.",
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "DOTAFire",
@@ -1847,7 +2078,8 @@
     "checkMethod": "message",
     "errorMsg": ">No results found</span>",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "sporcle",
@@ -1856,7 +2088,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "This Sporcle user cannot be found.",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Ubisoft",
@@ -1864,7 +2098,9 @@
     "urlMain": "https://discussions.ubisoft.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "You seem to have stumbled upon a page that does not exist."
+    "errorMsg": "You seem to have stumbled upon a page that does not exist.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Diablo",
@@ -1873,7 +2109,9 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "The requested user does not exist",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "SimplePlanes",
@@ -1881,7 +2119,9 @@
     "urlMain": "https://www.simpleplanes.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<title>SimplePlanes Airplanes</title>"
+    "errorMsg": "<title>SimplePlanes Airplanes</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "smule",
@@ -1891,7 +2131,9 @@
     "checkMethod": "message",
     "errorMsg": "\"code\":",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Mixcloud",
@@ -1900,7 +2142,9 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"error\":",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Audiojungle",
@@ -1908,7 +2152,9 @@
     "urlMain": "https://audiojungle.net",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "404 - Nothing to see here"
+    "errorMsg": "404 - Nothing to see here",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Discogs",
@@ -1917,7 +2163,9 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"message\": \"User does not exist or may have been deleted.\"",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Bandlab",
@@ -1925,7 +2173,9 @@
     "urlMain": "https://www.bandlab.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "CouldnÃ¢â‚¬â„¢t find any matching element, it might be deleted"
+    "errorMsg": "CouldnÃ¢â‚¬â„¢t find any matching element, it might be deleted",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Blogspot",
@@ -1934,7 +2184,9 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Blog not found",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "WordPress.com (Public)",
@@ -1942,7 +2194,9 @@
     "urlMain": "https://public-api.wordpress.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"unknown_blog\""
+    "errorMsg": "\"error\":\"unknown_blog\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Researchgate",
@@ -1951,7 +2205,9 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "20+ million researchers on ResearchGate",
-    "allowBrowserFallback": false
+    "allowBrowserFallback": false,
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Houzz",
@@ -1959,7 +2215,9 @@
     "urlMain": "https://www.houzz.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Page Not Found"
+    "errorMsg": "Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Quizlet",
@@ -1970,7 +2228,8 @@
     "errorMsg": "\"success\":true",
     "undetectable": true,
     "positiveMsg": "\"success\":false",
-    "cors": true
+    "cors": true,
+    "expectedStatus": 200
   },
   {
     "name": "LibraryThing",
@@ -1980,7 +2239,8 @@
     "checkMethod": "message",
     "errorMsg": "Error: This user doesn't exist",
     "allowBrowserFallback": false,
-    "cfProxy": true
+    "cfProxy": true,
+    "expectedStatus": 200
   },
   {
     "name": "carrd.co",
@@ -1988,7 +2248,9 @@
     "urlMain": "https://{}.carrd.co",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Sorry, the requested page could not be found."
+    "errorMsg": "Sorry, the requested page could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "X",
@@ -1998,7 +2260,8 @@
     "checkMethod": "message",
     "cors": false,
     "positiveMsg": "\"reason\":\"taken\"",
-    "errorMsg": "\"reason\":\"available\""
+    "errorMsg": "\"reason\":\"available\"",
+    "expectedStatus": 200
   },
   {
     "name": "247CTF",
@@ -2007,7 +2270,9 @@
     "category": "developer",
     "checkMethod": "message",
     "positiveMsg": "avatar-container d-flex",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "247sports",
@@ -2015,7 +2280,9 @@
     "urlMain": "https://247sports.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>247Sports</title>"
+    "errorMsg": "<title>247Sports</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "35photo",
@@ -2023,7 +2290,9 @@
     "urlMain": "https://35photo.pro",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "userNameBlock"
+    "positiveMsg": "userNameBlock",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "3dtoday",
@@ -2031,7 +2300,9 @@
     "urlMain": "https://3dtoday.ru",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "class=\"header_user_name"
+    "positiveMsg": "class=\"header_user_name",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "7cup",
@@ -2039,7 +2310,9 @@
     "urlMain": "https://7cups.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Oops! The content you're attempting to access could not be found."
+    "errorMsg": "Oops! The content you're attempting to access could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "7dach",
@@ -2047,7 +2320,9 @@
     "urlMain": "https://7dach.ru",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>Ошибка / 7dach.ru"
+    "errorMsg": "<title>Ошибка / 7dach.ru",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "ACF",
@@ -2055,7 +2330,9 @@
     "urlMain": "https://support.advancedcustomfields.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<title>Page Not Found - ACF Support</title>"
+    "errorMsg": "<title>Page Not Found - ACF Support</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "AdmireMe.VIP",
@@ -2063,7 +2340,9 @@
     "urlMain": "https://admireme.vip",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Page Not Found |"
+    "errorMsg": "<title>Page Not Found |",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "adultism",
@@ -2071,7 +2350,9 @@
     "urlMain": "https://adultism.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title> Not Found"
+    "errorMsg": "<title> Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "ADVFN",
@@ -2079,7 +2360,9 @@
     "urlMain": "https://uk.advfn.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "ADVFN ERROR - Page Not Found"
+    "errorMsg": "ADVFN ERROR - Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Albicla",
@@ -2087,7 +2370,9 @@
     "urlMain": "https://albicla.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "404 Nie znaleziono użytkownika"
+    "errorMsg": "404 Nie znaleziono użytkownika",
+    "expectedStatus": 500,
+    "notFoundStatus": 200
   },
   {
     "name": "alik",
@@ -2095,7 +2380,9 @@
     "urlMain": "https://alik.cz",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>Vizitka nenalezena"
+    "errorMsg": "<title>Vizitka nenalezena",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Alura",
@@ -2103,7 +2390,9 @@
     "urlMain": "https://cursos.alura.com.br",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"Not Found\""
+    "errorMsg": "\"error\":\"Not Found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Ameblo",
@@ -2111,7 +2400,9 @@
     "urlMain": "https://ameblo.jp",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "削除された可能性がございます。"
+    "errorMsg": "削除された可能性がございます。",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "AmericanThinker",
@@ -2119,7 +2410,9 @@
     "urlMain": "https://americanthinker.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "title>404 Not Found</title>"
+    "errorMsg": "title>404 Not Found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "appian Community",
@@ -2127,7 +2420,9 @@
     "urlMain": "https://community.appian.com",
     "category": "developer",
     "checkMethod": "message",
-    "positiveMsg": "class=\"avatar-container"
+    "positiveMsg": "class=\"avatar-container",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Arch Linux GitLab",
@@ -2135,7 +2430,8 @@
     "urlMain": "https://gitlab.archlinux.org",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "[]"
+    "errorMsg": "[]",
+    "expectedStatus": 200
   },
   {
     "name": "Arduino (Forum)",
@@ -2143,7 +2439,9 @@
     "urlMain": "https://forum.arduino.cc",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"error_type\":\"not_found\""
+    "errorMsg": "\"error_type\":\"not_found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Arduino (Project Hub)",
@@ -2151,7 +2449,8 @@
     "urlMain": "https://projecthub.arduino.cc",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"userInfo\":null"
+    "errorMsg": "\"userInfo\":null",
+    "expectedStatus": 200
   },
   {
     "name": "Arsmate",
@@ -2159,7 +2458,9 @@
     "urlMain": "https://arsmate.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "error-link mt-5"
+    "errorMsg": "error-link mt-5",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Artbreeder",
@@ -2167,7 +2468,9 @@
     "urlMain": "https://artbreeder.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "error: {message:\"User not found\""
+    "errorMsg": "error: {message:\"User not found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "asciinema",
@@ -2175,7 +2478,9 @@
     "urlMain": "https://asciinema.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<h1>404 Not Found</h1>"
+    "errorMsg": "<h1>404 Not Found</h1>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "au.ru",
@@ -2183,7 +2488,9 @@
     "urlMain": "https://au.ru",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Пользователь не найден"
+    "errorMsg": "Пользователь не найден",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Avid Community",
@@ -2192,7 +2499,9 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "The user you requested cannot be found.",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "babepedia",
@@ -2200,7 +2509,9 @@
     "urlMain": "https://babepedia.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Profile not found"
+    "errorMsg": "Profile not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "BabyPips",
@@ -2208,7 +2519,9 @@
     "urlMain": "https://forums.babypips.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found"
+    "errorMsg": "The requested URL or resource could not be found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "bblog_ru",
@@ -2216,7 +2529,8 @@
     "urlMain": "https://babyblog.ru",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "БэбиБлог - беременность, календарь беременности, дневники"
+    "errorMsg": "БэбиБлог - беременность, календарь беременности, дневники",
+    "expectedStatus": 200
   },
   {
     "name": "BDSMLR",
@@ -2224,7 +2538,8 @@
     "urlMain": "https://{}.bdsmlr.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "This blog doesn't exist."
+    "errorMsg": "This blog doesn't exist.",
+    "expectedStatus": 200
   },
   {
     "name": "bdsmsingles",
@@ -2232,7 +2547,9 @@
     "urlMain": "https://bdsmsingles.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "<title>Profile"
+    "positiveMsg": "<title>Profile",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Beacons",
@@ -2241,7 +2558,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "The page you are looking for does not seem to exist anymore",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200
   },
   {
     "name": "Bentbox",
@@ -2249,7 +2567,8 @@
     "urlMain": "https://bentbox.co",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "This user is currently not available"
+    "errorMsg": "This user is currently not available",
+    "expectedStatus": 200
   },
   {
     "name": "BiggerPockets",
@@ -2257,7 +2576,9 @@
     "urlMain": "https://biggerpockets.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Bimpos",
@@ -2265,7 +2586,9 @@
     "urlMain": "https://ask.bimpos.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Bio Site",
@@ -2273,7 +2596,9 @@
     "urlMain": "https://bio.site",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "This Bio Site doesn’t exist — Bio Site</title>"
+    "errorMsg": "This Bio Site doesn’t exist — Bio Site</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "biolink",
@@ -2281,7 +2606,9 @@
     "urlMain": "https://bio.link",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "The page you’re looking for doesn’t exist"
+    "errorMsg": "The page you’re looking for doesn’t exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "blogi.pl",
@@ -2289,7 +2616,8 @@
     "urlMain": "https://blogi.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Niepoprawny adres."
+    "errorMsg": "Niepoprawny adres.",
+    "expectedStatus": 200
   },
   {
     "name": "Blogmarks",
@@ -2297,7 +2625,8 @@
     "urlMain": "https://blogmarks.net",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "class=\"mark\""
+    "positiveMsg": "class=\"mark\"",
+    "expectedStatus": 200
   },
   {
     "name": "Bluesky Username",
@@ -2305,7 +2634,9 @@
     "urlMain": "https://public.api.bsky.app",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"Profile not found\""
+    "errorMsg": "\"message\":\"Profile not found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Bookcrossing",
@@ -2314,7 +2645,9 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "BookCrossing - Not Found",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Booknode",
@@ -2322,7 +2655,9 @@
     "urlMain": "https://booknode.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Page non trouvée"
+    "errorMsg": "<title>Page non trouvée",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Boosty",
@@ -2330,7 +2665,9 @@
     "urlMain": "https://api.boosty.to",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"blog_not_found\""
+    "errorMsg": "\"error\":\"blog_not_found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Booth",
@@ -2339,7 +2676,9 @@
     "category": "shopping",
     "checkMethod": "message",
     "positiveMsg": "- BOOTH</title>",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Brickset",
@@ -2347,7 +2686,8 @@
     "urlMain": "https://brickset.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "{name}</h1>"
+    "errorMsg": "{name}</h1>",
+    "expectedStatus": 200
   },
   {
     "name": "Bunpro",
@@ -2355,7 +2695,9 @@
     "urlMain": "https://community.bunpro.jp",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found."
+    "errorMsg": "The requested URL or resource could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "cafecito",
@@ -2364,7 +2706,9 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Es posible que el enlace que seleccionaste esté roto o que se haya eliminado la página",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Calendy",
@@ -2372,7 +2716,9 @@
     "urlMain": "https://calendly.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"not found\""
+    "errorMsg": "\"message\":\"not found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Cameo",
@@ -2380,7 +2726,9 @@
     "urlMain": "https://cameo.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"We could not find the user:"
+    "errorMsg": "\"message\":\"We could not find the user:",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Carbonmade",
@@ -2388,7 +2736,9 @@
     "urlMain": "https://{}.carbonmade.com",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": ".carbonmade.com not found"
+    "errorMsg": ".carbonmade.com not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Career.habr",
@@ -2396,7 +2746,9 @@
     "urlMain": "https://career.habr.com",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Ошибка 404"
+    "errorMsg": "Ошибка 404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "CastingCallClub",
@@ -2404,7 +2756,9 @@
     "urlMain": "https://castingcall.club",
     "category": "professional",
     "checkMethod": "message",
-    "positiveMsg": "class=\"text-sm text-gray-500\">Joined"
+    "positiveMsg": "class=\"text-sm text-gray-500\">Joined",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "cda.pl",
@@ -2412,7 +2766,8 @@
     "urlMain": "https://cda.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Strona na którą chcesz wejść nie istnieje"
+    "errorMsg": "Strona na którą chcesz wejść nie istnieje",
+    "expectedStatus": 200
   },
   {
     "name": "Cent",
@@ -2420,7 +2775,8 @@
     "urlMain": "https://beta.cent.co",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"results\":[]"
+    "errorMsg": "\"results\":[]",
+    "expectedStatus": 200
   },
   {
     "name": "cfx.re",
@@ -2428,7 +2784,9 @@
     "urlMain": "https://forum.cfx.re",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found."
+    "errorMsg": "The requested URL or resource could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "championat",
@@ -2436,7 +2794,9 @@
     "urlMain": "https://championat.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Извините, запрашиваемая страница не найдена"
+    "errorMsg": "Извините, запрашиваемая страница не найдена",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Chamsko",
@@ -2444,7 +2804,9 @@
     "urlMain": "https://chamsko.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Strona nie istnieje."
+    "errorMsg": "Strona nie istnieje.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "chatango.com",
@@ -2452,7 +2814,8 @@
     "urlMain": "https://{}.chatango.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>Unknown User!"
+    "errorMsg": "<title>Unknown User!",
+    "expectedStatus": 200
   },
   {
     "name": "chaturbate",
@@ -2460,7 +2823,9 @@
     "urlMain": "https://chaturbate.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "It's probably just a broken link"
+    "errorMsg": "It's probably just a broken link",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "CHEEZburger",
@@ -2468,7 +2833,9 @@
     "urlMain": "https://cheezburger.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<title>404 Not Found</title>"
+    "errorMsg": "<title>404 Not Found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Choko.Link",
@@ -2476,7 +2843,9 @@
     "urlMain": "https://choko.link",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The link might be incorrect or the profile has been deleted."
+    "errorMsg": "The link might be incorrect or the profile has been deleted.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Chomikuj.pl",
@@ -2484,7 +2853,9 @@
     "urlMain": "https://chomikuj.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Chomik o takiej nazwie nie istnieje"
+    "errorMsg": "Chomik o takiej nazwie nie istnieje",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Chyoa",
@@ -2492,7 +2863,9 @@
     "urlMain": "https://chyoa.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Sorry, I got distracted..."
+    "errorMsg": "Sorry, I got distracted...",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Cloudflare",
@@ -2500,7 +2873,9 @@
     "urlMain": "https://community.cloudflare.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found"
+    "errorMsg": "The requested URL or resource could not be found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "cnet",
@@ -2508,7 +2883,9 @@
     "urlMain": "https://cnet.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "class=\"c-error404_message\">"
+    "errorMsg": "class=\"c-error404_message\">",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Coda",
@@ -2516,7 +2893,9 @@
     "urlMain": "https://coda.io",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Coda | Page not found - Coda</title>"
+    "errorMsg": "<title>Coda | Page not found - Coda</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "codementor",
@@ -2524,7 +2903,9 @@
     "urlMain": "https://codementor.io",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "404/favicon.png"
+    "errorMsg": "404/favicon.png",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Coderwall",
@@ -2532,7 +2913,9 @@
     "urlMain": "https://coderwall.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "404! Our feels when that url is used"
+    "errorMsg": "404! Our feels when that url is used",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Commudle",
@@ -2540,7 +2923,9 @@
     "urlMain": "https://json.commudle.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"status\":404"
+    "errorMsg": "\"status\":404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Community Adobe",
@@ -2548,7 +2933,8 @@
     "urlMain": "https://community.adobe.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "No search results found."
+    "errorMsg": "No search results found.",
+    "expectedStatus": 200
   },
   {
     "name": "coroflot",
@@ -2556,7 +2942,9 @@
     "urlMain": "https://coroflot.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Looking for something?"
+    "errorMsg": "Looking for something?",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Coub",
@@ -2564,7 +2952,9 @@
     "urlMain": "https://coub.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"Unhandled exception\""
+    "errorMsg": "\"error\":\"Unhandled exception\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "cowboys4angels",
@@ -2572,7 +2962,9 @@
     "urlMain": "https://cowboys4angels.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Error Page not found"
+    "errorMsg": "Error Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Cracked",
@@ -2580,7 +2972,9 @@
     "urlMain": "https://cracked.com",
     "category": "social",
     "checkMethod": "message",
-    "positiveMsg": "Member Since"
+    "positiveMsg": "Member Since",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "crevado",
@@ -2588,7 +2982,9 @@
     "urlMain": "https://{}.crevado.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Site not found :-("
+    "errorMsg": "Site not found :-(",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Cropty",
@@ -2596,7 +2992,9 @@
     "urlMain": "https://api.cropty.io",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"errors\":"
+    "errorMsg": "\"errors\":",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Crowdin",
@@ -2604,7 +3002,9 @@
     "urlMain": "https://crowdin.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "class=\"error-page\""
+    "errorMsg": "class=\"error-page\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Cults3D",
@@ -2612,7 +3012,9 @@
     "urlMain": "https://cults3d.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Oh dear, this page is not working!"
+    "errorMsg": "Oh dear, this page is not working!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Cytoid",
@@ -2620,7 +3022,9 @@
     "urlMain": "https://cytoid.io",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Profile not found"
+    "errorMsg": "Profile not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Daily Kos",
@@ -2628,7 +3032,9 @@
     "urlMain": "https://dailykos.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Page not found! (404)"
+    "errorMsg": "Page not found! (404)",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "darudar",
@@ -2636,7 +3042,9 @@
     "urlMain": "https://darudar.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "404. Дару~дар: миру~мир!"
+    "errorMsg": "404. Дару~дар: миру~мир!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "dateinasia",
@@ -2644,7 +3052,9 @@
     "urlMain": "https://dateinasia.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for does not exist"
+    "errorMsg": "The page you are looking for does not exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "datezone",
@@ -2652,7 +3062,8 @@
     "urlMain": "https://datezone.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "404: page not found"
+    "errorMsg": "404: page not found",
+    "expectedStatus": 200
   },
   {
     "name": "Dating.ru",
@@ -2660,7 +3071,9 @@
     "urlMain": "https://dating.ru",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Такой страницы не существует."
+    "errorMsg": "Такой страницы не существует.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Demotywatory",
@@ -2668,7 +3081,8 @@
     "urlMain": "https://demotywatory.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Użytkownik o podanym pseudonimie nie istnieje."
+    "errorMsg": "Użytkownik o podanym pseudonimie nie istnieje.",
+    "expectedStatus": 200
   },
   {
     "name": "Designspriation",
@@ -2676,7 +3090,9 @@
     "urlMain": "https://designspiration.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Content Not Found"
+    "errorMsg": "Content Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "destream",
@@ -2684,7 +3100,9 @@
     "urlMain": "https://api.destream.net",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"errorMessage\":\"Error happened.\""
+    "errorMsg": "\"errorMessage\":\"Error happened.\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "dfgames",
@@ -2692,7 +3110,9 @@
     "urlMain": "https://dfgames.com.br",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "404 Not Found"
+    "errorMsg": "404 Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "DIBIZ",
@@ -2700,7 +3120,9 @@
     "urlMain": "https://dibiz.com",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "An Error Has Occurred"
+    "errorMsg": "An Error Has Occurred",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Digitalspy",
@@ -2708,7 +3130,9 @@
     "urlMain": "https://forums.digitalspy.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "User not found"
+    "errorMsg": "User not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "diigo",
@@ -2716,7 +3140,8 @@
     "urlMain": "https://diigo.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "{}"
+    "errorMsg": "{}",
+    "expectedStatus": 200
   },
   {
     "name": "Discourse",
@@ -2724,7 +3149,9 @@
     "urlMain": "https://meta.discourse.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found."
+    "errorMsg": "The requested URL or resource could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "discuss.elastic.co",
@@ -2732,7 +3159,9 @@
     "urlMain": "https://discuss.elastic.co",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Oops!"
+    "errorMsg": "Oops!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Dissenter",
@@ -2740,7 +3169,9 @@
     "urlMain": "https://dissenter.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "That user is not registered here."
+    "errorMsg": "That user is not registered here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Dojoverse",
@@ -2748,7 +3179,9 @@
     "urlMain": "https://dojoverse.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Looks like you got lost!."
+    "errorMsg": "Looks like you got lost!.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "donate.stream",
@@ -2757,7 +3190,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"Not found\"",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200
   },
   {
     "name": "Donatello",
@@ -2765,7 +3199,9 @@
     "urlMain": "https://donatello.to",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Сторінку не знайдено (404) - Donatello</title>"
+    "errorMsg": "<title>Сторінку не знайдено (404) - Donatello</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Donatik",
@@ -2773,7 +3209,9 @@
     "urlMain": "https://{}.donatik.io",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "id=\"__next_error__\""
+    "errorMsg": "id=\"__next_error__\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "Donation Alerts",
@@ -2781,7 +3219,9 @@
     "urlMain": "https://donationalerts.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"success\":false"
+    "errorMsg": "\"success\":false",
+    "expectedStatus": 200,
+    "notFoundStatus": 202
   },
   {
     "name": "Donatty",
@@ -2790,7 +3230,9 @@
     "category": "professional",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"internal error\"",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "dot.cards",
@@ -2798,7 +3240,8 @@
     "urlMain": "https://dot.cards",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "status\": \"username_not_found"
+    "errorMsg": "status\": \"username_not_found",
+    "expectedStatus": 200
   },
   {
     "name": "Dota2.ru",
@@ -2806,7 +3249,8 @@
     "urlMain": "https://dota2.ru",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "id=\"no-activity-posts\""
+    "errorMsg": "id=\"no-activity-posts\"",
+    "expectedStatus": 200
   },
   {
     "name": "DOU",
@@ -2814,7 +3258,9 @@
     "urlMain": "https://dou.ua",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "class=\"page-error\""
+    "errorMsg": "class=\"page-error\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "DRIVE2.RU",
@@ -2823,7 +3269,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "<title>404 — Страница не найдена</title>",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Droners",
@@ -2831,7 +3279,9 @@
     "urlMain": "https://droners.io",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "(404)</title>"
+    "errorMsg": "(404)</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "easyen",
@@ -2839,7 +3289,8 @@
     "urlMain": "https://easyen.ru",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Пользователь не найден"
+    "errorMsg": "Пользователь не найден",
+    "expectedStatus": 200
   },
   {
     "name": "Engadget",
@@ -2847,7 +3298,8 @@
     "urlMain": "https://engadget.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<title>,  - Engadget</title>"
+    "errorMsg": "<title>,  - Engadget</title>",
+    "expectedStatus": 200
   },
   {
     "name": "Etoro",
@@ -2856,7 +3308,9 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"ErrorCode\":\"NotFound\"",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Evolution CMS",
@@ -2864,7 +3318,8 @@
     "urlMain": "https://community.evocms.ru",
     "category": "developer",
     "checkMethod": "message",
-    "positiveMsg": "id=\"user-search\""
+    "positiveMsg": "id=\"user-search\"",
+    "expectedStatus": 200
   },
   {
     "name": "Expressional.social (Mastodon Instance)",
@@ -2872,7 +3327,9 @@
     "urlMain": "https://expressional.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Eyeem",
@@ -2880,7 +3337,9 @@
     "urlMain": "https://eyeem.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Not Found (404) | EyeEm"
+    "errorMsg": "Not Found (404) | EyeEm",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Fabswingers",
@@ -2888,7 +3347,8 @@
     "urlMain": "https://fabswingers.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The user you tried to view doesn't seem to be on the site any more"
+    "errorMsg": "The user you tried to view doesn't seem to be on the site any more",
+    "expectedStatus": 200
   },
   {
     "name": "Faktopedia",
@@ -2896,7 +3356,8 @@
     "urlMain": "https://faktopedia.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono użytkownika o podanym loginie."
+    "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
+    "expectedStatus": 200
   },
   {
     "name": "FanCentro",
@@ -2904,7 +3365,8 @@
     "urlMain": "https://fancentro.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"status\":false"
+    "errorMsg": "\"status\":false",
+    "expectedStatus": 200
   },
   {
     "name": "fanpop",
@@ -2912,7 +3374,9 @@
     "urlMain": "https://fanpop.com",
     "category": "social",
     "checkMethod": "message",
-    "positiveMsg": "Fanpopping since"
+    "positiveMsg": "Fanpopping since",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Fanslist (OnlyFans)",
@@ -2920,7 +3384,8 @@
     "urlMain": "https://fanslist.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "No results found for query"
+    "errorMsg": "No results found for query",
+    "expectedStatus": 200
   },
   {
     "name": "Fansly",
@@ -2929,7 +3394,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"response\":[]",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200
   },
   {
     "name": "Fark",
@@ -2937,7 +3403,8 @@
     "urlMain": "https://fark.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Tastes like chicken."
+    "errorMsg": "Tastes like chicken.",
+    "expectedStatus": 200
   },
   {
     "name": "FatSecret",
@@ -2945,7 +3412,9 @@
     "urlMain": "https://fatsecret.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Your Key to Success"
+    "errorMsg": "Your Key to Success",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Federated.press (Mastodon Instance)",
@@ -2953,7 +3422,9 @@
     "urlMain": "https://federated.press",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Figma",
@@ -2962,7 +3433,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Filmot Channel Search",
@@ -2970,7 +3443,8 @@
     "urlMain": "https://filmot.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "No channels found"
+    "errorMsg": "No channels found",
+    "expectedStatus": 200
   },
   {
     "name": "Filmweb",
@@ -2978,7 +3452,8 @@
     "urlMain": "https://filmweb.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Varnish 404"
+    "errorMsg": "Varnish 404",
+    "expectedStatus": 200
   },
   {
     "name": "fine_art_america",
@@ -2986,7 +3461,9 @@
     "urlMain": "https://fineartamerica.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "Browse through millions of independent artists in our extensive"
+    "errorMsg": "Browse through millions of independent artists in our extensive",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "FL.ru",
@@ -2995,7 +3472,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "content=\"404 Not Found\"",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Flightradar24",
@@ -3003,7 +3482,9 @@
     "urlMain": "https://my.flightradar24.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "class=\"main page-not-found-main"
+    "errorMsg": "class=\"main page-not-found-main",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Flipboard",
@@ -3011,7 +3492,9 @@
     "urlMain": "https://flipboard.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<title></title>"
+    "errorMsg": "<title></title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "flowcode",
@@ -3019,7 +3502,9 @@
     "urlMain": "https://flowcode.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Nobody's reserved this Flowpage yet."
+    "errorMsg": "Nobody's reserved this Flowpage yet.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Fodors Forum",
@@ -3027,7 +3512,9 @@
     "urlMain": "https://fodors.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Plan Your Trip Online</title>"
+    "errorMsg": "Plan Your Trip Online</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Folkd",
@@ -3035,7 +3522,8 @@
     "urlMain": "https://folkd.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"result\":\"ok\""
+    "errorMsg": "\"result\":\"ok\"",
+    "expectedStatus": 200
   },
   {
     "name": "forumprawne.org",
@@ -3043,7 +3531,9 @@
     "urlMain": "https://forumprawne.org",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "Wiadomość"
+    "positiveMsg": "Wiadomość",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "Fosstodon.org (Mastodon Instance)",
@@ -3051,7 +3541,9 @@
     "urlMain": "https://fosstodon.org",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "fotka",
@@ -3059,7 +3551,8 @@
     "urlMain": "https://api.fotka.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "ERROR"
+    "errorMsg": "ERROR",
+    "expectedStatus": 200
   },
   {
     "name": "Fotolog Archived Profile",
@@ -3067,7 +3560,8 @@
     "urlMain": "https://archive.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"archived_snapshots\": {}"
+    "errorMsg": "\"archived_snapshots\": {}",
+    "expectedStatus": 200
   },
   {
     "name": "freeCodeCamp",
@@ -3076,7 +3570,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "{}",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Freelance.RU",
@@ -3084,7 +3580,9 @@
     "urlMain": "https://freelance.ru",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "class=\"msg_error alert alert-danger\""
+    "errorMsg": "class=\"msg_error alert alert-danger\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Freelance.ua",
@@ -3092,7 +3590,9 @@
     "urlMain": "https://freelance.ua",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Схоже, дана сторінка не знайдена"
+    "errorMsg": "Схоже, дана сторінка не знайдена",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Freelancehunt (Employer)",
@@ -3101,7 +3601,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "User not found.",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "freesound",
@@ -3109,7 +3611,9 @@
     "urlMain": "https://freesound.org",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<h1>Page not found</h1>"
+    "errorMsg": "<h1>Page not found</h1>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "FreeSteamKeys",
@@ -3117,7 +3621,9 @@
     "urlMain": "https://freesteamkeys.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error404"
+    "errorMsg": "error404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "FriendFinder",
@@ -3125,7 +3631,9 @@
     "urlMain": "https://friendfinder.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "302 Found"
+    "errorMsg": "302 Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "FriendFinder-X",
@@ -3133,7 +3641,9 @@
     "urlMain": "https://friendfinder-x.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The document has moved"
+    "errorMsg": "The document has moved",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Fur Affinity",
@@ -3141,7 +3651,8 @@
     "urlMain": "https://furaffinity.net",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<h2>System Error</h2>"
+    "errorMsg": "<h2>System Error</h2>",
+    "expectedStatus": 200
   },
   {
     "name": "Gab",
@@ -3149,7 +3660,9 @@
     "urlMain": "https://gab.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"Record not found\""
+    "errorMsg": "\"error\":\"Record not found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "game_debate",
@@ -3157,7 +3670,9 @@
     "urlMain": "https://game-debate.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Not Found"
+    "errorMsg": "Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Gamer DVR",
@@ -3165,7 +3680,9 @@
     "urlMain": "https://gamerdvr.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<body>You are being <"
+    "errorMsg": "<body>You are being <",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Garmin connect",
@@ -3173,7 +3690,8 @@
     "urlMain": "https://connect.garmin.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "resourceNotFoundRoute"
+    "errorMsg": "resourceNotFoundRoute",
+    "expectedStatus": 200
   },
   {
     "name": "GDBrowser",
@@ -3181,7 +3699,9 @@
     "urlMain": "https://gdbrowser.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "-1"
+    "errorMsg": "-1",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "getmonero",
@@ -3189,7 +3709,8 @@
     "urlMain": "https://forum.getmonero.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Monero | Page not found. Error: 404"
+    "errorMsg": "Monero | Page not found. Error: 404",
+    "expectedStatus": 200
   },
   {
     "name": "Gigapan",
@@ -3197,7 +3718,9 @@
     "urlMain": "https://gigapan.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<a href=\"/gigapans\">View Gigapans</a>"
+    "errorMsg": "<a href=\"/gigapans\">View Gigapans</a>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Gitee",
@@ -3205,7 +3728,9 @@
     "urlMain": "https://gitee.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "class=\"container error midCenter\""
+    "errorMsg": "class=\"container error midCenter\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "GitHub (Gists)",
@@ -3213,7 +3738,9 @@
     "urlMain": "https://api.github.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"status\": \"404\""
+    "errorMsg": "\"status\": \"404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "gloria.tv",
@@ -3221,7 +3748,9 @@
     "urlMain": "https://gloria.tv",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Page unavailable"
+    "errorMsg": "Page unavailable",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "GNOME (GitLab)",
@@ -3229,7 +3758,8 @@
     "urlMain": "https://gitlab.gnome.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "[]"
+    "errorMsg": "[]",
+    "expectedStatus": 200
   },
   {
     "name": "GNOME (Shell Extensions)",
@@ -3237,7 +3767,9 @@
     "urlMain": "https://extensions.gnome.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<h3>404 - Page not Found</h3>"
+    "errorMsg": "<h3>404 - Page not Found</h3>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Goodgame_Russia",
@@ -3245,7 +3777,9 @@
     "urlMain": "https://goodgame.ru",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Такой страницы не существует"
+    "errorMsg": "Такой страницы не существует",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "gpodder.net",
@@ -3253,7 +3787,9 @@
     "urlMain": "https://gpodder.net",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "404 - Not found"
+    "errorMsg": "404 - Not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "grandprof",
@@ -3261,7 +3797,9 @@
     "urlMain": "https://grandprof.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Mauvaise pioche"
+    "errorMsg": "Mauvaise pioche",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Graphics.social (Mastodon Instance)",
@@ -3269,7 +3807,9 @@
     "urlMain": "https://graphics.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Greasy Fork",
@@ -3277,7 +3817,8 @@
     "urlMain": "https://greasyfork.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<p>No users!</p>"
+    "errorMsg": "<p>No users!</p>",
+    "expectedStatus": 200
   },
   {
     "name": "GTAinside.com",
@@ -3285,7 +3826,8 @@
     "urlMain": "https://gtainside.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<h1>404 Not Found"
+    "errorMsg": "<h1>404 Not Found",
+    "expectedStatus": 200
   },
   {
     "name": "gumroad",
@@ -3293,7 +3835,9 @@
     "urlMain": "https://{}.gumroad.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.com.br",
@@ -3301,7 +3845,9 @@
     "urlMain": "https://habbo.com.br",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.com.tr",
@@ -3309,7 +3855,9 @@
     "urlMain": "https://habbo.com.tr",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.de",
@@ -3317,7 +3865,9 @@
     "urlMain": "https://habbo.de",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.es",
@@ -3325,7 +3875,9 @@
     "urlMain": "https://habbo.es",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "not-found"
+    "errorMsg": "not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.fi",
@@ -3333,7 +3885,9 @@
     "urlMain": "https://habbo.fi",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.fr",
@@ -3341,7 +3895,9 @@
     "urlMain": "https://habbo.fr",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.it",
@@ -3349,7 +3905,9 @@
     "urlMain": "https://habbo.it",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habbo.nl",
@@ -3357,7 +3915,9 @@
     "urlMain": "https://habbo.nl",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "error\": \"not-found"
+    "errorMsg": "error\": \"not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habr (Q&A)",
@@ -3365,7 +3925,9 @@
     "urlMain": "https://qna.habr.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "icon_error_404"
+    "errorMsg": "icon_error_404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habr (User)",
@@ -3373,7 +3935,9 @@
     "urlMain": "https://habr.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "tm-error-message"
+    "errorMsg": "tm-error-message",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Habtium",
@@ -3381,7 +3945,9 @@
     "urlMain": "https://habtium.es",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<h1 class=\"section red\">Oops!"
+    "errorMsg": "<h1 class=\"section red\">Oops!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Hackaday.io",
@@ -3389,7 +3955,9 @@
     "urlMain": "https://hackaday.io",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "class=\"error-nav\""
+    "errorMsg": "class=\"error-nav\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "HackAdvisor",
@@ -3397,7 +3965,9 @@
     "urlMain": "https://hackadvisor.io",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "{\"detail\":\"Username not found\"}"
+    "errorMsg": "{\"detail\":\"Username not found\"}",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "hamaha",
@@ -3405,7 +3975,8 @@
     "urlMain": "https://hamaha.net",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "content=\"HAMAHA  Биткоин форум. Торговля на бирже - ➨ Обучение Криптовалютам, Биткоин и NYSE \""
+    "errorMsg": "content=\"HAMAHA  Биткоин форум. Торговля на бирже - ➨ Обучение Криптовалютам, Биткоин и NYSE \"",
+    "expectedStatus": 200
   },
   {
     "name": "Hanime",
@@ -3413,7 +3984,9 @@
     "urlMain": "https://hanime.tv",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "DYNAMIC"
+    "errorMsg": "DYNAMIC",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Hcommons.social (Mastodon Instance)",
@@ -3421,7 +3994,9 @@
     "urlMain": "https://hcommons.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Heylink",
@@ -3429,7 +4004,9 @@
     "urlMain": "https://heylink.me",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "We can't find the page that you're looking for :("
+    "errorMsg": "We can't find the page that you're looking for :(",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "HiHello",
@@ -3437,7 +4014,9 @@
     "urlMain": "https://hihello.me",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Well, this is awkward"
+    "errorMsg": "Well, this is awkward",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "HomeDesign3D",
@@ -3445,7 +4024,9 @@
     "urlMain": "https://en.homedesign3d.net",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "An Error Occurred: Internal Server Error"
+    "errorMsg": "An Error Occurred: Internal Server Error",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "Hometech.social (Mastodon Instance)",
@@ -3453,7 +4034,9 @@
     "urlMain": "https://hometech.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "hoo.be",
@@ -3461,7 +4044,9 @@
     "urlMain": "https://hoo.be",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Page Not Found</h3>"
+    "errorMsg": "Page Not Found</h3>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Hostux.social (Mastodon Instance)",
@@ -3469,7 +4054,9 @@
     "urlMain": "https://hostux.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "HubPages",
@@ -3477,7 +4064,9 @@
     "urlMain": "https://hubpages.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Sorry, that user does not exist"
+    "errorMsg": "Sorry, that user does not exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Hubski",
@@ -3485,7 +4074,8 @@
     "urlMain": "https://hubski.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "No such user."
+    "errorMsg": "No such user.",
+    "expectedStatus": 200
   },
   {
     "name": "HudsonRock",
@@ -3493,7 +4083,8 @@
     "urlMain": "https://cavalier.hudsonrock.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "This username is not associated with a computer infected by an info-stealer"
+    "errorMsg": "This username is not associated with a computer infected by an info-stealer",
+    "expectedStatus": 200
   },
   {
     "name": "HulkShare",
@@ -3501,7 +4092,8 @@
     "urlMain": "https://hulkshare.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Invalid user."
+    "errorMsg": "Invalid user.",
+    "expectedStatus": 200
   },
   {
     "name": "Iconfinder",
@@ -3509,7 +4101,9 @@
     "urlMain": "https://iconfinder.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "We couldn't find the page you are looking for."
+    "errorMsg": "We couldn't find the page you are looking for.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "icq-chat",
@@ -3517,7 +4111,9 @@
     "urlMain": "https://icq.icqchat.co",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Oops! We ran into some problems"
+    "errorMsg": "Oops! We ran into some problems",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "IFTTT",
@@ -3525,7 +4121,9 @@
     "urlMain": "https://ifttt.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "The requested page or file does not exist"
+    "errorMsg": "The requested page or file does not exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "ifunny",
@@ -3533,7 +4131,9 @@
     "urlMain": "https://ifunny.co",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "404 - page not found"
+    "errorMsg": "404 - page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "igromania",
@@ -3541,7 +4141,8 @@
     "urlMain": "https://forum.igromania.ru",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Пользователь не зарегистрирован и не имеет профиля для просмотра."
+    "errorMsg": "Пользователь не зарегистрирован и не имеет профиля для просмотра.",
+    "expectedStatus": 200
   },
   {
     "name": "ilovegrowingmarijuana",
@@ -3549,7 +4150,9 @@
     "urlMain": "https://support.ilovegrowingmarijuana.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Oops! That page doesn’t exist or is private"
+    "errorMsg": "Oops! That page doesn’t exist or is private",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "imagefap",
@@ -3557,7 +4160,8 @@
     "urlMain": "https://imagefap.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Invalid uid"
+    "errorMsg": "Invalid uid",
+    "expectedStatus": 200
   },
   {
     "name": "ImageShack",
@@ -3565,7 +4169,9 @@
     "urlMain": "https://imageshack.com",
     "category": "content",
     "checkMethod": "message",
-    "positiveMsg": "s Images</title>"
+    "positiveMsg": "s Images</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "iMGSRC.RU",
@@ -3573,7 +4179,9 @@
     "urlMain": "https://imgsrc.ru",
     "category": "content",
     "checkMethod": "message",
-    "positiveMsg": "Присоединился"
+    "positiveMsg": "Присоединился",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Immunefi",
@@ -3581,7 +4189,9 @@
     "urlMain": "https://immunefi.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "id=\"__next_error__\""
+    "errorMsg": "id=\"__next_error__\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "inaturalist",
@@ -3589,7 +4199,9 @@
     "urlMain": "https://api.inaturalist.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"status\":404"
+    "errorMsg": "\"status\":404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Independent academia",
@@ -3597,7 +4209,9 @@
     "urlMain": "https://independent.academia.edu",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Academia.edu"
+    "errorMsg": "Academia.edu",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "InkBunny",
@@ -3605,7 +4219,9 @@
     "urlMain": "https://inkbunny.net",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Members | Inkbunny, the Furry Art Community</title>"
+    "errorMsg": "<title>Members | Inkbunny, the Furry Art Community</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "InsaneJournal",
@@ -3613,7 +4229,8 @@
     "urlMain": "https://{}.insanejournal.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The requested URL /profile was not found on this server"
+    "errorMsg": "The requested URL /profile was not found on this server",
+    "expectedStatus": 200
   },
   {
     "name": "Instagram (Imginn)",
@@ -3622,7 +4239,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "class=\"page-error notfound\"",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 410
   },
   {
     "name": "interpals",
@@ -3630,7 +4249,8 @@
     "urlMain": "https://interpals.net",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "User not found"
+    "errorMsg": "User not found",
+    "expectedStatus": 200
   },
   {
     "name": "Intigriti",
@@ -3638,7 +4258,9 @@
     "urlMain": "https://app.intigriti.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "class=\"error-page-container\""
+    "errorMsg": "class=\"error-page-container\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Issuu",
@@ -3646,7 +4268,8 @@
     "urlMain": "https://issuu.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"status\":\"available\""
+    "errorMsg": "\"status\":\"available\"",
+    "expectedStatus": 200
   },
   {
     "name": "iXBT Forum",
@@ -3654,7 +4277,9 @@
     "urlMain": "https://forum.ixbt.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Проверьте регистр написания."
+    "errorMsg": "Проверьте регистр написания.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Japandict",
@@ -3662,7 +4287,9 @@
     "urlMain": "https://forum.japandict.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you requested could not be found."
+    "errorMsg": "The page you requested could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "JBZD",
@@ -3670,7 +4297,9 @@
     "urlMain": "https://jbzd.com.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Błąd 404"
+    "errorMsg": "Błąd 404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "jeja.pl",
@@ -3678,7 +4307,8 @@
     "urlMain": "https://jeja.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Niepoprawny login"
+    "errorMsg": "Niepoprawny login",
+    "expectedStatus": 200
   },
   {
     "name": "Jeuxvideo",
@@ -3686,7 +4316,9 @@
     "urlMain": "https://jeuxvideo.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "rence des gamers"
+    "errorMsg": "rence des gamers",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Joe Monster",
@@ -3694,7 +4326,8 @@
     "urlMain": "https://joemonster.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Nie wiem jak ci to powiedzieć"
+    "errorMsg": "Nie wiem jak ci to powiedzieć",
+    "expectedStatus": 200
   },
   {
     "name": "Justforfans",
@@ -3702,7 +4335,9 @@
     "urlMain": "https://justfor.fans",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "@ JustFor.Fans"
+    "positiveMsg": "@ JustFor.Fans",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Kickstarter",
@@ -3710,7 +4345,9 @@
     "urlMain": "https://kickstarter.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "Oops, Something went missing"
+    "errorMsg": "Oops, Something went missing",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "kik",
@@ -3718,7 +4355,8 @@
     "urlMain": "https://kik.me",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<h1 class=\"display-name\"> </h1>"
+    "errorMsg": "<h1 class=\"display-name\"> </h1>",
+    "expectedStatus": 200
   },
   {
     "name": "kipin",
@@ -3726,7 +4364,9 @@
     "urlMain": "https://kipin.app",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Page not found. Link expired, broken or wrong."
+    "errorMsg": "Page not found. Link expired, broken or wrong.",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "komi",
@@ -3734,7 +4374,9 @@
     "urlMain": "https://api.komi.io",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The talent profile was not found"
+    "errorMsg": "The talent profile was not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Kotburger",
@@ -3742,7 +4384,8 @@
     "urlMain": "https://kotburger.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono użytkownika o podanym loginie."
+    "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
+    "expectedStatus": 200
   },
   {
     "name": "Kwai",
@@ -3750,7 +4393,8 @@
     "urlMain": "https://kwai.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>Kwai</title>"
+    "errorMsg": "<title>Kwai</title>",
+    "expectedStatus": 200
   },
   {
     "name": "kwejk.pl",
@@ -3758,7 +4402,9 @@
     "urlMain": "https://kwejk.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "404 - strona nie została znaleziona - KWEJK.pl"
+    "errorMsg": "404 - strona nie została znaleziona - KWEJK.pl",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Kwork",
@@ -3766,7 +4412,8 @@
     "urlMain": "https://kwork.ru",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"success\":false"
+    "errorMsg": "\"success\":false",
+    "expectedStatus": 200
   },
   {
     "name": "LeakIX",
@@ -3774,7 +4421,9 @@
     "urlMain": "https://leakix.net",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<title>LeakIX - Server error</title>"
+    "errorMsg": "<title>LeakIX - Server error</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "Lemon8",
@@ -3782,7 +4431,9 @@
     "urlMain": "https://lemon8-app.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "class=\"not_found_text\""
+    "errorMsg": "class=\"not_found_text\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "LevelBlue",
@@ -3790,7 +4441,9 @@
     "urlMain": "https://otx.alienvault.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "{}"
+    "errorMsg": "{}",
+    "expectedStatus": 400,
+    "notFoundStatus": 200
   },
   {
     "name": "Liberapay",
@@ -3799,7 +4452,9 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Response code: 404",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Libretooth.gr (Mastodon Instance)",
@@ -3807,7 +4462,9 @@
     "urlMain": "https://libretooth.gr",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "linux.org.ru",
@@ -3815,7 +4472,9 @@
     "urlMain": "https://linux.org.ru",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Пользователя не существует"
+    "errorMsg": "Пользователя не существует",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "livemaster.ru",
@@ -3823,7 +4482,9 @@
     "urlMain": "https://livemaster.ru",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "<title>Вы попали на несуществующую страницу"
+    "errorMsg": "<title>Вы попали на несуществующую страницу",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "LoLProfile",
@@ -3831,7 +4492,8 @@
     "urlMain": "https://lolprofile.net",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "We could not find any results, please try again later or check your input."
+    "errorMsg": "We could not find any results, please try again later or check your input.",
+    "expectedStatus": 200
   },
   {
     "name": "Lor.sh (Mastodon Instance)",
@@ -3839,7 +4501,9 @@
     "urlMain": "https://lor.sh",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "lowcygier.pl",
@@ -3847,7 +4511,9 @@
     "urlMain": "https://bazar.lowcygier.pl",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Błąd 404 - Podana strona nie istnieje"
+    "errorMsg": "Błąd 404 - Podana strona nie istnieje",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MAGABOOK",
@@ -3855,7 +4521,9 @@
     "urlMain": "https://magabook.com",
     "category": "social",
     "checkMethod": "message",
-    "positiveMsg": "Timeline"
+    "positiveMsg": "Timeline",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Magix",
@@ -3863,7 +4531,8 @@
     "urlMain": "https://magix.info",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200
   },
   {
     "name": "Malpedia Actors",
@@ -3871,7 +4540,9 @@
     "urlMain": "https://malpedia.caad.fkie.fraunhofer.de",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Page not Found."
+    "errorMsg": "Page not Found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MapMyTracks",
@@ -3879,7 +4550,9 @@
     "urlMain": "https://mapmytracks.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Outside together"
+    "errorMsg": "Outside together",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Mapstodon.space (Mastodon Instance)",
@@ -3887,7 +4560,9 @@
     "urlMain": "https://mapstodon.space",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Maroc_nl",
@@ -3895,7 +4570,8 @@
     "urlMain": "https://maroc.nl",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Deze gebruiker is niet geregistreerd"
+    "errorMsg": "Deze gebruiker is niet geregistreerd",
+    "expectedStatus": 200
   },
   {
     "name": "Marshmallow",
@@ -3903,7 +4579,9 @@
     "urlMain": "https://marshmallow-qa.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "For compensation, here are cats for you."
+    "errorMsg": "For compensation, here are cats for you.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Martech",
@@ -3911,7 +4589,9 @@
     "urlMain": "https://martech.org",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Massage Anywhere",
@@ -3919,7 +4599,8 @@
     "urlMain": "https://massageanywhere.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>MassageAnywhere.com: Search Results</title>"
+    "errorMsg": "<title>MassageAnywhere.com: Search Results</title>",
+    "expectedStatus": 200
   },
   {
     "name": "masto.ai",
@@ -3927,7 +4608,9 @@
     "urlMain": "https://masto.ai",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here."
+    "errorMsg": "The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Masto.nyc (Mastodon Instance)",
@@ -3935,7 +4618,9 @@
     "urlMain": "https://masto.nyc",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-101010.pl",
@@ -3943,7 +4628,9 @@
     "urlMain": "https://101010.pl",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here."
+    "errorMsg": "The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-C.IM",
@@ -3951,7 +4638,9 @@
     "urlMain": "https://c.im",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>The page you are looking for isn&#39;t here"
+    "errorMsg": "<title>The page you are looking for isn&#39;t here",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-Chaos.social",
@@ -3959,7 +4648,9 @@
     "urlMain": "https://chaos.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here."
+    "errorMsg": "The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-Defcon",
@@ -3967,7 +4658,9 @@
     "urlMain": "https://defcon.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here."
+    "errorMsg": "The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-meow.social",
@@ -3975,7 +4668,9 @@
     "urlMain": "https://meow.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here."
+    "errorMsg": "The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-mstdn.io",
@@ -3983,7 +4678,9 @@
     "urlMain": "https://mstdn.io",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here."
+    "errorMsg": "The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-rigcz.club",
@@ -3991,7 +4688,9 @@
     "urlMain": "https://rigcz.club",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn't here."
+    "errorMsg": "The page you are looking for isn't here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon-social_tchncs",
@@ -3999,7 +4698,9 @@
     "urlMain": "https://social.tchncs.de",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here"
+    "errorMsg": "The page you are looking for isn&#39;t here",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Mastodon-Toot.Community",
@@ -4007,7 +4708,9 @@
     "urlMain": "https://toot.community",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for isn&#39;t here."
+    "errorMsg": "The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodon.online",
@@ -4015,7 +4718,9 @@
     "urlMain": "https://mastodon.online",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>The page you are looking for isn&#39;t here."
+    "errorMsg": "<title>The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mastodonbooks.net (Mastodon Instance)",
@@ -4023,7 +4728,9 @@
     "urlMain": "https://mastodonbooks.net",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "medyczka.pl",
@@ -4031,7 +4738,8 @@
     "urlMain": "https://medyczka.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "This user has not registered and therefore does not have a profile to view."
+    "errorMsg": "This user has not registered and therefore does not have a profile to view.",
+    "expectedStatus": 200
   },
   {
     "name": "meet me",
@@ -4039,7 +4747,9 @@
     "urlMain": "https://meetme.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>MeetMe - Chat and Meet New People</title"
+    "errorMsg": "<title>MeetMe - Chat and Meet New People</title",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Meta-Wiki (Wikimedia)",
@@ -4047,7 +4757,8 @@
     "urlMain": "https://meta.wikimedia.org",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "There is no global account for"
+    "errorMsg": "There is no global account for",
+    "expectedStatus": 200
   },
   {
     "name": "Metacritic",
@@ -4055,7 +4766,9 @@
     "urlMain": "https://metacritic.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "class=\"c-error404\""
+    "errorMsg": "class=\"c-error404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Microsoft Learn",
@@ -4063,7 +4776,9 @@
     "urlMain": "https://learn.microsoft.com",
     "category": "developer",
     "checkMethod": "message",
-    "positiveMsg": "\"userId\":"
+    "positiveMsg": "\"userId\":",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "mintme",
@@ -4071,7 +4786,9 @@
     "urlMain": "https://mintme.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mistrzowie",
@@ -4079,7 +4796,8 @@
     "urlMain": "https://mistrzowie.org",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono użytkownika o podanym loginie."
+    "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
+    "expectedStatus": 200
   },
   {
     "name": "Mix",
@@ -4087,7 +4805,9 @@
     "urlMain": "https://mix.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The best content from the open web, personalized."
+    "errorMsg": "The best content from the open web, personalized.",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Mixi",
@@ -4095,7 +4815,8 @@
     "urlMain": "https://mixi.jp",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "データがありません"
+    "errorMsg": "データがありません",
+    "expectedStatus": 200
   },
   {
     "name": "Mixlr",
@@ -4103,7 +4824,9 @@
     "urlMain": "https://api.mixlr.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"Resource not found\""
+    "errorMsg": "\"error\":\"Resource not found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Mmorpg",
@@ -4111,7 +4834,9 @@
     "urlMain": "https://forums.mmorpg.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "404 Not Not_Found"
+    "errorMsg": "404 Not Not_Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MobileGTA.net",
@@ -4119,7 +4844,8 @@
     "urlMain": "https://mobilegta.net",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<h1>404 Not Found"
+    "errorMsg": "<h1>404 Not Found",
+    "expectedStatus": 200
   },
   {
     "name": "MODX.im",
@@ -4127,7 +4853,9 @@
     "urlMain": "https://modx.evo.im",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "class=\"content-error\""
+    "errorMsg": "class=\"content-error\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Moto Trip",
@@ -4135,7 +4863,9 @@
     "urlMain": "https://moto-trip.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<h1>Page introuvable</h1>"
+    "errorMsg": "<h1>Page introuvable</h1>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Motokiller",
@@ -4143,7 +4873,8 @@
     "urlMain": "https://mklr.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono użytkownika o podanym loginie."
+    "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
+    "expectedStatus": 200
   },
   {
     "name": "mssg.me",
@@ -4151,7 +4882,9 @@
     "urlMain": "https://{}.mssg.me",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "id=\"page_404\""
+    "errorMsg": "id=\"page_404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Muck Rack",
@@ -4159,7 +4892,9 @@
     "urlMain": "https://muckrack.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Oh no! Page not found."
+    "errorMsg": "Oh no! Page not found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Musician.social (Mastodon Instance)",
@@ -4167,7 +4902,9 @@
     "urlMain": "https://musician.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "musictraveler",
@@ -4175,7 +4912,9 @@
     "urlMain": "https://musictraveler.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<title>Page Not found</title>"
+    "errorMsg": "<title>Page Not found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MUYZORRAS",
@@ -4183,7 +4922,9 @@
     "urlMain": "https://muyzorras.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Error 404"
+    "errorMsg": "<title>Error 404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "my_instants",
@@ -4191,7 +4932,9 @@
     "urlMain": "https://myinstants.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MyBuilder.com",
@@ -4199,7 +4942,9 @@
     "urlMain": "https://mybuilder.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Whoops! You broke our site!"
+    "errorMsg": "Whoops! You broke our site!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MyFitnessPal Author",
@@ -4207,7 +4952,9 @@
     "urlMain": "https://blog.myfitnesspal.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Page not found"
+    "errorMsg": "<title>Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MyFitnessPal Community",
@@ -4215,7 +4962,9 @@
     "urlMain": "https://community.myfitnesspal.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "User Not Found"
+    "errorMsg": "User Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MyLot",
@@ -4223,7 +4972,9 @@
     "urlMain": "https://mylot.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "/ Whoops!"
+    "errorMsg": "/ Whoops!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MYM",
@@ -4231,7 +4982,9 @@
     "urlMain": "https://mym.fans",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "class=\"page page-404\""
+    "errorMsg": "class=\"page page-404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "MyNickname",
@@ -4239,7 +4992,8 @@
     "urlMain": "https://mynickname.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<h2>Nickname not found. Try searching for similar nicknames.</h2>"
+    "errorMsg": "<h2>Nickname not found. Try searching for similar nicknames.</h2>",
+    "expectedStatus": 200
   },
   {
     "name": "myportfolio",
@@ -4247,7 +5001,9 @@
     "urlMain": "https://{}.myportfolio.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Adobe Portfolio | Build your own personalized website</title>"
+    "errorMsg": "<title>Adobe Portfolio | Build your own personalized website</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Myspreadshop",
@@ -4255,7 +5011,9 @@
     "urlMain": "https://myspreadshop.de",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "not found"
+    "errorMsg": "not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "myWishBoard",
@@ -4263,7 +5021,9 @@
     "urlMain": "https://mywishboard.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "class=\"MwbError\""
+    "errorMsg": "class=\"MwbError\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "naija_planet",
@@ -4271,7 +5031,8 @@
     "urlMain": "https://naijaplanet.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "- NaijaPlanet!"
+    "errorMsg": "- NaijaPlanet!",
+    "expectedStatus": 200
   },
   {
     "name": "nairaland",
@@ -4279,7 +5040,9 @@
     "urlMain": "https://nairaland.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "404: Page Not Found"
+    "errorMsg": "404: Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "NaturalNews",
@@ -4287,7 +5050,8 @@
     "urlMain": "https://naturalnews.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for cannot be found or is no longer available."
+    "errorMsg": "The page you are looking for cannot be found or is no longer available.",
+    "expectedStatus": 200
   },
   {
     "name": "Naver",
@@ -4295,7 +5059,9 @@
     "urlMain": "https://blog.naver.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "페이지를 찾을 수 없습니다"
+    "errorMsg": "페이지를 찾을 수 없습니다",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "netvibes",
@@ -4303,7 +5069,9 @@
     "urlMain": "https://netvibes.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "newmeet",
@@ -4311,7 +5079,8 @@
     "urlMain": "https://newmeet.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Chat with , , ,  -"
+    "errorMsg": "Chat with , , ,  -",
+    "expectedStatus": 200
   },
   {
     "name": "Nifty Gateway",
@@ -4319,7 +5088,9 @@
     "urlMain": "https://api.niftygateway.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "&quot;didSucceed&quot;: false"
+    "errorMsg": "&quot;didSucceed&quot;: false",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Nightbot",
@@ -4327,7 +5098,9 @@
     "urlMain": "https://api.nightbot.tv",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"status\":404"
+    "errorMsg": "\"status\":404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "nihbuatjajan",
@@ -4335,7 +5108,9 @@
     "urlMain": "https://nihbuatjajan.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>Nih Buat Jajan</title>"
+    "errorMsg": "<title>Nih Buat Jajan</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Nitecrew (Mastodon Instance)",
@@ -4343,7 +5118,9 @@
     "urlMain": "https://nitecrew.rip",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "nnru",
@@ -4351,7 +5128,9 @@
     "urlMain": "https://{}.www.nn.ru",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>Ошибка 404 -"
+    "errorMsg": "<title>Ошибка 404 -",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "NotABug",
@@ -4359,7 +5138,9 @@
     "urlMain": "https://notabug.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "alt=\"404\""
+    "errorMsg": "alt=\"404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Note",
@@ -4367,7 +5148,9 @@
     "urlMain": "https://note.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "お探しのページが見つかりません。"
+    "errorMsg": "お探しのページが見つかりません。",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "oglaszamy24h.pl",
@@ -4375,7 +5158,9 @@
     "urlMain": "https://oglaszamy24h.pl",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "Nieprawidłowy link, w bazie danych nie istnieje użytkownik o podanym loginie"
+    "errorMsg": "Nieprawidłowy link, w bazie danych nie istnieje użytkownik o podanym loginie",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "ok.ru",
@@ -4383,7 +5168,9 @@
     "urlMain": "https://ok.ru",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "class=\"p404_t"
+    "errorMsg": "class=\"p404_t",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "okidoki",
@@ -4391,7 +5178,9 @@
     "urlMain": "https://m.okidoki.ee",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Страница не найдена"
+    "errorMsg": "Страница не найдена",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "omg.lol",
@@ -4399,7 +5188,8 @@
     "urlMain": "https://api.omg.lol",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"success\": false"
+    "errorMsg": "\"success\": false",
+    "expectedStatus": 200
   },
   {
     "name": "Opencollective",
@@ -4407,7 +5197,8 @@
     "urlMain": "https://opencollective.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Not Found"
+    "errorMsg": "Not Found",
+    "expectedStatus": 200
   },
   {
     "name": "OpenSource",
@@ -4415,7 +5206,9 @@
     "urlMain": "https://opensource.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"errorCode\": \"404\""
+    "errorMsg": "\"errorCode\": \"404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "OpenStreetMap Wiki",
@@ -4423,7 +5216,8 @@
     "urlMain": "https://wiki.openstreetmap.org",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"missing\":\"\""
+    "errorMsg": "\"missing\":\"\"",
+    "expectedStatus": 200
   },
   {
     "name": "Oper.ru",
@@ -4431,7 +5225,8 @@
     "urlMain": "https://oper.ru",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Нет такого пользователя"
+    "errorMsg": "Нет такого пользователя",
+    "expectedStatus": 200
   },
   {
     "name": "Orbys",
@@ -4439,7 +5234,9 @@
     "urlMain": "https://orbys.net",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for cannot be found."
+    "errorMsg": "The page you are looking for cannot be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Origins.Habbo.com",
@@ -4447,7 +5244,9 @@
     "urlMain": "https://origins.habbo.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "not-found"
+    "errorMsg": "not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Origins.Habbo.com.br",
@@ -4455,7 +5254,9 @@
     "urlMain": "https://origins.habbo.com.br",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "not-found"
+    "errorMsg": "not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Origins.Habbo.es",
@@ -4463,7 +5264,9 @@
     "urlMain": "https://origins.habbo.es",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "not-found"
+    "errorMsg": "not-found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Our Freedom Book",
@@ -4471,7 +5274,9 @@
     "urlMain": "https://ourfreedombook.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Sorry, page not found"
+    "errorMsg": "Sorry, page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "ow.ly",
@@ -4479,7 +5284,9 @@
     "urlMain": "https://ow.ly",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "404 error"
+    "errorMsg": "404 error",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "palnet",
@@ -4487,7 +5294,9 @@
     "urlMain": "https://palnet.io",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Unknown user account!"
+    "errorMsg": "Unknown user account!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "patch",
@@ -4495,7 +5304,9 @@
     "urlMain": "https://patch.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<title>Page not found</title>"
+    "errorMsg": "<title>Page not found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "PatientsLikeMe",
@@ -4503,7 +5314,9 @@
     "urlMain": "https://patientslikeme.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "s profile | PatientsLikeMe</title>"
+    "positiveMsg": "s profile | PatientsLikeMe</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Patriots Win",
@@ -4511,7 +5324,9 @@
     "urlMain": "https://patriots.win",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "An error occurred"
+    "errorMsg": "An error occurred",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "Patronite",
@@ -4519,7 +5334,9 @@
     "urlMain": "https://patronite.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleźliśmy strony której szukasz."
+    "errorMsg": "Nie znaleźliśmy strony której szukasz.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Paypal",
@@ -4527,7 +5344,8 @@
     "urlMain": "https://paypal.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>PayPal.Me</title><meta"
+    "errorMsg": "<title>PayPal.Me</title><meta",
+    "expectedStatus": 200
   },
   {
     "name": "PCGamer",
@@ -4535,7 +5353,9 @@
     "urlMain": "https://forums.pcgamer.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Oops! We ran into some problems"
+    "errorMsg": "Oops! We ran into some problems",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Peerlist",
@@ -4544,7 +5364,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User Not found\"",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "peoople (Creator)",
@@ -4553,7 +5375,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "<title>Peoople</title>",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Periscope",
@@ -4561,7 +5385,9 @@
     "urlMain": "https://periscope.tv",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Sorry, this page doesn’t exist"
+    "errorMsg": "Sorry, this page doesn’t exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Pewex",
@@ -4569,7 +5395,8 @@
     "urlMain": "https://retro.pewex.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono użytkownika o podanym loginie."
+    "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
+    "expectedStatus": 200
   },
   {
     "name": "Picsart",
@@ -4577,7 +5404,8 @@
     "urlMain": "https://api.picsart.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"status\":\"error\""
+    "errorMsg": "\"status\":\"error\"",
+    "expectedStatus": 200
   },
   {
     "name": "Piekielni",
@@ -4585,7 +5413,8 @@
     "urlMain": "https://piekielni.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono użytkownika o podanym loginie."
+    "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
+    "expectedStatus": 200
   },
   {
     "name": "Pillowfort",
@@ -4593,7 +5422,9 @@
     "urlMain": "https://pillowfort.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>(404)</title>"
+    "errorMsg": "<title>(404)</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "PinkBike",
@@ -4601,7 +5432,9 @@
     "urlMain": "https://pinkbike.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "I couldn't find the page you were looking for"
+    "errorMsg": "I couldn't find the page you were looking for",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "pixelfed.social",
@@ -4609,7 +5442,9 @@
     "urlMain": "https://pixelfed.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>pixelfed</title>"
+    "errorMsg": "<title>pixelfed</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Plink",
@@ -4617,7 +5452,9 @@
     "urlMain": "https://plink.gg",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<title>PLINK - 404 Page not found</title>"
+    "errorMsg": "<title>PLINK - 404 Page not found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Poe.com",
@@ -4625,7 +5462,8 @@
     "urlMain": "https://poe.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"user\":null"
+    "errorMsg": "\"user\":null",
+    "expectedStatus": 200
   },
   {
     "name": "Pokec",
@@ -4633,7 +5471,9 @@
     "urlMain": "https://pokec.azet.sk",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Neexistujúci používateľ"
+    "errorMsg": "Neexistujúci používateľ",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Polarsteps",
@@ -4641,7 +5481,9 @@
     "urlMain": "https://api.polarsteps.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>404 Not Found</title>"
+    "errorMsg": "<title>404 Not Found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Polchat.pl",
@@ -4649,7 +5491,8 @@
     "urlMain": "https://polczat.pl",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Wybrany użytkownik nie istnieje."
+    "errorMsg": "Wybrany użytkownik nie istnieje.",
+    "expectedStatus": 200
   },
   {
     "name": "policja2009",
@@ -4657,7 +5500,8 @@
     "urlMain": "https://policja2009.fora.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono tematów ani postów pasujących do Twoich kryteriów"
+    "errorMsg": "Nie znaleziono tematów ani postów pasujących do Twoich kryteriów",
+    "expectedStatus": 200
   },
   {
     "name": "Poll Everywhere",
@@ -4665,7 +5509,9 @@
     "urlMain": "https://pollev.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "ResourceNotFound"
+    "errorMsg": "ResourceNotFound",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "polygon",
@@ -4673,7 +5519,9 @@
     "urlMain": "https://polygon.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "404 Not found"
+    "errorMsg": "404 Not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "popl",
@@ -4681,7 +5529,8 @@
     "urlMain": "https://poplme.co",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Profile not found"
+    "errorMsg": "Profile not found",
+    "expectedStatus": 200
   },
   {
     "name": "Pornhub (Model)",
@@ -4689,7 +5538,9 @@
     "urlMain": "https://pornhub.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "class=\"topProfileHeader\""
+    "positiveMsg": "class=\"topProfileHeader\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Poweredbygay.social (Mastodon Instance)",
@@ -4697,7 +5548,9 @@
     "urlMain": "https://poweredbygay.social",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Pr0gramm",
@@ -4706,7 +5559,9 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"code\":404",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Pravda.me",
@@ -4714,7 +5569,9 @@
     "urlMain": "https://pravda.me",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>The page you are looking for isn&#39;t here."
+    "errorMsg": "<title>The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Privacy Guides",
@@ -4722,7 +5579,9 @@
     "urlMain": "https://discuss.privacyguides.net",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found."
+    "errorMsg": "The requested URL or resource could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Pronouns.Page",
@@ -4730,7 +5589,9 @@
     "urlMain": "https://pronouns.page",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"profiles\": {}"
+    "errorMsg": "\"profiles\": {}",
+    "expectedStatus": 200,
+    "notFoundStatus": 304
   },
   {
     "name": "Pronouny",
@@ -4738,7 +5599,9 @@
     "urlMain": "https://pronouny.xyz",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "That user doesn't exist"
+    "errorMsg": "That user doesn't exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Prose",
@@ -4746,7 +5609,9 @@
     "urlMain": "https://prose.astral.camp",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Are you sure it was ever here?"
+    "errorMsg": "Are you sure it was ever here?",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "prv.pl",
@@ -4754,7 +5619,8 @@
     "urlMain": "https://prv.pl",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Użytkownik nie istnieje."
+    "errorMsg": "Użytkownik nie istnieje.",
+    "expectedStatus": 200
   },
   {
     "name": "Public.com",
@@ -4762,7 +5628,9 @@
     "urlMain": "https://public.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>404 - Page Not Found</title>"
+    "errorMsg": "<title>404 - Page Not Found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "QUEER PL",
@@ -4770,7 +5638,9 @@
     "urlMain": "https://queer.pl",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Strona nie została znaleziona"
+    "errorMsg": "Strona nie została znaleziona",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "quitter.pl",
@@ -4778,7 +5648,9 @@
     "urlMain": "https://quitter.pl",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"error\":"
+    "errorMsg": "\"error\":",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Raddle.me",
@@ -4786,7 +5658,9 @@
     "urlMain": "https://raddle.me",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "404 Not Found"
+    "errorMsg": "404 Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Rant.li",
@@ -4794,7 +5668,9 @@
     "urlMain": "https://rant.li",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Are you sure it was ever here?"
+    "errorMsg": "Are you sure it was ever here?",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Rarible",
@@ -4802,7 +5678,9 @@
     "urlMain": "https://rarible.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"success\":false"
+    "errorMsg": "\"success\":false",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "RedGIFs",
@@ -4810,7 +5688,9 @@
     "urlMain": "https://api.redgifs.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"status\":404"
+    "errorMsg": "\"status\":404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Refsheet",
@@ -4818,7 +5698,9 @@
     "urlMain": "https://refsheet.net",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "That's unfortunate. Where did it go?"
+    "errorMsg": "That's unfortunate. Where did it go?",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "resumes_actorsaccess",
@@ -4826,7 +5708,8 @@
     "urlMain": "https://resumes.actorsaccess.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "File was not found on this SERVER"
+    "errorMsg": "File was not found on this SERVER",
+    "expectedStatus": 200
   },
   {
     "name": "Revolut",
@@ -4834,7 +5717,9 @@
     "urlMain": "https://revolut.me",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"User not found\""
+    "errorMsg": "\"User not found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "risk.ru",
@@ -4842,7 +5727,9 @@
     "urlMain": "https://risk.ru",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "404 — Risk.ru"
+    "errorMsg": "404 — Risk.ru",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "RoutineHub",
@@ -4850,7 +5737,8 @@
     "urlMain": "https://routinehub.co",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "A community for Apple Shortcuts</title>"
+    "errorMsg": "A community for Apple Shortcuts</title>",
+    "expectedStatus": 200
   },
   {
     "name": "rsi",
@@ -4858,7 +5746,9 @@
     "urlMain": "https://robertsspaceindustries.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "404 NAVIGATING UNCHARTED TERRITORY"
+    "errorMsg": "404 NAVIGATING UNCHARTED TERRITORY",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "ru_123rf",
@@ -4866,7 +5756,9 @@
     "urlMain": "https://ru.123rf.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Фотобанк 123RF - Стоковые Фото, Векторы, Видеоролики. Подписка на Фото. Royalty Free контент<"
+    "errorMsg": "<title>Фотобанк 123RF - Стоковые Фото, Векторы, Видеоролики. Подписка на Фото. Royalty Free контент<",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "RuneScape",
@@ -4874,7 +5766,8 @@
     "urlMain": "https://apps.runescape.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"error\":\"NO_PROFILE\""
+    "errorMsg": "\"error\":\"NO_PROFILE\"",
+    "expectedStatus": 200
   },
   {
     "name": "RuTracker.org",
@@ -4882,7 +5775,8 @@
     "urlMain": "https://rutracker.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Пользователь не найден"
+    "errorMsg": "Пользователь не найден",
+    "expectedStatus": 200
   },
   {
     "name": "ruVoIP.net",
@@ -4890,7 +5784,8 @@
     "urlMain": "https://ruvoip.net",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Error 404 - Not Found"
+    "errorMsg": "Error 404 - Not Found",
+    "expectedStatus": 200
   },
   {
     "name": "Salon24",
@@ -4898,7 +5793,9 @@
     "urlMain": "https://salon24.pl",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<title>Salon24 - Blogi, wiadomości, opinie i komentarze"
+    "errorMsg": "<title>Salon24 - Blogi, wiadomości, opinie i komentarze",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Scammer.info",
@@ -4906,7 +5803,9 @@
     "urlMain": "https://scammer.info",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found"
+    "errorMsg": "The requested URL or resource could not be found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Scored",
@@ -4914,7 +5813,8 @@
     "urlMain": "https://scored.co",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"status\":false"
+    "errorMsg": "\"status\":false",
+    "expectedStatus": 200
   },
   {
     "name": "ScoutWiki",
@@ -4922,7 +5822,9 @@
     "urlMain": "https://en.scoutwiki.org",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "is not registered"
+    "errorMsg": "is not registered",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Searchengines",
@@ -4930,7 +5832,8 @@
     "urlMain": "https://searchengines.guru",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "class=\"nothing-found\""
+    "errorMsg": "class=\"nothing-found\"",
+    "expectedStatus": 200
   },
   {
     "name": "secure_donation",
@@ -4938,7 +5841,9 @@
     "urlMain": "https://secure.donationpay.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>secure.donationpay.org</title>"
+    "errorMsg": "<title>secure.donationpay.org</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "sedisp@ce",
@@ -4946,7 +5851,9 @@
     "urlMain": "https://sedispace.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "- Page non trouvée!"
+    "errorMsg": "- Page non trouvée!",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Seneporno",
@@ -4954,7 +5861,9 @@
     "urlMain": "https://seneporno.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Unexpected error! Please contact us and tell us more how you got to this page!"
+    "errorMsg": "Unexpected error! Please contact us and tell us more how you got to this page!",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "sentimente",
@@ -4962,7 +5871,9 @@
     "urlMain": "https://sentimente.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "HTTP Error code: 404. Resource not found"
+    "errorMsg": "HTTP Error code: 404. Resource not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "SEOClerks",
@@ -4970,7 +5881,9 @@
     "urlMain": "https://seoclerks.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>SEO Marketplace"
+    "errorMsg": "<title>SEO Marketplace",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Sepia Search (PeerTube)",
@@ -4978,7 +5891,8 @@
     "urlMain": "https://sepiasearch.org",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"data\":[]"
+    "errorMsg": "\"data\":[]",
+    "expectedStatus": 200
   },
   {
     "name": "setlist.fm",
@@ -4986,7 +5900,9 @@
     "urlMain": "https://setlist.fm",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Sorry, the page you requested doesn't exist"
+    "errorMsg": "Sorry, the page you requested doesn't exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "SFD",
@@ -4994,7 +5910,9 @@
     "urlMain": "https://sfd.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Brak aktywnego profilu na forum"
+    "errorMsg": "Brak aktywnego profilu na forum",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Shesfreaky",
@@ -5002,7 +5920,9 @@
     "urlMain": "https://shesfreaky.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "s Profile - ShesFreaky</title>"
+    "positiveMsg": "s Profile - ShesFreaky</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Shikimori",
@@ -5010,7 +5930,9 @@
     "urlMain": "https://shikimori.io",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "class=\"error-404\""
+    "errorMsg": "class=\"error-404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "shopify",
@@ -5018,7 +5940,9 @@
     "urlMain": "https://{}.myshopify.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "Sorry, this shop is currently unavailable."
+    "errorMsg": "Sorry, this shop is currently unavailable.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Showup.tv",
@@ -5026,7 +5950,9 @@
     "urlMain": "https://showup.tv",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Darmowe"
+    "errorMsg": "<title>Darmowe",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "shutterstock",
@@ -5034,7 +5960,9 @@
     "urlMain": "https://shutterstock.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Well, this is unexpected..."
+    "errorMsg": "Well, this is unexpected...",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "skeb",
@@ -5042,7 +5970,9 @@
     "urlMain": "https://skeb.jp",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Skeb - Request Box"
+    "errorMsg": "Skeb - Request Box",
+    "expectedStatus": 200,
+    "notFoundStatus": 503
   },
   {
     "name": "SlackHoles",
@@ -5050,7 +5980,9 @@
     "urlMain": "https://slackholes.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "It looks like nothing was found at this location"
+    "errorMsg": "It looks like nothing was found at this location",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "slant",
@@ -5058,7 +5990,9 @@
     "urlMain": "https://slant.co",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "404 - Page Not Found - Slant"
+    "errorMsg": "404 - Page Not Found - Slant",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "slides",
@@ -5066,7 +6000,9 @@
     "urlMain": "https://slides.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "You may have mistyped the address"
+    "errorMsg": "You may have mistyped the address",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "SmashRun",
@@ -5074,7 +6010,9 @@
     "urlMain": "https://smashrun.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "no Smashrunner with the username"
+    "errorMsg": "no Smashrunner with the username",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "SmugMug",
@@ -5082,7 +6020,9 @@
     "urlMain": "https://{}.smugmug.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "schema.org/Thing"
+    "errorMsg": "schema.org/Thing",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Snipfeed",
@@ -5090,7 +6030,9 @@
     "urlMain": "https://snipfeed.co",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Oops, you hit a dead end!"
+    "errorMsg": "Oops, you hit a dead end!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "soc.citizen4.eu",
@@ -5098,7 +6040,9 @@
     "urlMain": "https://soc.citizen4.eu",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Nie znaleziono"
+    "errorMsg": "Nie znaleziono",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "social.bund.de",
@@ -5106,7 +6050,9 @@
     "urlMain": "https://social.bund.de",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>The page you are looking for isn&#39;t here."
+    "errorMsg": "<title>The page you are looking for isn&#39;t here.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "social_msdn",
@@ -5114,7 +6060,9 @@
     "urlMain": "https://social.msdn.microsoft.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "The resource you are looking for has been removed, had its name changed, or is temporarily unavailable."
+    "errorMsg": "The resource you are looking for has been removed, had its name changed, or is temporarily unavailable.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "sofurry",
@@ -5122,7 +6070,9 @@
     "urlMain": "https://{}.sofurry.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "SoFurry - Error | SoFurry"
+    "errorMsg": "SoFurry - Error | SoFurry",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Soup",
@@ -5130,7 +6080,9 @@
     "urlMain": "https://soup.io",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Soup.io - News, Sports, Entertainment, TV, Tech, Gaming"
+    "errorMsg": "Soup.io - News, Sports, Entertainment, TV, Tech, Gaming",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "SpiceWorks",
@@ -5138,7 +6090,9 @@
     "urlMain": "https://community.spiceworks.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Page Not Found"
+    "errorMsg": "Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "SPOJ",
@@ -5146,7 +6100,8 @@
     "urlMain": "https://spoj.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<strong>Innopolis Open 2018</strong>"
+    "errorMsg": "<strong>Innopolis Open 2018</strong>",
+    "expectedStatus": 200
   },
   {
     "name": "Sports Tracker",
@@ -5154,7 +6109,8 @@
     "urlMain": "https://api.sports-tracker.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"code\":\"404\""
+    "errorMsg": "\"code\":\"404\"",
+    "expectedStatus": 200
   },
   {
     "name": "StackOverflow",
@@ -5163,7 +6119,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"items\":[]",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200
   },
   {
     "name": "StackShare",
@@ -5171,7 +6128,8 @@
     "urlMain": "https://stackshare.io",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\\\"content\\\":\\\"The requested page could not be found.\\\""
+    "errorMsg": "\\\"content\\\":\\\"The requested page could not be found.\\\"",
+    "expectedStatus": 200
   },
   {
     "name": "Statuspage",
@@ -5179,7 +6137,9 @@
     "urlMain": "https://{}.statuspage.io",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<html><body>You are being <a href=\"https://www.statuspage.io\">redirected</a>.</body></html>"
+    "errorMsg": "<html><body>You are being <a href=\"https://www.statuspage.io\">redirected</a>.</body></html>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "steller",
@@ -5187,7 +6147,9 @@
     "urlMain": "https://steller.co",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "<title></title>"
+    "errorMsg": "<title></title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "StoryCorps",
@@ -5195,7 +6157,9 @@
     "urlMain": "https://archive.storycorps.org",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "We're sorry, but the page"
+    "errorMsg": "We're sorry, but the page",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "StreamElements",
@@ -5203,7 +6167,9 @@
     "urlMain": "https://api.streamelements.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "error"
+    "errorMsg": "error",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "StreamLabs",
@@ -5211,7 +6177,9 @@
     "urlMain": "https://streamlabs.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Unauthorized</title>"
+    "errorMsg": "<title>Unauthorized</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 401
   },
   {
     "name": "Stripchat",
@@ -5219,7 +6187,9 @@
     "urlMain": "https://stripchat.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "[]"
+    "errorMsg": "[]",
+    "expectedStatus": 400,
+    "notFoundStatus": 200
   },
   {
     "name": "Subscribestar",
@@ -5227,7 +6197,9 @@
     "urlMain": "https://subscribestar.adult",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "WE ARE SORRY, THE PAGE YOU REQUESTED CANNOT BE FOUND"
+    "errorMsg": "WE ARE SORRY, THE PAGE YOU REQUESTED CANNOT BE FOUND",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "sukebei.nyaa.si",
@@ -5235,7 +6207,9 @@
     "urlMain": "https://sukebei.nyaa.si",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "404 Not Found"
+    "errorMsg": "404 Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Suzuri",
@@ -5243,7 +6217,9 @@
     "urlMain": "https://suzuri.jp",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Push Space-key"
+    "errorMsg": "Push Space-key",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "szmer.info",
@@ -5251,7 +6227,8 @@
     "urlMain": "https://szmer.info",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Code: Couldn't find that username or email."
+    "errorMsg": "Code: Couldn't find that username or email.",
+    "expectedStatus": 200
   },
   {
     "name": "tabletoptournament",
@@ -5259,7 +6236,8 @@
     "urlMain": "https://tabletoptournaments.net",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "No player with the nickname"
+    "errorMsg": "No player with the nickname",
+    "expectedStatus": 200
   },
   {
     "name": "Tagged",
@@ -5267,7 +6245,9 @@
     "urlMain": "https://secure.tagged.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Tagged - The social network for meeting new people"
+    "errorMsg": "Tagged - The social network for meeting new people",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "TamTam",
@@ -5275,7 +6255,9 @@
     "urlMain": "https://tamtam.chat",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "ТамТам</title>"
+    "errorMsg": "ТамТам</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Tanuki.pl",
@@ -5283,7 +6265,9 @@
     "urlMain": "https://tanuki.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Nie ma takiego użytkownika"
+    "errorMsg": "Nie ma takiego użytkownika",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "TAPiTAG",
@@ -5291,7 +6275,8 @@
     "urlMain": "https://account.tapitag.co",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "The rf number is not valid"
+    "errorMsg": "The rf number is not valid",
+    "expectedStatus": 200
   },
   {
     "name": "Tappy",
@@ -5299,7 +6284,8 @@
     "urlMain": "https://api.tappy.tech",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Profile of username Not Found"
+    "errorMsg": "Profile of username Not Found",
+    "expectedStatus": 200
   },
   {
     "name": "Taringa",
@@ -5307,7 +6293,9 @@
     "urlMain": "https://taringa.net",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Colectiva en Taringa!</title>"
+    "errorMsg": "Colectiva en Taringa!</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "taskrabbit",
@@ -5315,7 +6303,9 @@
     "urlMain": "https://taskrabbit.com",
     "category": "professional",
     "checkMethod": "message",
-    "positiveMsg": "’s Profile"
+    "positiveMsg": "’s Profile",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Teamtreehouse",
@@ -5323,7 +6313,9 @@
     "urlMain": "https://teamtreehouse.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Oops, Something went missing"
+    "errorMsg": "Oops, Something went missing",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Teespring",
@@ -5331,7 +6323,9 @@
     "urlMain": "https://commerce.teespring.com",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "{\"errors\":{\"store\":[\"not found\"]}}"
+    "errorMsg": "{\"errors\":{\"store\":[\"not found\"]}}",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Teknik",
@@ -5339,7 +6333,8 @@
     "urlMain": "https://user.teknik.io",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "The user does not exist"
+    "errorMsg": "The user does not exist",
+    "expectedStatus": 200
   },
   {
     "name": "Teletype",
@@ -5347,7 +6342,9 @@
     "urlMain": "https://teletype.in",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "class=\"error\""
+    "errorMsg": "class=\"error\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Tenor",
@@ -5355,7 +6352,9 @@
     "urlMain": "https://tenor.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "class=\"error-page container page\""
+    "errorMsg": "class=\"error-page container page\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "TF2 Backpack Examiner",
@@ -5363,7 +6362,9 @@
     "urlMain": "https://tf2items.com",
     "category": "gaming",
     "checkMethod": "message",
-    "positiveMsg": "<title>TF2 Backpack -"
+    "positiveMsg": "<title>TF2 Backpack -",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "thegatewaypundit",
@@ -5371,7 +6372,9 @@
     "urlMain": "https://thegatewaypundit.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Not found, error 404"
+    "errorMsg": "Not found, error 404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "theguardian",
@@ -5379,7 +6382,9 @@
     "urlMain": "https://theguardian.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<title>Page Not Found | The Guardian</title>"
+    "errorMsg": "<title>Page Not Found | The Guardian</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "themeforest",
@@ -5387,7 +6392,9 @@
     "urlMain": "https://themeforest.net",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Page Not Found | ThemeForest"
+    "errorMsg": "Page Not Found | ThemeForest",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Thetattooforum",
@@ -5395,7 +6402,9 @@
     "urlMain": "https://thetattooforum.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "We’re sorry"
+    "errorMsg": "We’re sorry",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "thoughts",
@@ -5403,7 +6412,9 @@
     "urlMain": "https://thoughts.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Page not found"
+    "errorMsg": "<title>Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Tilde.zone (Mastodon Instance)",
@@ -5411,7 +6422,9 @@
     "urlMain": "https://tilde.zone",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Tinder",
@@ -5419,7 +6432,8 @@
     "urlMain": "https://tinder.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Tinder | Dating, Make Friends &amp; Meet New People"
+    "errorMsg": "Tinder | Dating, Make Friends &amp; Meet New People",
+    "expectedStatus": 200
   },
   {
     "name": "TipeeeStream",
@@ -5427,7 +6441,9 @@
     "urlMain": "https://tipeeestream.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"Not found\""
+    "errorMsg": "\"message\":\"Not found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Tooting.ch (Mastodon Instance)",
@@ -5435,7 +6451,9 @@
     "urlMain": "https://tooting.ch",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "toyhou.se",
@@ -5443,7 +6461,9 @@
     "urlMain": "https://toyhou.se",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "We can't find that page!"
+    "errorMsg": "We can't find that page!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "tradingview",
@@ -5451,7 +6471,9 @@
     "urlMain": "https://tradingview.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Page not found — TradingView"
+    "errorMsg": "Page not found — TradingView",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "TRAKTRAIN",
@@ -5459,7 +6481,9 @@
     "urlMain": "https://traktrain.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "class=\"title-404\""
+    "errorMsg": "class=\"title-404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "TruckersMP.Ru",
@@ -5467,7 +6491,9 @@
     "urlMain": "https://truckersmp.ru",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "class=\"b-handler-error-404\""
+    "errorMsg": "class=\"b-handler-error-404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Tryst",
@@ -5475,7 +6501,9 @@
     "urlMain": "https://tryst.link",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Page not found"
+    "errorMsg": "<title>Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "tunefind",
@@ -5483,7 +6511,9 @@
     "urlMain": "https://tunefind.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"code\":\"not_found\""
+    "errorMsg": "\"code\":\"not_found\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Twitch",
@@ -5491,7 +6521,9 @@
     "urlMain": "https://twitchtracker.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<title>404 Page Not Found"
+    "errorMsg": "<title>404 Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "twpro",
@@ -5499,7 +6531,9 @@
     "urlMain": "https://twpro.jp",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "をご確認ください。"
+    "errorMsg": "をご確認ください。",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "UEF CONNECT",
@@ -5507,7 +6541,9 @@
     "urlMain": "https://uefconnect.uef.fi",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "<title>Page not found - UEFConnect</title>"
+    "errorMsg": "<title>Page not found - UEFConnect</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Ultimate Guitar",
@@ -5515,7 +6551,9 @@
     "urlMain": "https://ultimate-guitar.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Oops! We couldn't find that page."
+    "errorMsg": "Oops! We couldn't find that page.",
+    "expectedStatus": 200,
+    "notFoundStatus": 410
   },
   {
     "name": "Ultras Diary",
@@ -5523,7 +6561,9 @@
     "urlMain": "https://ultrasdiary.pl",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Ile masz wyjazdów?"
+    "errorMsg": "Ile masz wyjazdów?",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Unlisted Videos",
@@ -5531,7 +6571,8 @@
     "urlMain": "https://unlistedvideos.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "content=\"\"/>"
+    "errorMsg": "content=\"\"/>",
+    "expectedStatus": 200
   },
   {
     "name": "USA Life",
@@ -5539,7 +6580,9 @@
     "urlMain": "https://usa.life",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Sorry, page not found"
+    "errorMsg": "Sorry, page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "utip.io",
@@ -5547,7 +6590,9 @@
     "urlMain": "https://utip.io",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Not a valid web service key"
+    "errorMsg": "Not a valid web service key",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "uwu.ai",
@@ -5555,7 +6600,9 @@
     "urlMain": "https://{}.uwu.ai",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Sorry, the requested page could not be found."
+    "errorMsg": "Sorry, the requested page could not be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Uwumarket",
@@ -5563,7 +6610,9 @@
     "urlMain": "https://uwumarket.us",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Page not found"
+    "errorMsg": "Page not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "vapenews",
@@ -5571,7 +6620,9 @@
     "urlMain": "https://vapenews.ru",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>404</title>"
+    "errorMsg": "<title>404</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Venmo",
@@ -5579,7 +6630,9 @@
     "urlMain": "https://account.venmo.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Sorry, the page you requested does not exist!"
+    "errorMsg": "Sorry, the page you requested does not exist!",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Vero",
@@ -5587,7 +6640,8 @@
     "urlMain": "https://vero.co",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "<h3>Not Found</h3>"
+    "errorMsg": "<h3>Not Found</h3>",
+    "expectedStatus": 200
   },
   {
     "name": "vibilagare",
@@ -5595,7 +6649,9 @@
     "urlMain": "https://vibilagare.se",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Sidan hittades inte |"
+    "errorMsg": "Sidan hittades inte |",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "VIEWBUG",
@@ -5603,7 +6659,9 @@
     "urlMain": "https://viewbug.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "id=\"missing-this\""
+    "errorMsg": "id=\"missing-this\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Vine",
@@ -5611,7 +6669,9 @@
     "urlMain": "https://vine.co",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "That record does not exist"
+    "errorMsg": "That record does not exist",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "VIP-blog",
@@ -5619,7 +6679,8 @@
     "urlMain": "https://{}.vip-blog.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Blog inexistant"
+    "errorMsg": "Blog inexistant",
+    "expectedStatus": 200
   },
   {
     "name": "VirusTotal",
@@ -5627,7 +6688,9 @@
     "urlMain": "https://virustotal.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"code\": \"NotFoundError\""
+    "errorMsg": "\"code\": \"NotFoundError\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "visnesscard",
@@ -5635,7 +6698,8 @@
     "urlMain": "https://my.visnesscard.com",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "card_id\": 0"
+    "errorMsg": "card_id\": 0",
+    "expectedStatus": 200
   },
   {
     "name": "Vivino",
@@ -5643,7 +6707,9 @@
     "urlMain": "https://api.vivino.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "\"error\":{\"message\":\"Record not found\"}"
+    "errorMsg": "\"error\":{\"message\":\"Record not found\"}",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Vkl.world (Mastodon Instance)",
@@ -5651,7 +6717,9 @@
     "urlMain": "https://vkl.world",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Vmst.io (Mastodon Instance)",
@@ -5659,7 +6727,9 @@
     "urlMain": "https://vmst.io",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Record not found"
+    "errorMsg": "Record not found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Voice123",
@@ -5667,7 +6737,8 @@
     "urlMain": "https://voice123.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "[]"
+    "errorMsg": "[]",
+    "expectedStatus": 200
   },
   {
     "name": "Voices.com",
@@ -5675,7 +6746,9 @@
     "urlMain": "https://voices.com",
     "category": "professional",
     "checkMethod": "message",
-    "errorMsg": "Try going back to the previous page or see below for more options"
+    "errorMsg": "Try going back to the previous page or see below for more options",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "VseTop",
@@ -5683,7 +6756,9 @@
     "urlMain": "https://vsetop.org",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<p>Пользователь с таким именем не найден.</p>"
+    "errorMsg": "<p>Пользователь с таким именем не найден.</p>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "W3Schools",
@@ -5691,7 +6766,9 @@
     "urlMain": "https://pathfinder-api.kai.w3spaces.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"Profile does not exists or not visible\""
+    "errorMsg": "\"message\":\"Profile does not exists or not visible\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Warmerise",
@@ -5699,7 +6776,9 @@
     "urlMain": "https://warmerise.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "<h2>Page Not Found"
+    "errorMsg": "<h2>Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "warriorforum",
@@ -5707,7 +6786,9 @@
     "urlMain": "https://warriorforum.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Oops | Warrior Forum -"
+    "errorMsg": "Oops | Warrior Forum -",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "watchmemore.com",
@@ -5715,7 +6796,9 @@
     "urlMain": "https://api.watchmemore.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "notExists"
+    "errorMsg": "notExists",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Watchmyfeed",
@@ -5723,7 +6806,9 @@
     "urlMain": "https://watchmyfeed.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "SEND ME A TIP"
+    "positiveMsg": "SEND ME A TIP",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "waytohey",
@@ -5731,7 +6816,9 @@
     "urlMain": "https://waytohey.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Unfortunately, this page doesn&#039;t exist."
+    "errorMsg": "Unfortunately, this page doesn&#039;t exist.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Weasyl",
@@ -5739,7 +6826,9 @@
     "urlMain": "https://weasyl.com",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "This user doesn't seem to be in our database."
+    "errorMsg": "This user doesn't seem to be in our database.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Weblancer",
@@ -5747,7 +6836,9 @@
     "urlMain": "https://weblancer.net",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"page\":\"/404\""
+    "errorMsg": "\"page\":\"/404\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Weblate",
@@ -5755,7 +6846,9 @@
     "urlMain": "https://hosted.weblate.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<h2>Page Not Found</h2>"
+    "errorMsg": "<h2>Page Not Found</h2>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "weebly",
@@ -5763,7 +6856,9 @@
     "urlMain": "https://{}.weebly.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>404 - Page Not Found"
+    "errorMsg": "<title>404 - Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "wego",
@@ -5771,7 +6866,9 @@
     "urlMain": "https://wego.social",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Sorry, page not found!"
+    "errorMsg": "Sorry, page not found!",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "Weibo",
@@ -5779,7 +6876,9 @@
     "urlMain": "https://weibo.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<h2>400 Bad Request</h2>"
+    "errorMsg": "<h2>400 Bad Request</h2>",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "WeTransfer",
@@ -5787,7 +6886,9 @@
     "urlMain": "https://{}.wetransfer.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "workspaceName"
+    "positiveMsg": "workspaceName",
+    "expectedStatus": 200,
+    "notFoundStatus": 307
   },
   {
     "name": "Wikimapia",
@@ -5795,7 +6896,8 @@
     "urlMain": "https://wikimapia.org",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"ok\":true"
+    "errorMsg": "\"ok\":true",
+    "expectedStatus": 200
   },
   {
     "name": "Wimkin-PublicProfile",
@@ -5803,7 +6905,9 @@
     "urlMain": "https://wimkin.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "The page you are looking for cannot be found."
+    "errorMsg": "The page you are looking for cannot be found.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Wireclub",
@@ -5811,7 +6915,9 @@
     "urlMain": "https://wireclub.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "People - Wireclub"
+    "errorMsg": "People - Wireclub",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Wishlistr",
@@ -5819,7 +6925,8 @@
     "urlMain": "https://wishlistr.com",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "+:var res = parseInt(0);"
+    "errorMsg": "+:var res = parseInt(0);",
+    "expectedStatus": 200
   },
   {
     "name": "wordnik",
@@ -5827,7 +6934,9 @@
     "urlMain": "https://wordnik.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Wordnik: Page Not Found"
+    "errorMsg": "Wordnik: Page Not Found",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "WordPress.org (Forums)",
@@ -5835,7 +6944,8 @@
     "urlMain": "https://login.wordpress.org",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"available\":true"
+    "errorMsg": "\"available\":true",
+    "expectedStatus": 200
   },
   {
     "name": "Wykop",
@@ -5843,7 +6953,9 @@
     "urlMain": "https://wykop.pl",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Wystąpił błąd 404."
+    "errorMsg": "Wystąpił błąd 404.",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Xakep.ru",
@@ -5851,7 +6963,9 @@
     "urlMain": "https://xakep.ru",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Страница не найдена"
+    "errorMsg": "Страница не найдена",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Xanga",
@@ -5859,7 +6973,9 @@
     "urlMain": "https://{}.xanga.com",
     "category": "content",
     "checkMethod": "message",
-    "positiveMsg": "s Xanga Site | Just"
+    "positiveMsg": "s Xanga Site | Just",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "xHamster",
@@ -5867,7 +6983,9 @@
     "urlMain": "https://xhamster.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "User not found</title>"
+    "errorMsg": "User not found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "XNXX",
@@ -5875,7 +6993,9 @@
     "urlMain": "https://xnxx.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Bad request"
+    "errorMsg": "<title>Bad request",
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "XVideos",
@@ -5883,7 +7003,9 @@
     "urlMain": "https://xvideos.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"message\":\"Unknown user\""
+    "errorMsg": "\"message\":\"Unknown user\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Yahoo! JAPAN Auction",
@@ -5891,7 +7013,9 @@
     "urlMain": "https://auctions.yahoo.co.jp",
     "category": "shopping",
     "checkMethod": "message",
-    "errorMsg": "Yahoo! JAPAN IDが無効です。"
+    "errorMsg": "Yahoo! JAPAN IDが無効です。",
+    "expectedStatus": 200,
+    "notFoundStatus": 500
   },
   {
     "name": "yapishu",
@@ -5899,7 +7023,9 @@
     "urlMain": "https://yapishu.net",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "Not Found (#404)"
+    "errorMsg": "Not Found (#404)",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Yazawaj",
@@ -5907,7 +7033,9 @@
     "urlMain": "https://yazawaj.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "<title>nodata"
+    "errorMsg": "<title>nodata",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "YesWeHack",
@@ -5915,7 +7043,9 @@
     "urlMain": "https://api.yeswehack.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"code\":404"
+    "errorMsg": "\"code\":404",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "youpic",
@@ -5923,7 +7053,9 @@
     "urlMain": "https://youpic.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>YouPic — Not Found</title>"
+    "errorMsg": "<title>YouPic — Not Found</title>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Zbiornik",
@@ -5931,7 +7063,9 @@
     "urlMain": "https://mini.zbiornik.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "INFO"
+    "positiveMsg": "INFO",
+    "expectedStatus": 200,
+    "notFoundStatus": 301
   },
   {
     "name": "Zenn",
@@ -5939,7 +7073,9 @@
     "urlMain": "https://zenn.dev",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<div class=\"ErrorContent_status__2Ykoq\">404</div>"
+    "errorMsg": "<div class=\"ErrorContent_status__2Ykoq\">404</div>",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Zillow",
@@ -5947,7 +7083,9 @@
     "urlMain": "https://zillow.com",
     "category": "shopping",
     "checkMethod": "message",
-    "positiveMsg": "- Real Estate Agent"
+    "positiveMsg": "- Real Estate Agent",
+    "expectedStatus": 200,
+    "notFoundStatus": 302
   },
   {
     "name": "zmarsa.com",
@@ -5955,7 +7093,9 @@
     "urlMain": "https://zmarsa.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>Error 404 - zMarsa.com<"
+    "errorMsg": "<title>Error 404 - zMarsa.com<",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Znanija",
@@ -5964,7 +7104,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"isAvailable\":true",
-    "undetectable": true
+    "undetectable": true,
+    "expectedStatus": 200
   },
   {
     "name": "zoomitir",
@@ -5972,7 +7113,9 @@
     "urlMain": "https://zoomit.ir",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "<title>خطای ۴۰۴ - صفحه یافت نشد</title>"
+    "errorMsg": "<title>خطای ۴۰۴ - صفحه یافت نشد</title>",
+    "expectedStatus": 301,
+    "notFoundStatus": 404
   },
   {
     "name": "Военное обозрение",
@@ -5980,7 +7123,9 @@
     "urlMain": "https://topwar.ru",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "class=\"error-container\""
+    "errorMsg": "class=\"error-container\"",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Чатовка.net",
@@ -5988,6 +7133,7 @@
     "urlMain": "https://chatovka.net",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "По Вашему запросу люди не найдены."
+    "errorMsg": "По Вашему запросу люди не найдены.",
+    "expectedStatus": 200
   }
 ]

@@ -47,6 +47,14 @@ function convert(s) {
   if (hasM) { entry.checkMethod = 'message'; entry.errorMsg = String(s.m_string).trim(); }
   else if (hasE) { entry.checkMethod = 'message'; entry.positiveMsg = String(s.e_string).trim(); }
   else { entry.checkMethod = 'status_code'; }
+  // Carry over WMN's own found/not-found status codes so /api/verify can
+  // replicate WMN's real found = (code===e_code [&& e_string in body]) /
+  // not_found = (code===m_code) dual-signal check instead of guessing from
+  // status 200 alone.
+  const eCode = Number(s.e_code);
+  const mCode = Number(s.m_code);
+  if (Number.isFinite(eCode)) entry.expectedStatus = eCode;
+  if (Number.isFinite(mCode) && mCode !== eCode) entry.notFoundStatus = mCode;
   const prot = s.protection || [];
   if (prot.includes('cloudflare') || prot.includes('ddos-guard') || prot.includes('cloudfront')) {
     entry.undetectable = true;
