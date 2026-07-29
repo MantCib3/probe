@@ -98,9 +98,8 @@ let pinnedItems = [];       // cards pinned to case notepad
 let captures    = {};       // { [url]: { metadata, screenshot, mimeType } }
 let lastScannedTarget = ''; // current dork panel target
 let activeDorkEngine  = 'google'; // active tab in dork panel
-let wmnSources = [];
-let wmnSearchTerm = '';
-let wmnCategoryFilter = 'all';
+let activePivotMode = 'email';
+let dorkResults = [];
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -140,17 +139,12 @@ const filterCategories  = $('filterCategories');
 const navbar            = $('navbar');
 const hamburger         = $('hamburger');
 const navMenu           = $('navMenu');
-const pivotEmailInput   = $('pivotEmailInput');
-const pivotEmailBtn     = $('pivotEmailBtn');
-const pivotPhoneInput   = $('pivotPhoneInput');
-const pivotPhoneBtn     = $('pivotPhoneBtn');
-const pivotNameInput    = $('pivotNameInput');
-const pivotNameBtn      = $('pivotNameBtn');
-const wmnQueryInput     = $('wmnQueryInput');
-const wmnCategoryFilterSelect = $('wmnCategoryFilter');
-const wmnRefreshBtn     = $('wmnRefreshBtn');
-const wmnSummary        = $('wmnSummary');
-const wmnSourceList     = $('wmnSourceList');
+const pivotTabs         = $('pivotTabs');
+const pivotResultsList  = $('pivotResultsList');
+const pivotStatus       = $('pivotStatus');
+const dorkTabs          = $('dorkTabs');
+const dorkResultsList   = $('dorkResultsList');
+const dorkStatus        = $('dorkStatus');
 const searchHint        = $('searchHint');
 
 /* ── Security helpers ────────────────────────────────────────────────── */
@@ -316,15 +310,16 @@ function makeDraggable(panel, handle) {
 
 function updateDorkPanel(target) {
   lastScannedTarget = target || '';
-  const queryEl = $('dorkEngineQuery');
-  const tabs    = $('dorkTabs');
-  if (!queryEl) return;
+  const tabs = $('dorkTabs');
   if (target) {
-    queryEl.innerHTML = `"<strong>${escHtml(target)}</strong>"`;
     if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = false);
+    pivotStatus.textContent = `${activePivotMode.charAt(0).toUpperCase() + activePivotMode.slice(1)} pivot ready for ${target}`;
+    dorkStatus.textContent = `Ready to search ${target}`;
+    renderPivotSources();
   } else {
-    queryEl.textContent = 'run a scan first';
     if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = true);
+    pivotStatus.textContent = 'Ready for the current scan target.';
+    dorkStatus.textContent = 'Awaiting scan…';
   }
 }
 
@@ -621,127 +616,106 @@ function normalizePivotQuery(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-function getWmnSourceUrl(source, query) {
-  const q = String(query || '').trim();
-  if (!source || !source.uri_check) return '#';
-  let url = source.uri_check;
-  if (q) {
-    url = url
-      .replace(/\{account\}/gi, encodeURIComponent(q))
-      .replace(/\{username\}/gi, encodeURIComponent(q))
-      .replace(/\{query\}/gi, encodeURIComponent(q))
-      .replace(/\{email\}/gi, encodeURIComponent(q))
-      .replace(/\{phone\}/gi, encodeURIComponent(q))
-      .replace(/\{name\}/gi, encodeURIComponent(q));
-  }
-  return url;
-}
+/* Static, curated reference sources for each pivot mode. These are plain
+ * link cards — nothing is fetched or searched; the URL is built from the
+ * current scan target and opened manually by the user. */
+const PIVOT_SOURCES = {
+  email: [
+    { name: 'Have I Been Pwned', note: 'Check breach exposure for this email', url: t => `https://haveibeenpwned.com/account/${encodeURIComponent(t)}` },
+    { name: 'Epieos', note: 'Reverse email lookup across linked services', url: t => `https://epieos.com/?q=${encodeURIComponent(t)}&t=email` },
+    { name: 'IntelX', note: 'Deep-index search for leaked and indexed references', url: t => `https://intelx.io/?s=${encodeURIComponent(t)}` },
+    { name: 'Google Search', note: 'Web search pivot for this email address', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+    { name: 'GitHub Code Search', note: 'Search commits/code for this email', url: t => `https://github.com/search?q=${encodeURIComponent('"' + t + '"')}&type=code` },
+  ],
+  phone: [
+    { name: 'That\'sThem', note: 'Reverse phone directory lookup', url: t => `https://thatsthem.com/phone/${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
+    { name: 'Sync.me', note: 'Caller ID / reverse phone lookup', url: t => `https://sync.me/search/?number=${encodeURIComponent(t)}` },
+    { name: 'TruePeopleSearch', note: 'Reverse phone number search', url: t => `https://www.truepeoplesearch.com/results?phoneno=${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
+    { name: 'NumLookup', note: 'Carrier and line-type lookup', url: t => `https://www.numlookup.com/${encodeURIComponent(t.replace(/[^0-9+]/g, ''))}` },
+    { name: 'Google Search', note: 'Web search pivot for this phone number', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+  ],
+  name: [
+    { name: 'FastPeopleSearch', note: 'Public records and people search', url: t => `https://www.fastpeoplesearch.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-').toLowerCase())}` },
+    { name: 'Whitepages', note: 'Contact and address lookup', url: t => `https://www.whitepages.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'TruePeopleSearch', note: 'Public records search by name', url: t => `https://www.truepeoplesearch.com/results?name=${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'Spokeo', note: 'People search aggregator', url: t => `https://www.spokeo.com/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'Google Search', note: 'Web search pivot for this name', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+  ],
+};
 
-function getFilteredWmnSources(query = '', category = 'all') {
-  const q = normalizePivotQuery(query);
-  const cat = String(category || 'all').toLowerCase();
-  return (wmnSources || []).filter(source => {
-    const name = (source.name || '').toLowerCase();
-    const catName = (source.cat || '').toLowerCase();
-    const uri = (source.uri_check || '').toLowerCase();
-    const categoryMatch = cat === 'all' || catName === cat;
-    const searchMatch = !q || name.includes(q) || catName.includes(q) || uri.includes(q);
-    return categoryMatch && searchMatch;
-  });
-}
+function renderPivotSources() {
+  if (!pivotResultsList || !pivotStatus) return;
+  const target = lastScannedTarget || '';
+  const label = activePivotMode.charAt(0).toUpperCase() + activePivotMode.slice(1);
+  const sources = PIVOT_SOURCES[activePivotMode] || [];
 
-function renderWmnSources() {
-  if (!wmnSourceList || !wmnSummary) return;
-  const filtered = getFilteredWmnSources(wmnSearchTerm, wmnCategoryFilter);
-  const total = filtered.length;
-  const shown = filtered.slice(0, 60);
-  const categories = [...new Set((wmnSources || []).map(s => (s.cat || '').toLowerCase()).filter(Boolean))].sort();
-  if (wmnCategoryFilterSelect) {
-    const current = wmnCategoryFilterSelect.value;
-    wmnCategoryFilterSelect.innerHTML = '<option value="all">All categories</option>' + categories.map(cat => `<option value="${escHtml(cat)}">${escHtml(cat)}</option>`).join('');
-    if (categories.includes(current)) wmnCategoryFilterSelect.value = current;
-    else wmnCategoryFilterSelect.value = 'all';
+  if (!target) {
+    pivotStatus.textContent = `Run a scan to activate ${label} pivots.`;
+  } else {
+    pivotStatus.textContent = `${sources.length} ${label} pivot sources for ${target}`;
   }
-  wmnSummary.textContent = `${total} WMN sources available · showing ${shown.length}`;
-  if (!shown.length) {
-    wmnSourceList.innerHTML = '<div class="wmn-empty">No WMN sources match that filter.</div>';
-    return;
-  }
-  wmnSourceList.innerHTML = shown.map(source => {
-    const url = getWmnSourceUrl(source, wmnSearchTerm || '');
+
+  pivotResultsList.innerHTML = sources.map(source => {
+    const href = target ? safeUrl(source.url(target)) : '#';
     return `
       <div class="wmn-source-card">
         <div class="wmn-source-row">
           <div>
-            <div class="wmn-source-name">${escHtml(source.name || 'Untitled source')}</div>
-            <div class="wmn-source-meta">${escHtml((source.cat || 'misc').toLowerCase())} · ${escHtml((source.protection || []).join(', ') || 'no special protection noted')}</div>
+            <div class="wmn-source-name">${escHtml(source.name)}</div>
+            <div class="wmn-source-meta">${escHtml(source.note)}</div>
           </div>
-          <a class="wmn-source-link" href="${escHtml(url)}" target="_blank" rel="noopener noreferrer">Open</a>
+          <a class="wmn-source-link" href="${href}" target="_blank" rel="noopener noreferrer">Open</a>
         </div>
       </div>
     `;
   }).join('');
 }
 
-async function loadWmnSources(force = false) {
-  if (wmnSources.length && !force) return wmnSources;
-  if (!wmnSummary) return [];
-  try {
-    const res = await fetch('./wmn-data.json');
-    if (!res.ok) throw new Error('WMN fetch failed');
-    const data = await res.json();
-    wmnSources = Array.isArray(data && data.sites) ? data.sites : [];
-    renderWmnSources();
-    return wmnSources;
-  } catch (_) {
-    if (wmnSummary) wmnSummary.textContent = 'WMN source catalog could not be loaded in this session.';
-    if (wmnSourceList) wmnSourceList.innerHTML = '<div class="wmn-empty">Unable to load the WMN source catalog.</div>';
-    return [];
+function renderDorkResults() {
+  if (!dorkResultsList || !dorkStatus) return;
+  if (!dorkResults.length) {
+    dorkResultsList.innerHTML = '<div class="wmn-empty">Run a scan to populate dork results.</div>';
+    return;
   }
+  const engineLabel = activeDorkEngine.charAt(0).toUpperCase() + activeDorkEngine.slice(1);
+  dorkStatus.textContent = `${dorkResults.length} ${engineLabel} dork hits for ${lastScannedTarget || 'current target'}`;
+  dorkResultsList.innerHTML = dorkResults.map(item => {
+    const cleanUrl = String(item.url || '').replace(/\s+/g, '');
+    const displayUrl = cleanUrl.length > 90 ? `${cleanUrl.slice(0, 87)}…` : cleanUrl;
+    const isSearchResult = /google\.com\/search|bing\.com\/search|duckduckgo\.com|yandex\.com\/search/.test(cleanUrl);
+    const label = isSearchResult ? 'Open query' : 'Open';
+    return `
+      <div class="wmn-source-card">
+        <div class="wmn-source-row">
+          <div>
+            <div class="wmn-source-name">${escHtml(item.title || item.url || 'Result')}</div>
+            <div class="wmn-source-meta">${escHtml(item.engine || 'search')} · ${escHtml(displayUrl)}</div>
+          </div>
+          <a class="wmn-source-link" href="${escHtml(safeUrl(cleanUrl))}" target="_blank" rel="noopener noreferrer">${escHtml(label)}</a>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
-async function runPivotQuery(mode, value) {
-  const query = String(value || '').trim();
-  if (!query) {
-    if (mode === 'email' && pivotEmailHint) pivotEmailHint.textContent = 'Enter an email address to build a light WMN pivot list.';
-    if (mode === 'phone' && pivotPhoneHint) pivotPhoneHint.textContent = 'Enter a phone number to build a light WMN pivot list.';
-    if (mode === 'name' && pivotNameHint) pivotNameHint.textContent = 'Enter a full name to build a light WMN pivot list.';
-    return;
+async function runDorkSearch() {
+  if (!lastScannedTarget) return;
+  dorkStatus.textContent = `Searching ${activeDorkEngine}…`;
+  try {
+    const response = await fetch(`/api/dork-search?target=${encodeURIComponent(lastScannedTarget)}&engine=${encodeURIComponent(activeDorkEngine)}`);
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || 'Dork lookup failed');
+    dorkResults = (Array.isArray(payload.results) ? payload.results : []).slice(0, 8).map((item, idx) => ({
+      title: item.title || `Dork result ${idx + 1}`,
+      url: item.url,
+      engine: item.engine || activeDorkEngine,
+    }));
+    renderDorkResults();
+  } catch (_) {
+    dorkResults = [];
+    dorkStatus.textContent = 'Dork lookup failed.';
+    renderDorkResults();
   }
-
-  await loadWmnSources();
-  const mapped = {
-    email: ['email', 'mail', 'pwned', 'breach', 'intel', 'contact'],
-    phone: ['phone', 'mobile', 'tel', 'contact'],
-    name: ['people', 'person', 'profile', 'name', 'social'],
-  }[mode] || [];
-
-  const filtered = (wmnSources || []).filter(source => {
-    const name = (source.name || '').toLowerCase();
-    const cat = (source.cat || '').toLowerCase();
-    const uri = (source.uri_check || '').toLowerCase();
-    const queryMatch = name.includes(query.toLowerCase()) || cat.includes(query.toLowerCase()) || uri.includes(query.toLowerCase());
-    const typeMatch = !mapped.length || mapped.some(token => name.includes(token) || cat.includes(token) || uri.includes(token));
-    return queryMatch || typeMatch;
-  }).slice(0, 12);
-
-  if (!filtered.length) {
-    const fallback = `https://www.google.com/search?q=${encodeURIComponent(`${mode} ${query}`)}`;
-    window.open(fallback, '_blank', 'noopener,noreferrer');
-    if (mode === 'email' && pivotEmailHint) pivotEmailHint.textContent = 'No direct WMN source matched; opened a general web search instead.';
-    if (mode === 'phone' && pivotPhoneHint) pivotPhoneHint.textContent = 'No direct WMN source matched; opened a general web search instead.';
-    if (mode === 'name' && pivotNameHint) pivotNameHint.textContent = 'No direct WMN source matched; opened a general web search instead.';
-    return;
-  }
-
-  filtered.forEach((source, idx) => {
-    const url = getWmnSourceUrl(source, query);
-    setTimeout(() => window.open(url, '_blank', 'noopener,noreferrer'), idx * 140);
-  });
-
-  if (mode === 'email' && pivotEmailHint) pivotEmailHint.textContent = `Opened ${filtered.length} WMN-backed sources for ${query}.`;
-  if (mode === 'phone' && pivotPhoneHint) pivotPhoneHint.textContent = `Opened ${filtered.length} WMN-backed sources for ${query}.`;
-  if (mode === 'name' && pivotNameHint) pivotNameHint.textContent = `Opened ${filtered.length} WMN-backed sources for ${query}.`;
 }
 
 function initFloatingPanels() {
@@ -871,8 +845,9 @@ function initFloatingPanels() {
 
 /* ── Platforms grid (static, rendered on load) ───────────────────────── */
 function initPlatformsGrid(sites) {
+  const activeSites = (sites || []).filter(s => !s.defunct);
   const frag = document.createDocumentFragment();
-  sites.forEach(site => {
+  activeSites.forEach(site => {
     const chip = document.createElement('div');
     chip.className = 'platform-chip';
     chip.innerHTML = `<span class="chip-name">${escHtml(site.name)}</span><span class="chip-cat">${escHtml(site.category)}</span>`;
@@ -881,14 +856,14 @@ function initPlatformsGrid(sites) {
   platformsGrid.appendChild(frag);
 
   // Update count placeholders
-  const count = sites.length;
+  const count = activeSites.length;
   document.querySelectorAll('#heroCount, #siteCount, .step-count').forEach(el => {
     el.textContent = count;
   });
 
   // Update checklist with real counts per category
   const catCount = {};
-  sites.forEach(s => { catCount[s.category] = (catCount[s.category] || 0) + 1; });
+  activeSites.forEach(s => { catCount[s.category] = (catCount[s.category] || 0) + 1; });
   // update search hint
   const hint = $('searchHint');
   if (hint) hint.innerHTML = `${count} platforms &nbsp;·&nbsp; social · developer · gaming · content · and more`;
@@ -1204,10 +1179,10 @@ async function runArchiveFallback() {
 
 /* ── Found-first insertion ───────────────────────────────────────────── */
 function insertCardSorted(card) {
-  const isTop = card.dataset.status === 'found' || card.dataset.status === 'deleted';
-  if (isTop) {
-    resultsGrid.insertBefore(card, resultsGrid.children[foundInsertIdx] || null);
-    foundInsertIdx++;
+  const category = (card.dataset.category || 'misc').toLowerCase();
+  const section = resultsGrid.querySelector(`[data-category-section="${CSS.escape(category)}"]`);
+  if (section) {
+    section.appendChild(card);
   } else {
     resultsGrid.appendChild(card);
   }
@@ -1231,9 +1206,21 @@ function makeManualItem(r) {
 /* ── Filter application ──────────────────────────────────────────────── */
 function applyFilters() {
   const cards = resultsGrid.querySelectorAll('.result-card');
+  const sections = resultsGrid.querySelectorAll('.result-category-section');
+  sections.forEach(section => {
+    const sectionCards = section.querySelectorAll('.result-card');
+    const visibleCards = [...sectionCards].filter(card => {
+      if (card.classList.contains('name-card')) return true;
+      const catMatch = activeFilter === 'all' || card.dataset.category === activeFilter;
+      const foundMatch = !foundOnly || card.dataset.status === 'found';
+      return catMatch && foundMatch;
+    });
+    const hasVisible = visibleCards.length > 0;
+    section.style.display = hasVisible ? '' : 'none';
+  });
   cards.forEach(card => {
     if (card.classList.contains('name-card')) return; // name cards always visible
-    const catMatch   = activeFilter === 'all' || card.dataset.category === activeFilter;
+    const catMatch = activeFilter === 'all' || card.dataset.category === activeFilter;
     const foundMatch = !foundOnly || card.dataset.status === 'found';
     card.classList.toggle('hidden', !(catMatch && foundMatch));
   });
@@ -1281,9 +1268,12 @@ async function startScan(username) {
 
   resetScanState();
   renderQuickChecks([]);
+  dorkResults = [];
+  renderDorkResults();
 
   currentUsername.textContent = username;
   updateDorkPanel(username);
+  renderPivotSources();
   const fabGrpA = $('fabGroup'); if (fabGrpA) fabGrpA.style.display = 'flex';
   pushCaseEvent(`Username investigation started for ${username}`, 'start');
   scanProgressSec.style.display = 'block';
@@ -1311,6 +1301,18 @@ async function startScan(username) {
   const sites = _sitesCache;
   updateStats(0, sites.length);
   progressStatus.innerHTML = `Scanning <strong>${escHtml(username)}</strong>…`;
+
+  const categoryOrder = ['social','developer','gaming','content','forum','professional','shopping','misc'];
+  const categorySections = {};
+  categoryOrder.forEach(cat => {
+    const section = document.createElement('div');
+    section.className = 'result-category-section';
+    section.dataset.categorySection = cat;
+    section.innerHTML = `<div class="result-category-header">${escHtml(cat)}</div><div class="result-category-list"></div>`;
+    resultsGrid.appendChild(section);
+    categorySections[cat] = section.querySelector('.result-category-list');
+  });
+  const miscSection = categorySections.misc || resultsGrid.appendChild(document.createElement('div'));
 
   /* Build result objects and create cards for every site up-front.
    * makeCard() auto-queues cors=true sites into _cvQueue for direct
@@ -1340,7 +1342,8 @@ async function startScan(username) {
     results.push(result);
     const card = makeCard(result, 0);
     card.dataset.resultIndex = String(results.length - 1);
-    resultsGrid.appendChild(card);
+    const targetList = categorySections[site.category] || miscSection;
+    targetList.appendChild(card);
     done++;
     if (done % 30 === 0) {
       updateStats(done, sites.length);
@@ -1400,9 +1403,11 @@ function finishScan(username, done, total) {
 
   const found = results.filter(r => r.status === 'found').length;
   progressStatus.innerHTML = `Scan complete — <strong>${escHtml(username)}</strong>`;
-  completionText.textContent = `${found} profile${found !== 1 ? 's' : ''} found across ${total} platforms`;
+  completionText.textContent = `${found} profile${found !== 1 ? 's' : ''} found across ${total} platforms · grouped by category`;
   completionBar.style.display = 'flex';
   pushCaseEvent(`Username investigation complete: ${found} found across ${total} sources`, 'done');
+  renderPivotSources();
+  runDorkSearch();
   resetScanControls();
 
   /* Run CORS browser verification then Archive.org CDX, then populate manual panel */
@@ -1668,86 +1673,24 @@ function initEvents() {
     queueQuickCheck(e.target.value.trim());
   });
 
-  // Pivot buttons
-  if (pivotNameBtn) {
-    pivotNameBtn.addEventListener('click', () => {
-      const val = pivotNameInput ? pivotNameInput.value.trim() : '';
-      const err = validateName(val);
-      if (err) {
-        searchError.textContent = err;
-        searchError.style.display = 'block';
-        if (pivotNameInput) pivotNameInput.focus();
-        return;
-      }
-      searchError.style.display = 'none';
-      startNameScan(val);
+  if (pivotTabs) {
+    pivotTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.pivot-tab');
+      if (!tab) return;
+      activePivotMode = tab.dataset.pivot || 'email';
+      pivotTabs.querySelectorAll('.pivot-tab').forEach(btn => btn.classList.toggle('active', btn === tab));
+      renderPivotSources();
     });
   }
 
-  if (pivotEmailBtn) {
-    pivotEmailBtn.addEventListener('click', () => {
-      const val = pivotEmailInput ? pivotEmailInput.value.trim() : '';
-      const err = validateEmail(val);
-      if (err) {
-        searchError.textContent = err;
-        searchError.style.display = 'block';
-        if (pivotEmailInput) pivotEmailInput.focus();
-        return;
-      }
-      searchError.style.display = 'none';
-      startEmailScan(val);
+  if (dorkTabs) {
+    dorkTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.dork-tab');
+      if (!tab || tab.disabled) return;
+      activeDorkEngine = tab.dataset.engine || 'google';
+      dorkTabs.querySelectorAll('.dork-tab').forEach(btn => btn.classList.toggle('active', btn === tab));
+      if (lastScannedTarget) runDorkSearch();
     });
-  }
-
-  if (pivotPhoneBtn) {
-    pivotPhoneBtn.addEventListener('click', () => {
-      const val = pivotPhoneInput ? pivotPhoneInput.value.trim() : '';
-      const err = validatePhone(val);
-      if (err) {
-        searchError.textContent = err;
-        searchError.style.display = 'block';
-        if (pivotPhoneInput) pivotPhoneInput.focus();
-        return;
-      }
-      searchError.style.display = 'none';
-      startPhoneScan(val);
-    });
-  }
-
-  if (pivotNameInput) {
-    pivotNameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && pivotNameBtn) pivotNameBtn.click();
-    });
-  }
-
-  if (pivotEmailInput) {
-    pivotEmailInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && pivotEmailBtn) pivotEmailBtn.click();
-    });
-  }
-
-  if (pivotPhoneInput) {
-    pivotPhoneInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && pivotPhoneBtn) pivotPhoneBtn.click();
-    });
-  }
-
-  if (wmnQueryInput) {
-    wmnQueryInput.addEventListener('input', (e) => {
-      wmnSearchTerm = e.target.value.trim();
-      renderWmnSources();
-    });
-  }
-
-  if (wmnCategoryFilterSelect) {
-    wmnCategoryFilterSelect.addEventListener('change', (e) => {
-      wmnCategoryFilter = e.target.value || 'all';
-      renderWmnSources();
-    });
-  }
-
-  if (wmnRefreshBtn) {
-    wmnRefreshBtn.addEventListener('click', () => loadWmnSources(true));
   }
 
   // Cancel button
@@ -1847,7 +1790,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-  loadWmnSources();
   initEvents();
   initFadeIn();
 });

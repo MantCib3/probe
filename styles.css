@@ -616,9 +616,30 @@ a.nav-logo {
 /* Results grid */
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 1rem;
   min-height: 60px;
+}
+
+.result-category-section {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1rem;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(10px);
+}
+
+.result-category-header {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+}
+
+.result-category-list {
+  display: grid;
+  gap: 0.75rem;
 }
 
 /* Result cards */
@@ -804,6 +825,137 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .result-card.email-card { opacity: 1 !important; }
 
 /* Completion bar */
+.pivots-section {
+  padding: 4.5rem 0 5rem;
+}
+
+.pivot-shell {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.pivot-column, .dork-column {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1rem;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(10px);
+}
+
+.pivot-header, .dork-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.pivot-tabs, .dork-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pivot-tab, .dork-tab {
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--tr);
+}
+
+.pivot-tab.active, .dork-tab.active {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+.pivot-tab:disabled, .dork-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pivot-status, .dork-status {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.pivot-results, .dork-results {
+  display: grid;
+  gap: 0.7rem;
+  min-height: 220px;
+}
+
+.pivot-group {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.8);
+}
+
+.pivot-group-title {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.pivot-group-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.wmn-source-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  background: var(--white);
+}
+
+.wmn-source-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.wmn-source-name {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.wmn-source-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.18rem;
+}
+
+.wmn-source-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wmn-empty {
+  color: var(--muted);
+  font-size: 0.92rem;
+  padding: 0.7rem 0;
+}
+
+@media (max-width: 980px) {
+  .pivot-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Manual Check Panel ──────────────────────────────────────────────── */
 .manual-check-panel {
   margin-top: 1.5rem;

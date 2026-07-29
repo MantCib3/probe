@@ -42,6 +42,29 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function fetchText(url, timeoutMs = 20000) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const transport = parsed.protocol === 'https:' ? https : http;
+    const req = transport.get(parsed, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        resolve(fetchText(new URL(res.headers.location, parsed).toString(), timeoutMs));
+        return;
+      }
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => resolve(body));
+    });
+    req.on('error', reject);
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error('request timeout'));
+    });
+  });
+}
+
 // Auth/login redirect patterns — if a 3xx points here, account doesn't exist
 const AUTH_REDIRECT_PATTERNS = [
   '/login', '/signin', '/sign-in', '/signup', '/sign-up', '/register',
@@ -1931,6 +1954,44 @@ const server = http.createServer((req, res) => {
         res.end();
       }
     });
+    return;
+  }
+
+  /* ── Dork proxy endpoint ──────────────────────────────────────────── */
+  if (pathname === '/api/dork-search') {
+    const target = (urlObj.searchParams.get('target') || '').trim();
+    const engine = (urlObj.searchParams.get('engine') || 'google').toLowerCase();
+    if (!target) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Missing target.' }));
+    }
+
+    const engineKey = ['google', 'bing', 'ddg', 'yandex'].includes(engine) ? engine : 'google';
+    const searchUrl = {
+      google: `https://r.jina.ai/http://www.google.com/search?q=${encodeURIComponent('"' + target + '"')}`,
+      bing: `https://r.jina.ai/http://www.bing.com/search?q=${encodeURIComponent('"' + target + '"')}`,
+      ddg: `https://r.jina.ai/http://duckduckgo.com/?q=${encodeURIComponent('"' + target + '"')}`,
+      yandex: `https://r.jina.ai/http://yandex.com/search/?text=${encodeURIComponent('"' + target + '"')}`,
+    }[engineKey];
+
+    fetchText(searchUrl)
+      .then(text => {
+        const urls = [...new Set((text.match(/https?:\/\/[^\s"'<>]+/gi) || [])
+          .map(item => item.replace(/[),.]+$/, ''))
+          .filter(Boolean))];
+        const cleaned = urls.filter(url => !url.includes('challenges.cloudflare.com') && !url.includes('google.com/search?q=') && !url.includes('www.google.com/search'));
+        const results = cleaned.slice(0, 8).map((url, idx) => ({
+          title: `Dork result ${idx + 1}`,
+          url,
+          engine: engineKey,
+        }));
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, target, engine: engineKey, results }));
+      })
+      .catch(() => {
+        res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'Dork lookup failed.' }));
+      });
     return;
   }
 
