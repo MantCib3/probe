@@ -20,12 +20,14 @@ const REASON_LABEL = {
   title_blocked_pattern: 'CF/bot protection page detected',
   body_blocked_pattern: 'CF/bot protection content detected',
   client_side_check_pending: 'Server skipped — browser will verify directly',
+  username_format_incompatible: 'Username format not valid for this platform',
   probe_timeout: 'Site did not respond within 15 seconds',
   body_guard_username_match: 'Username matched on page',
   body_guard_no_username_match: 'Profile loaded but username was not confirmed',
   site_positive_message: 'Site-specific positive signal matched',
   skip_body_check_enabled: 'Direct profile response accepted',
   username_present_in_body: 'Username explicitly present in page content',
+  archive_org_fallback_found: 'Found archived in the Wayback Machine',
   username_missing_in_body: 'Username missing from expected page content',
   title_not_found_pattern: 'Page title indicates account not found',
   body_not_found_pattern: 'Page content indicates account not found',
@@ -84,7 +86,6 @@ const REASON_LABEL = {
 let results       = [];   // all result objects from this scan
 let manualResults = [];   // undetectable sites routed to manual panel
 let evtSource     = null; // kept for cancelScan compat — not used in static mode
-let _sitesCache   = null; // sites.json loaded once on first scan
 let activeFilter  = 'all';
 let foundOnly     = true;
 let scanActive    = false;
@@ -276,14 +277,6 @@ function queueQuickCheck(_username) {
 
 /* fetchPinMeta is a no-op in static mode (metadata capture requires a server) */
 function fetchPinMeta(_idx) {}
-
-/* ── Dork engines ────────────────────────────────────────────────────── */
-const DORK_URLS = {
-  google:  q => `https://www.google.com/search?q=${encodeURIComponent('"'+q+'"')}`,
-  bing:    q => `https://www.bing.com/search?q=${encodeURIComponent('"'+q+'"')}`,
-  ddg:     q => `https://duckduckgo.com/?q=${encodeURIComponent('"'+q+'"')}`,
-  yandex:  q => `https://yandex.com/search/?text=${encodeURIComponent('"'+q+'"')}`,
-};
 
 /* ── Floating panel utilities ────────────────────────────────────────── */
 function makeDraggable(panel, handle) {
@@ -669,31 +662,74 @@ function renderPivotSources() {
   }).join('');
 }
 
-function renderDorkResults() {
+/* ── Dork results — rendered as a search-engine results page (SERP):
+ * clickable blue title, green breadcrumb URL, gray snippet text, and an
+ * optional lazy-loaded thumbnail pulled from the target page's og:image.
+ * Every engine (google/bing/ddg/yandex) renders with this exact layout. */
+function renderDorkResults(searched) {
   if (!dorkResultsList || !dorkStatus) return;
   if (!dorkResults.length) {
-    dorkResultsList.innerHTML = '<div class="wmn-empty">Run a scan to populate dork results.</div>';
+    dorkResultsList.innerHTML = searched
+      ? '<div class="wmn-empty">No results found for this engine.</div>'
+      : '<div class="wmn-empty">Run a scan to populate dork results.</div>';
     return;
   }
   const engineLabel = activeDorkEngine.charAt(0).toUpperCase() + activeDorkEngine.slice(1);
-  dorkStatus.textContent = `${dorkResults.length} ${engineLabel} dork hits for ${lastScannedTarget || 'current target'}`;
-  dorkResultsList.innerHTML = dorkResults.map(item => {
+  dorkStatus.textContent = `${dorkResults.length} ${engineLabel} results for ${lastScannedTarget || 'current target'}`;
+  dorkResultsList.innerHTML = dorkResults.map((item, idx) => {
     const cleanUrl = String(item.url || '').replace(/\s+/g, '');
+    const safeHref = escHtml(safeUrl(cleanUrl));
+    let host = cleanUrl;
+    try { host = new URL(cleanUrl).hostname.replace(/^www\./, ''); } catch (_) { /* keep raw */ }
     const displayUrl = cleanUrl.length > 90 ? `${cleanUrl.slice(0, 87)}…` : cleanUrl;
-    const isSearchResult = /google\.com\/search|bing\.com\/search|duckduckgo\.com|yandex\.com\/search/.test(cleanUrl);
-    const label = isSearchResult ? 'Open query' : 'Open';
+    const snippetHtml = item.snippet
+      ? `<div class="serp-snippet">${escHtml(item.snippet)}</div>`
+      : '';
     return `
-      <div class="wmn-source-card">
-        <div class="wmn-source-row">
-          <div>
-            <div class="wmn-source-name">${escHtml(item.title || item.url || 'Result')}</div>
-            <div class="wmn-source-meta">${escHtml(item.engine || 'search')} · ${escHtml(displayUrl)}</div>
-          </div>
-          <a class="wmn-source-link" href="${escHtml(safeUrl(cleanUrl))}" target="_blank" rel="noopener noreferrer">${escHtml(label)}</a>
+      <div class="serp-result">
+        <div class="serp-thumb" data-preview-url="${escHtml(cleanUrl)}" data-preview-idx="${idx}">
+          <img class="serp-thumb-img" alt="" loading="lazy">
+        </div>
+        <div class="serp-body">
+          <div class="serp-breadcrumb">${escHtml(host)}</div>
+          <a class="serp-title" href="${safeHref}" target="_blank" rel="noopener noreferrer">${escHtml(item.title || cleanUrl || 'Result')}</a>
+          <div class="serp-url">${escHtml(displayUrl)}</div>
+          ${snippetHtml}
         </div>
       </div>
     `;
   }).join('');
+
+  loadDorkThumbnails();
+}
+
+// Lazily fetch an og:image/twitter:image preview for each rendered result.
+// Small batch size (4) since there are only ever ~8 results per engine —
+// no need for a full concurrency-controlled queue like the main scan.
+async function loadDorkThumbnails() {
+  const thumbs = [...dorkResultsList.querySelectorAll('.serp-thumb[data-preview-url]')];
+  for (let i = 0; i < thumbs.length; i += 4) {
+    await Promise.all(thumbs.slice(i, i + 4).map(async (thumb) => {
+      const url = thumb.dataset.previewUrl;
+      if (!url) return;
+      try {
+        const resp = await fetch(`/api/link-preview?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(7000) });
+        const payload = await resp.json();
+        if (payload && payload.ok && payload.image) {
+          const img = thumb.querySelector('.serp-thumb-img');
+          if (img) {
+            img.src = payload.image;
+            img.onerror = () => thumb.classList.add('no-image');
+            thumb.classList.add('has-image');
+          }
+        } else {
+          thumb.classList.add('no-image');
+        }
+      } catch (_) {
+        thumb.classList.add('no-image');
+      }
+    }));
+  }
 }
 
 async function runDorkSearch() {
@@ -706,46 +742,31 @@ async function runDorkSearch() {
     const payload = await response.json();
     if (!response.ok || !payload.ok) throw new Error(payload.error || 'Dork lookup failed');
     dorkResults = (Array.isArray(payload.results) ? payload.results : []).slice(0, 8).map((item, idx) => ({
-      title: item.title || `Dork result ${idx + 1}`,
+      title: item.title || `Result ${idx + 1}`,
       url: item.url,
+      snippet: item.snippet || '',
       engine: item.engine || activeDorkEngine,
     }));
-    renderDorkResults();
+    renderDorkResults(true);
   } catch (err) {
     dorkResults = [];
     dorkStatus.textContent = (err && err.name === 'TimeoutError') ? 'Dork lookup timed out.' : 'Dork lookup failed.';
-    renderDorkResults();
+    renderDorkResults(true);
   }
 }
 
 function initFloatingPanels() {
-  const dorkPanel   = $('dorkPanel');
   const caseNotepad = $('caseNotepad');
   const fabGrp      = $('fabGroup');
-  const fabDork     = $('fabDork');
   const fabNotepad  = $('fabNotepad');
-  if (!dorkPanel || !caseNotepad || !fabGrp) return;
+  if (!caseNotepad || !fabGrp) return;
 
-  makeDraggable(dorkPanel,   $('dorkHandle'));
   makeDraggable(caseNotepad, $('notepadHandle'));
 
   function hidePanel(panel, fab) {
     panel.style.display = 'none';
     if (fab) fab.classList.remove('active');
   }
-
-  fabDork.addEventListener('click', () => {
-    if (dorkPanel.style.display === 'block') { hidePanel(dorkPanel, fabDork); return; }
-    if (!dorkPanel.dataset.positioned) {
-      dorkPanel.style.right  = '80px';
-      dorkPanel.style.bottom = '80px';
-      dorkPanel.style.left   = 'auto';
-      dorkPanel.style.top    = 'auto';
-      dorkPanel.dataset.positioned = '1';
-    }
-    dorkPanel.style.display = 'block';
-    fabDork.classList.add('active');
-  });
 
   fabNotepad.addEventListener('click', () => {
     if (caseNotepad.style.display === 'block') { hidePanel(caseNotepad, fabNotepad); return; }
@@ -760,30 +781,11 @@ function initFloatingPanels() {
     fabNotepad.classList.add('active');
   });
 
-  $('dorkMinBtn').addEventListener('click', () => {
-    dorkPanel.classList.toggle('minimised');
-    $('dorkMinBtn').textContent = dorkPanel.classList.contains('minimised') ? '+' : '−';
-  });
-  $('dorkCloseBtn').addEventListener('click', () => hidePanel(dorkPanel, fabDork));
   $('notepadMinBtn').addEventListener('click', () => {
     caseNotepad.classList.toggle('minimised');
     $('notepadMinBtn').textContent = caseNotepad.classList.contains('minimised') ? '+' : '−';
   });
   $('notepadCloseBtn').addEventListener('click', () => hidePanel(caseNotepad, fabNotepad));
-
-  // Dork tabs — each button opens that engine’s search in a new tab
-  const dorkTabs = $('dorkTabs');
-  if (dorkTabs) {
-    dorkTabs.addEventListener('click', (e) => {
-      const tab = e.target.closest('.dork-tab');
-      if (!tab || tab.disabled) return;
-      const engine = tab.dataset.engine;
-      if (lastScannedTarget && DORK_URLS[engine]) {
-        window.open(DORK_URLS[engine](lastScannedTarget), '_blank', 'noopener,noreferrer');
-        tab.classList.add('visited');
-      }
-    });
-  }
 
   // Dork panel — pin a URL from search results
   function addPinFromUrl(url, source) {
@@ -921,21 +923,13 @@ function makeCard(r, animDelay = 0) {
   // Store profile URL for archive.org fallback
   card.dataset.profileUrl = r.url || '';
 
-  // Queue client-side verification based on what the server sent
-  if (r.cors && r.status === 'unknown' && r.checkUrl) {
-    // Tier 1: direct CORS fetch from browser (API endpoints with open CORS)
-    _cvQueue.push({ type: 'cors', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null });
-  } else if (r.cfProxy && r.status === 'unknown') {
-    // Tier 2: CF Worker edge proxy — allowlisted social/CF-protected sites
-    _cvQueue.push({ type: 'proxy', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null });
-  } else if (r.auth && r.status === 'auth_required') {
-    // Tier 3: no-cors redirect detect with user cookies
+  // The server now resolves every site itself (direct request, WMN dual-
+  // signal check, stealth-browser fallback, and Wayback Machine fallback
+  // are all done server-side). The only thing that genuinely can't be
+  // done server-side is an auth-gated check that needs the *user's own*
+  // login cookies — that's the one client-side tier kept below.
+  if (r.auth && r.status === 'auth_required') {
     _cvQueue.push({ type: 'auth', card, checkUrl: r.url || r.checkUrl });
-  } else if (r.status === 'unknown' && r.checkUrl) {
-    // Tier 4: server-side /api/verify — for sites with no cors/cfProxy/auth
-    // flag (e.g. the merged WhatsMyName catalog). Our own backend fetches
-    // server-to-server, which isn't subject to browser CORS restrictions.
-    _cvQueue.push({ type: 'server', card, checkUrl: r.checkUrl, checkMethod: r.checkMethod || 'status_code', errorMsg: r.errorMsg || null, positiveMsg: r.positiveMsg || null, notFoundStatus: r.notFoundStatus || null, expectedStatus: r.expectedStatus || null });
   }
 
   return card;
@@ -1002,25 +996,17 @@ function makeNameCard(r, animDelay = 0) {
 }
 
 /* ── Client-side verification ─────────────────────────────────────────
- *  Four job types — run after all cards are created:
- *  'cors'   → direct browser fetch (CORS-enabled API endpoints, user's IP)
- *  'proxy'  → CF Worker edge proxy (allowlisted CF-protected/social sites)
- *  'auth'   → no-cors redirect-detect (auth-gated; uses user's cookies)
- *  'server' → our own backend's /api/verify (no cors/cfProxy/auth flag —
- *             e.g. the merged WhatsMyName catalog; bypasses browser CORS
- *             entirely since the fetch happens server-to-server)
- *  Archive.org CDX fallback runs on any remaining unknowns afterwards.
+ *  The server resolves every site itself now (direct request, WMN dual-
+ *  signal check, stealth-browser fallback, Wayback Machine fallback are
+ *  all done server-side — see /api/check in server.js). The 'cors' and
+ *  'proxy' (CF Worker edge) tiers that used to run in the browser were
+ *  removed as redundant now that the server handles those sites the same
+ *  way as everything else.
+ *  The ONE tier still run here is 'auth' — a no-cors, credentials:include
+ *  redirect-detect for auth-gated sites, which only works with the
+ *  *user's own* browser session/cookies and can never be replicated
+ *  server-side.
  * ─────────────────────────────────────────────────────────────────── */
-
-// CF Worker proxy URL — handles cfProxy:true sites (edge-network, allowlisted hosts)
-const CF_WORKER_URL = 'https://probe-proxy.noviss-osint.workers.dev';
-
-// CF challenge page fingerprints — a 200 with these is NOT a profile
-const CF_CHALLENGE = [
-  'just a moment', 'checking your browser', 'please stand by',
-  'enable javascript and cookies', 'cf-spinner', 'challenge-running',
-  'cloudflare ray id', 'ddos-guard', 'under attack mode',
-];
 
 const _cvQueue = [];
 
@@ -1040,26 +1026,8 @@ function _applyVerdict(card, verdict, label) {
   applyFilters();
 }
 
-async function _resolveBody(resp, checkMethod, errorMsg, positiveMsg, notFoundStatus) {
-  const st = resp.status;
-  if (st === 403 || st === 401 || st === 429) return 'blocked';
-  if (st === 404 || st === 410) return 'not_found';
-  if (notFoundStatus && st === notFoundStatus) return 'not_found';
-
-  // Read body for all non-hard-error responses so errorMsg/positiveMsg can fire
-  // even on non-200 status codes (e.g. LinkedIn returns 999 for missing users)
-  let body = '';
-  try { body = await resp.text(); } catch (_) { return st === 200 ? 'found' : 'unknown'; }
-  const lbody = body.toLowerCase();
-  if (CF_CHALLENGE.some(p => lbody.includes(p))) return 'blocked';
-
-  if (positiveMsg && body.includes(positiveMsg)) return 'found';
-  if (errorMsg   && body.includes(errorMsg))     return 'not_found';
-  return st === 200 ? 'found' : 'unknown'; // non-200 without matching msg = unknown
-}
-
 async function _clientVerifyOne(job) {
-  const { type, card, checkUrl, checkMethod, errorMsg, positiveMsg, notFoundStatus, expectedStatus } = job;
+  const { card, checkUrl } = job;
   if (!card || !card.isConnected) return;
 
   card.classList.add('cv-verifying');
@@ -1068,80 +1036,21 @@ async function _clientVerifyOne(job) {
   if (statusEl) statusEl.textContent = '…';
 
   try {
-    if (type === 'auth') {
-      // No-cors redirect detection — sends user's browser cookies to the site.
-      // opaque = page loaded without redirect → profile probably exists.
-      // opaqueredirect = redirected (to login or 404) → inconclusive.
-      const resp = await fetch(checkUrl, {
-        mode: 'no-cors',
-        redirect: 'manual',
-        credentials: 'include',
-        signal: AbortSignal.timeout(8000),
-      });
-      if (resp.type === 'opaque') {
-        // Direct (non-redirected) response — likely the profile loaded
-        _applyVerdict(card, 'found', 'FOUND (browser)');
-        updateStats();
-      } else {
-        // Redirected or error → keep auth_required
-        card.classList.remove('cv-verifying');
-        if (statusEl) statusEl.textContent = prevText;
-      }
-      return;
-    }
-
-    if (type === 'proxy') {
-      if (!CF_WORKER_URL) {
-        card.classList.remove('cv-verifying');
-        if (statusEl) statusEl.textContent = prevText;
-        return;
-      }
-      const proxyTarget = CF_WORKER_URL + '?url=' + encodeURIComponent(checkUrl);
-      const proxyResp = await fetch(proxyTarget, { signal: AbortSignal.timeout(16000) });
-      if (proxyResp.status === 403) {
-        // Host not in allowlist — leave unknown so archive fallback runs
-        card.classList.remove('cv-verifying');
-        if (statusEl) statusEl.textContent = prevText;
-        return;
-      }
-      // Use X-Proxy-Status if set (real upstream code, e.g. 999→200 clamped by worker)
-      const realStatus = Number(proxyResp.headers.get('X-Proxy-Status') || proxyResp.status) || proxyResp.status;
-      const proxyRespWithRealStatus = { ...proxyResp, status: realStatus, text: () => proxyResp.text() };
-      const verdict = await _resolveBody(proxyRespWithRealStatus, checkMethod, errorMsg, positiveMsg, notFoundStatus);
-      if (verdict !== 'unknown') {
-        _applyVerdict(card, verdict, (STATUS_LABEL[verdict] || verdict.toUpperCase()) + ' (proxy)');
-        updateStats();
-      } else {
-        card.classList.remove('cv-verifying');
-        if (statusEl) statusEl.textContent = prevText;
-      }
-      return;
-    }
-
-    if (type === 'server') {
-      const qs = new URLSearchParams({ url: checkUrl, checkMethod: checkMethod || 'status_code' });
-      if (positiveMsg)    qs.set('positiveMsg', positiveMsg);
-      if (errorMsg)       qs.set('errorMsg', errorMsg);
-      if (notFoundStatus) qs.set('notFoundStatus', String(notFoundStatus));
-      if (expectedStatus) qs.set('expectedStatus', String(expectedStatus));
-      const resp = await fetch('/api/verify?' + qs.toString(), { signal: AbortSignal.timeout(14000) });
-      const payload = await resp.json();
-      if (payload.ok && payload.verdict && payload.verdict !== 'unknown') {
-        _applyVerdict(card, payload.verdict, (STATUS_LABEL[payload.verdict] || payload.verdict.toUpperCase()) + ' (server)');
-        updateStats();
-      } else {
-        card.classList.remove('cv-verifying');
-        if (statusEl) statusEl.textContent = prevText;
-      }
-      return;
-    }
-
-    const resp = await fetch(checkUrl, { signal: AbortSignal.timeout(14000) });
-    const verdict = await _resolveBody(resp, checkMethod, errorMsg, positiveMsg, notFoundStatus);
-    if (verdict !== 'unknown') {
-      _applyVerdict(card, verdict, (STATUS_LABEL[verdict] || verdict.toUpperCase()) + ' (browser)');
+    // No-cors redirect detection — sends user's browser cookies to the site.
+    // opaque = page loaded without redirect → profile probably exists.
+    // opaqueredirect = redirected (to login or 404) → inconclusive.
+    const resp = await fetch(checkUrl, {
+      mode: 'no-cors',
+      redirect: 'manual',
+      credentials: 'include',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (resp.type === 'opaque') {
+      // Direct (non-redirected) response — likely the profile loaded
+      _applyVerdict(card, 'found', 'FOUND (browser)');
       updateStats();
     } else {
+      // Redirected or error → keep auth_required
       card.classList.remove('cv-verifying');
       if (statusEl) statusEl.textContent = prevText;
     }
@@ -1151,65 +1060,22 @@ async function _clientVerifyOne(job) {
   }
 }
 
-// Kick off all queued verify jobs after SSE scan ends.
-// Proxy jobs (type='proxy') all hit the same CF Worker hostname, so the browser's
-// HTTP/1.1 per-host connection limit (6) applies — keep their batch ≤ 4.
-// Server jobs (type='server') all hit our own origin — same per-host limit applies.
-// CORS/auth jobs hit different origins so a wider batch is fine.
+// Kick off all queued auth-tier verify jobs after the scan ends. These all
+// hit different origins (one per site), so a wide batch is safe.
 async function runClientVerifyQueue() {
-  const proxyJobs  = _cvQueue.filter(j => j.type === 'proxy');
-  const serverJobs = _cvQueue.filter(j => j.type === 'server');
-  const otherJobs  = _cvQueue.filter(j => j.type !== 'proxy' && j.type !== 'server');
+  const jobs = _cvQueue.slice();
   _cvQueue.length = 0;
-
-  // CORS + auth — different origins, batch of 8
-  for (let i = 0; i < otherJobs.length; i += 8) {
-    await Promise.all(otherJobs.slice(i, i + 8).map(_clientVerifyOne));
-  }
-  // Proxy — same CF Worker origin, batch of 4 (stays under browser 6-conn limit)
-  for (let i = 0; i < proxyJobs.length; i += 4) {
-    await Promise.all(proxyJobs.slice(i, i + 4).map(_clientVerifyOne));
-  }
-  // Server — same origin as our own app, batch of 6
-  for (let i = 0; i < serverJobs.length; i += 6) {
-    await Promise.all(serverJobs.slice(i, i + 6).map(_clientVerifyOne));
+  for (let i = 0; i < jobs.length; i += 8) {
+    await Promise.all(jobs.slice(i, i + 8).map(_clientVerifyOne));
   }
 }
 
 /* ── Archive.org CDX fallback ────────────────────────────────────────────
- * For any card still 'unknown' or 'blocked' after all other checks,
- * query the Wayback Machine CDX API (open CORS, no key needed) to see
- * if the profile URL was ever archived with a 200 status since 2022.
- * If it was, the profile almost certainly existed at that point in time.
+ * This used to run client-side against any 'unknown'/'blocked' card after
+ * the other tiers finished. It's now done server-side (see
+ * probeArchiveOrgFallback() in server.js) as part of the single /api/check
+ * result for each site, so there's nothing left to do here.
  * ─────────────────────────────────────────────────────────────────────── */
-async function runArchiveFallback() {
-  const cards = [...resultsGrid.querySelectorAll('.result-card.unknown, .result-card.blocked')]
-    .filter(c => c.dataset.profileUrl && !c.classList.contains('cv-verifying'));
-  if (!cards.length) return;
-
-  const BATCH = 5; // CDX API has no hard rate-limit but be polite
-  for (let i = 0; i < cards.length; i += BATCH) {
-    await Promise.all(cards.slice(i, i + BATCH).map(async card => {
-      const profileUrl = card.dataset.profileUrl;
-      if (!profileUrl) return;
-      try {
-        // Strip leading https:// for CDX URL matching (more inclusive)
-        const cdxTarget = profileUrl.replace(/^https?:\/\//, '');
-        const cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(cdxTarget)}&output=json&limit=2&filter=statuscode:200&from=20220101&fl=timestamp&matchType=prefix`;
-        const resp = await fetch(cdxUrl, { signal: AbortSignal.timeout(9000) });
-        if (!resp.ok) return;
-        const data = await resp.json();
-        // data[0] = header row, data[1] = first result (if any)
-        if (Array.isArray(data) && data.length > 1 && data[1]) {
-          const ts  = String(data[1][0] || '');
-          const yr  = ts.length >= 4 ? ts.slice(0, 4) : '?';
-          _applyVerdict(card, 'found', `FOUND (archived ${yr})`);
-          updateStats();
-        }
-      } catch (_) { /* timeout or network error — skip */ }
-    }));
-  }
-}
 
 /* ── Found-first insertion ───────────────────────────────────────────── */
 function insertCardSorted(card) {
@@ -1295,8 +1161,15 @@ function resetScanState() {
   progressBarFill.parentElement.classList.add('scanning');
 }
 
-/* ── Main scan (client-side static — no server required) ─────────────── */
-async function startScan(username) {
+/* ── Main scan — streams live results from the server via SSE ────────
+ * The server (/api/check) does ALL of the work: direct request, WMN
+ * dual-signal classification, stealth-browser fallback, and Wayback
+ * Machine fallback. Each site is sent to the client the instant the
+ * server finishes checking it, with a real running `done`/`total`
+ * count — that's what drives an accurate progress bar (as opposed to
+ * the old approach of building every card up-front and only then
+ * kicking off async verification). */
+function startScan(username) {
   if (scanActive) return;
   scanActive = true;
 
@@ -1318,22 +1191,7 @@ async function startScan(username) {
   filterCategories.style.display = '';
   resultsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  /* Load sites.json once; reuse cache on subsequent scans */
-  if (!_sitesCache) {
-    try {
-      const r = await fetch('./sites.json');
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      _sitesCache = (await r.json()).filter(s => !s.defunct);
-    } catch (_) {
-      progressStatus.textContent = 'Could not load platforms list — check connection and reload.';
-      progressBarFill.parentElement.classList.remove('scanning');
-      resetScanControls();
-      return;
-    }
-  }
-
-  const sites = _sitesCache;
-  updateStats(0, sites.length);
+  updateStats(0, 0);
   progressStatus.innerHTML = `Scanning <strong>${escHtml(username)}</strong>…`;
 
   const categoryOrder = ['social','developer','gaming','content','forum','professional','shopping','misc'];
@@ -1348,48 +1206,48 @@ async function startScan(username) {
   });
   const miscSection = categorySections.misc || resultsGrid.appendChild(document.createElement('div'));
 
-  /* Build result objects and create cards for every site up-front.
-   * makeCard() auto-queues cors=true sites into _cvQueue for direct
-   * browser verification (user IP → avoids datacenter blocks).
-   * Non-CORS sites stay 'unknown' and are handled by runArchiveFallback(). */
-  let done = 0;
-  for (const site of sites) {
-    const profileUrl = site.url.replace(/\{\}/g, username);
-    const checkUrl   = (site.checkUrl || site.apiUrl || site.url).replace(/\{\}/g, username);
-    const result = {
-      name           : site.name,
-      category       : site.category,
-      url            : profileUrl,
-      checkUrl,
-      cors           : !!site.cors,
-      auth           : !!site.auth,
-      cfProxy        : !!site.cfProxy,
-      status         : 'unknown',
-      statusCode     : null,
-      reasonCodes    : [],
-      checkMethod    : site.checkMethod    || 'status_code',
-      positiveMsg    : site.positiveMsg    || null,
-      errorMsg       : site.errorMsg       || null,
-      notFoundStatus : site.notFoundStatus || null,
-      expectedStatus : site.expectedStatus || null,
-      caveat         : site.caveat         || null,
-    };
-    results.push(result);
-    const card = makeCard(result, 0);
-    card.dataset.resultIndex = String(results.length - 1);
-    const targetList = categorySections[site.category] || miscSection;
-    targetList.appendChild(card);
-    done++;
-    if (done % 30 === 0) {
-      updateStats(done, sites.length);
-      await new Promise(resolve => setTimeout(resolve, 0)); /* yield so UI stays responsive */
-    }
-  }
-  updateStats(sites.length, sites.length);
-  applyFilters();
+  if (evtSource) { evtSource.close(); evtSource = null; }
+  evtSource = new EventSource(`/api/check?username=${encodeURIComponent(username)}`);
 
-  finishScan(username, sites.length, sites.length);
+  evtSource.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch (_) { return; }
+
+    if (msg.type === 'result') {
+      const category = msg.category || 'misc';
+      const result = {
+        name        : msg.name,
+        category,
+        url         : msg.url || '',
+        auth        : !!msg.auth,
+        status      : msg.status || 'unknown',
+        statusCode  : msg.statusCode || null,
+        reasonCodes : Array.isArray(msg.reasonCodes) ? msg.reasonCodes : [],
+        displayName : msg.displayName || null,
+        resolvedBy  : msg.resolvedBy || null,
+      };
+      results.push(result);
+      const card = makeCard(result, 0);
+      card.dataset.resultIndex = String(results.length - 1);
+      const targetList = categorySections[category] || miscSection;
+      targetList.appendChild(card);
+      updateStats(msg.done, msg.total);
+      applyFilters();
+      return;
+    }
+
+    if (msg.type === 'done') {
+      finishScan(username, msg.done ?? results.length, msg.total ?? results.length);
+    }
+  };
+
+  evtSource.onerror = () => {
+    if (!scanActive) return; // already finished/cancelled — ignore trailing error after close()
+    if (evtSource) { evtSource.close(); evtSource = null; }
+    finishScan(username, results.length, results.length);
+  };
 }
+
 
 /* ── Name / Email / Phone / Domain scans (not available in static mode) ─ */
 async function startNameScan(fullName) {
@@ -1434,6 +1292,7 @@ function startDomainScan(_domain) {
 }
 
 function finishScan(username, done, total) {
+  if (evtSource) { evtSource.close(); evtSource = null; }
   progressBarFill.parentElement.classList.remove('scanning');
   progressBarFill.style.width = '100%';
 
@@ -1446,26 +1305,18 @@ function finishScan(username, done, total) {
   runDorkSearch();
   resetScanControls();
 
-  /* Run CORS browser verification then Archive.org CDX, then populate manual panel */
-  const corsCount   = _cvQueue.filter(j => j.type === 'cors').length;
-  const authCount   = _cvQueue.filter(j => j.type === 'auth').length;
-  const proxyCount  = _cvQueue.filter(j => j.type === 'proxy').length;
-  const serverCount = _cvQueue.filter(j => j.type === 'server').length;
-  const parts = [];
-  if (corsCount)   parts.push(`${corsCount} API`);
-  if (authCount)   parts.push(`${authCount} auth`);
-  if (proxyCount)  parts.push(`${proxyCount} proxy`);
-  if (serverCount) parts.push(`${serverCount} server`);
-  progressStatus.innerHTML += ` &mdash; <span id="cvStatus">verifying ${parts.length ? parts.join(', ') : 'sources'}…</span>`;
+  /* The only client-side verification tier left is 'auth' (auth-gated
+   * sites, checked with the user's own browser cookies) — everything
+   * else was resolved server-side already. */
+  const authCount = _cvQueue.length;
+  if (authCount) {
+    progressStatus.innerHTML += ` &mdash; <span id="cvStatus">verifying ${authCount} auth-gated source${authCount !== 1 ? 's' : ''}…</span>`;
+  }
 
   const runCV = _cvQueue.length > 0 ? runClientVerifyQueue() : Promise.resolve();
   runCV.then(() => {
     const cvEl = document.getElementById('cvStatus');
-    if (cvEl) cvEl.textContent = 'archive check…';
-    return runArchiveFallback();
-  }).then(() => {
-    const cvEl2 = document.getElementById('cvStatus');
-    if (cvEl2) cvEl2.remove();
+    if (cvEl) cvEl.remove();
     populateManualPanel();
     updateStats();
   });

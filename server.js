@@ -1350,6 +1350,17 @@ function doRequest(site, username, origUrl, url, hops, finish) {
     // ── Handle redirects ───────────────────────────────────────────────
     if (sc >= 301 && sc <= 308) {
       res.resume(); // drain to free socket
+
+      // WMN-derived sites carry a "missing profile" status code (m_code,
+      // stored as site.notFoundStatus) that is OFTEN this exact redirect
+      // code — the redirect itself IS the not-found signal. Check this
+      // BEFORE any of the location-sniffing heuristics below, or we'd
+      // follow the redirect away and lose the signal (this caused a real
+      // false "found" on 247CTF, whose m_code is 302).
+      if (site.notFoundStatus && sc === site.notFoundStatus) {
+        return finish({ ...base, status: 'not_found', statusCode: sc });
+      }
+
       const locRaw = headers['location'] || '';
       if (!locRaw) return finish({ ...base, status: 'found', statusCode: sc });
       const loc = locRaw.toLowerCase();
@@ -1477,6 +1488,21 @@ async function probeStealth(site, username) {
   }
 }
 
+// WhatsMyName's public dataset doesn't ship a per-site username-format
+// regex, so we can't replicate its exact per-platform validation. As a
+// cheap, safe proxy that still meaningfully cuts false positives: most
+// platforms reject usernames containing raw spaces (a strong signal the
+// input is actually a full name/phrase, not a handle) — except a handful
+// of categories (gaming platforms like Roblox/PSN/Xbox/Steam commonly use
+// space-containing display names). Skipping the network request entirely
+// for a clearly-incompatible format is both faster and reduces noise from
+// odd site-specific behavior on malformed input.
+const ALLOW_SPACE_CATEGORIES = new Set(['gaming']);
+function isUsernameFormatPlausible(username, site) {
+  if (/\s/.test(username) && !ALLOW_SPACE_CATEGORIES.has(site.category)) return false;
+  return true;
+}
+
 function probe(site, username) {
   // Optional fast-path: skip stealth for undetectable sites.
   // Sites that require authentication — server-side check is never possible
@@ -1494,37 +1520,30 @@ function probe(site, username) {
     });
   }
 
-  // CF-blocked sites — skip server attempt (always 403/challenge from datacenter).
-  // Client will retry via CF Worker proxy using the user's residential-adjacent IP.
-  if (site.cfProxy) {
+  // Format is obviously incompatible with this platform — skip the network
+  // request entirely rather than risk a misleading response.
+  if (!isUsernameFormatPlausible(username, site)) {
     return Promise.resolve({
       name: site.name,
       category: site.category,
       url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
-      status: 'unknown',
+      status: 'not_found',
       statusCode: 0,
-      reasonCodes: ['datacenter_ip_blocked'],
-      confidence: 0,
-      detectionMethod: 'http',
+      reasonCodes: ['username_format_incompatible'],
+      confidence: 0.55,
+      detectionMethod: 'format_check',
       bodyHash: null,
     });
   }
 
-  // CORS-capable sites: client browser handles the actual check — don't waste
-  // Playwright browser slots on them (probeStealth would run for 30s).
-  if (site.cors && site.undetectable) {
-    return Promise.resolve({
-      name: site.name,
-      category: site.category,
-      url: (site.apiUrl || site.url).replace(/\{\}/g, encodeURIComponent(username)),
-      status: 'unknown',
-      statusCode: 0,
-      reasonCodes: ['client_side_check_pending'],
-      confidence: 0,
-      detectionMethod: 'http',
-      bodyHash: null,
-    });
-  }
+  // NOTE: cfProxy/cors sites used to be deferred entirely to client-side
+  // tiers (browser-direct fetch / CF Worker edge proxy) since our own
+  // server IP got blocked by some CF-protected hosts. That client-side
+  // fallback has been removed as redundant now that every site resolves
+  // through this same server-side path — cfProxy/cors sites just fall
+  // through to the normal request below and surface as 'blocked' if the
+  // target actually blocks our server's IP (visible to the user, same as
+  // any other blocked site), instead of silently staying 'unknown'.
 
   if (site.undetectable && !ENABLE_UNDETECTABLE_STEALTH) {
     return Promise.resolve({
@@ -1562,21 +1581,65 @@ async function probeWithBrowserFallback(site, username) {
 
   // Keep fast-path result when already conclusive.
   if (first.status !== 'unknown') return first;
-  if (!ENABLE_USERNAME_BROWSER_FALLBACK && !site.allowBrowserFallback) return first;
-  if (!chromiumStealth) return first;
 
-  // Skip fallback when explicitly disabled per-site.
-  if (site.noBrowserFallback) return first;
+  let result = first;
+  if ((ENABLE_USERNAME_BROWSER_FALLBACK || site.allowBrowserFallback) && chromiumStealth && !site.noBrowserFallback) {
+    const second = await probeStealth(site, username);
+    const secondReasons = Array.isArray(second.reasonCodes) ? second.reasonCodes : [];
+    result = {
+      ...second,
+      preBrowserStatus: first.status,
+      resolvedBy: 'browser',
+      reasonCodes: secondReasons.includes('browser_fallback') ? secondReasons : [...secondReasons, 'browser_fallback'],
+    };
+  }
 
-  const second = await probeStealth(site, username);
-  const secondReasons = Array.isArray(second.reasonCodes) ? second.reasonCodes : [];
-  return {
-    ...second,
-    preBrowserStatus: first.status,
-    resolvedBy: 'browser',
-    reasonCodes: secondReasons.includes('browser_fallback') ? secondReasons : [...secondReasons, 'browser_fallback'],
-  };
+  // Last resort: any site still 'unknown' after the direct request (and
+  // browser fallback, if it ran) gets checked against the Wayback Machine's
+  // CDX API — if the profile URL was ever archived with a 200 response, the
+  // profile almost certainly existed at that point in time. This used to be
+  // a separate client-side pass; folding it in here means the frontend gets
+  // one single, already-final verdict per site instead of needing its own
+  // follow-up network round.
+  if (result.status === 'unknown') {
+    const archived = await probeArchiveOrgFallback(result.url).catch(() => false);
+    if (archived) {
+      const reasons = Array.isArray(result.reasonCodes) ? result.reasonCodes : [];
+      result = { ...result, status: 'found', confidence: 0.6, reasonCodes: [...reasons, 'archive_org_fallback_found'] };
+    }
+  }
+
+  return result;
 }
+
+// Wayback Machine CDX lookup — open CORS-free API, no key needed. Returns
+// true if the given URL was archived with a 200 response since 2022.
+function probeArchiveOrgFallback(profileUrl) {
+  return new Promise((resolve) => {
+    let cdxUrl;
+    try {
+      const cdxTarget = profileUrl.replace(/^https?:\/\//, '');
+      cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(cdxTarget)}&output=json&limit=2&filter=statuscode:200&from=20220101&fl=timestamp&matchType=prefix`;
+    } catch (_) { return resolve(false); }
+
+    const req = https.get(cdxUrl, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+      if (res.statusCode !== 200) { res.resume(); return resolve(false); }
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => { if (body.length < 20000) body += chunk; });
+      res.on('end', () => {
+        try {
+          const rows = JSON.parse(body);
+          resolve(Array.isArray(rows) && rows.length > 1); // row[0] is the header
+        } catch (_) { resolve(false); }
+      });
+      res.on('error', () => resolve(false));
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+  });
+}
+
 
 function getQuickSites() {
   const selected = [];
@@ -1655,6 +1718,55 @@ function httpSnapshotFallback(rawUrl, res) {
     }
   });
   req.setTimeout(8000, () => req.destroy());
+}
+
+/* ── Link preview helpers (dork result thumbnails) ───────────────────── */
+function sendNoImage(res) {
+  if (res.writableEnded) return;
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ ok: true, image: null }));
+}
+
+function readAndExtractImage(r, baseUrl, res) {
+  if (r.statusCode < 200 || r.statusCode >= 300) { r.resume(); return sendNoImage(res); }
+  const ct = (r.headers['content-type'] || '').toLowerCase();
+  if (ct && !ct.includes('html')) { r.resume(); return sendNoImage(res); }
+
+  let body = '';
+  let done = false;
+  r.setEncoding('utf8');
+  r.on('data', chunk => {
+    if (done) return;
+    body += chunk;
+    // og:image/twitter:image meta tags live in <head>, no need to read
+    // the whole document — bail out early once we've seen enough or hit
+    // </head>, whichever comes first.
+    if (body.length >= 220000 || /<\/head>/i.test(body)) {
+      done = true;
+      r.destroy();
+      finish();
+    }
+  });
+  r.on('end', () => { if (!done) { done = true; finish(); } });
+  r.on('error', () => { if (!done) { done = true; sendNoImage(res); } });
+
+  function finish() {
+    try {
+      const cheerio = require('cheerio');
+      const $c = cheerio.load(body);
+      const gm = name =>
+        ($c(`meta[property="${name}"]`).attr('content') ||
+         $c(`meta[name="${name}"]`).attr('content') || '').trim();
+      let image = gm('og:image') || gm('og:image:url') || gm('twitter:image') || gm('twitter:image:src') || '';
+      if (image) {
+        try { image = new URL(image, baseUrl).href; } catch (_) { image = ''; }
+      }
+      if (!res.writableEnded) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, image: image || null }));
+      }
+    } catch (_) { sendNoImage(res); }
+  }
 }
 
 /* ── Cheerio metadata + raw HTML fetch (for client-side capture) ────── */
@@ -2067,7 +2179,7 @@ const server = http.createServer((req, res) => {
     //   https://duckduckgo.com/l/?uddg=<url-encoded target>&rut=...
     function extractDdgUrls(text) {
       const out = [];
-      const re = /duckduckgo\.com\/l\/\?uddg=([^&\s)]+)/gi;
+      const re = /duckduckgo\.com\/l\/\?uddg=((?:[^&\s()]|\([^()]*\))+)/gi;
       let m;
       while ((m = re.exec(text))) {
         try { out.push(decodeURIComponent(m[1])); } catch (_) { /* skip malformed */ }
@@ -2124,14 +2236,77 @@ const server = http.createServer((req, res) => {
       return out;
     }
 
+    // r.jina.ai's reader-mode markdown renders organic results for DDG,
+    // Bing, and Yandex the same way: a "## [title](url)" header line
+    // followed by a paragraph of snippet text before the next result.
+    // Parsing that structure gets us a real SERP (title + URL + snippet)
+    // instead of a bare list of links.
+    function stripMarkdown(s) {
+      return String(s || '')
+        // Same balanced-paren issue as headerRe/unwrapUrl above: link/image
+        // hrefs inside the snippet body (e.g. a secondary breadcrumb link
+        // pointing at the same redirector) can contain literal parens
+        // (Wikipedia disambiguation URLs), so a naive "stop at first )"
+        // class truncates the href and leaks the remainder as raw text.
+        .replace(/!\[[^\]]*\]\(((?:[^()\s]|\([^()]*\))+)\)/g, '')       // images
+        .replace(/\[([^\]]*)\]\(((?:[^()\s]|\([^()]*\))+)\)/g, '$1')     // links → link text
+        .replace(/\*\*/g, '')                        // bold
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    function unwrapUrl(rawUrl, key) {
+      if (key === 'bing') {
+        const bm = /[?&]u=a1([A-Za-z0-9_-]+)/.exec(rawUrl);
+        if (bm) {
+          try {
+            const b64 = bm[1].replace(/-/g, '+').replace(/_/g, '/');
+            const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
+            return Buffer.from(b64 + pad, 'base64').toString('utf8');
+          } catch (_) { /* fall through */ }
+        }
+        return rawUrl;
+      }
+      const dm = /duckduckgo\.com\/l\/\?uddg=((?:[^&\s()]|\([^()]*\))+)/.exec(rawUrl);
+      if (dm) { try { return decodeURIComponent(dm[1]); } catch (_) { /* fall through */ } }
+      return rawUrl;
+    }
+    function extractSerpEntries(text, key) {
+      // Some destination URLs (e.g. Wikipedia disambiguation pages like
+      // "Cerberus_(mythology)") contain literal, non-percent-encoded
+      // parentheses. A naive "stop at the first )" regex truncates those
+      // URLs and leaks the remainder into the snippet, so allow one level
+      // of balanced (...) nesting inside the URL capture group.
+      const headerRe = /##\s*\[([^\]]+)\]\(((?:[^()\s]|\([^()]*\))+)\)/g;
+      const headers = [];
+      let m;
+      while ((m = headerRe.exec(text))) {
+        headers.push({ rawTitle: m[1], rawUrl: m[2], start: m.index, end: m.index + m[0].length });
+      }
+      const entries = [];
+      for (let i = 0; i < headers.length; i++) {
+        const cur = headers[i];
+        const url = unwrapUrl(cur.rawUrl, key);
+        if (!url || !/^https?:\/\//i.test(url) || isNavLink(url)) continue;
+        const chunkEnd = headers[i + 1] ? headers[i + 1].start : Math.min(text.length, cur.end + 700);
+        const snippet = stripMarkdown(text.slice(cur.end, chunkEnd)).slice(0, 280);
+        entries.push({ title: stripMarkdown(cur.rawTitle).slice(0, 160) || url, url, snippet, engine: key });
+      }
+      // De-dupe by resolved URL, keep first occurrence
+      const seen = new Set();
+      return entries.filter(e => (seen.has(e.url) ? false : (seen.add(e.url), true)));
+    }
+
     fetchText(searchUrl, 12000, 4, {})
       .then(text => {
-        let cleaned = extractByEngine(text, engineKey);
-        const results = cleaned.slice(0, 8).map((url, idx) => ({
-          title: `Dork result ${idx + 1}`,
-          url,
-          engine: engineKey,
-        }));
+        let results = extractSerpEntries(text, engineKey).slice(0, 8);
+        // Defensive fallback: if the markdown structure didn't match (site
+        // layout changed upstream), fall back to a bare URL list rather
+        // than returning nothing.
+        if (!results.length) {
+          results = extractByEngine(text, engineKey).slice(0, 8).map(url => ({
+            title: url, url, snippet: '', engine: engineKey,
+          }));
+        }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: true, target, engine: engineKey, results }));
       })
@@ -2141,6 +2316,52 @@ const server = http.createServer((req, res) => {
         res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: false, error: 'Dork lookup failed.' }));
       });
+    return;
+  }
+
+  /* ── Link preview endpoint (dork result thumbnails) ──────────────────
+   * Fetches a target page directly and pulls its og:image/twitter:image
+   * meta tag so dork results can show a thumbnail, same as a normal
+   * search engine results page. Lightweight: small byte cap, short
+   * timeout, HEAD-of-document only — this is best-effort and many pages
+   * simply won't have a usable image, which is fine (the client hides
+   * the thumbnail slot when none is found). */
+  if (pathname === '/api/link-preview') {
+    const rawUrl = (urlObj.searchParams.get('url') || '').trim();
+    let parsed;
+    try { parsed = new URL(rawUrl); } catch (_) { parsed = null; }
+    if (!parsed || !/^https?:$/.test(parsed.protocol) || isPrivateHost(parsed.hostname)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'Invalid or unsupported URL.' }));
+    }
+
+    const mod = parsed.protocol === 'https:' ? https : http;
+    const req = mod.get(parsed, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      timeout: 6000,
+    }, (r) => {
+      // Follow a single redirect hop (common for tracking/share links)
+      if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) {
+        r.resume();
+        try {
+          const next = new URL(r.headers.location, parsed);
+          const nextMod = next.protocol === 'https:' ? https : http;
+          const req2 = nextMod.get(next, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+            timeout: 6000,
+          }, (r2) => readAndExtractImage(r2, next, res));
+          req2.on('error', () => sendNoImage(res));
+          req2.setTimeout(6000, () => req2.destroy());
+        } catch (_) { sendNoImage(res); }
+        return;
+      }
+      readAndExtractImage(r, parsed, res);
+    });
+    req.on('error', () => sendNoImage(res));
+    req.setTimeout(6000, () => req.destroy());
     return;
   }
 

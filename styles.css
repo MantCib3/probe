@@ -1378,38 +1378,6 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .pin-btn.pinned { opacity: 0.85; filter: grayscale(0); }
 
 /* ── Dork panel ──────────────────────────────────────────────────────── */
-.dork-hdr-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dork-hdr-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  color: #bbb;
-}
-
-.dork-body { padding: 0.7rem 0.8rem 0.8rem; }
-
-.dork-query {
-  font-size: 0.72rem;
-  color: #ccc;
-  text-align: center;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid #f2f2f2;
-  min-height: 1.3em;
-  margin-bottom: 0.65rem;
-}
-.dork-query strong { color: #444; font-weight: 600; }
-
-.dork-btn-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
 .dork-tab {
   background: #f7f7f7;
   border: 1.5px solid #ebebeb;
@@ -1427,7 +1395,70 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .dork-tab:hover { background: #111; border-color: #111; color: #fff; }
 .dork-tab:disabled { opacity: 0.4; cursor: default; }
 .dork-tab:disabled:hover { background: #f7f7f7; border-color: #ebebeb; color: #888; }
-.dork-tab.visited { border-color: #d6ecd6; color: #5a9060; background: #f5fbf5; }
+
+/* ── SERP-style dork results ─────────────────────────────────────────── */
+.serp-result {
+  display: flex;
+  gap: 0.85rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.serp-result:last-child { border-bottom: none; }
+
+.serp-thumb {
+  flex: 0 0 auto;
+  width: 100px;
+  height: 76px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f2f2f2;
+  display: none;
+}
+.serp-thumb.has-image { display: block; }
+.serp-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.serp-body { min-width: 0; flex: 1 1 auto; }
+
+.serp-breadcrumb {
+  font-size: 0.76rem;
+  color: var(--muted);
+  text-transform: lowercase;
+  margin-bottom: 0.1rem;
+}
+
+.serp-title {
+  display: block;
+  color: #1a0dab;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.3;
+  margin-bottom: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.serp-title:hover { text-decoration: underline; }
+
+.serp-url {
+  font-size: 0.8rem;
+  color: #006621;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.serp-snippet {
+  font-size: 0.88rem;
+  color: #545454;
+  line-height: 1.45;
+}
 
 /* ── Case Notepad ────────────────────────────────────────────────────── */
 .np-panel { width: 320px; }
