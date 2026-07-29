@@ -42,23 +42,42 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function fetchText(url, timeoutMs = 20000) {
+function fetchText(url, timeoutMs = 20000, maxRedirects = 5) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const transport = parsed.protocol === 'https:' ? https : http;
+    let settled = false;
+    const finish = (fn, arg) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(hardDeadline);
+      fn(arg);
+    };
+    // Hard backstop in case socket-idle timeout doesn't fire (e.g. a slow
+    // trickle of bytes keeps the connection "active" indefinitely).
+    const hardDeadline = setTimeout(() => {
+      req.destroy(new Error('request timeout'));
+      finish(reject, new Error('request timeout'));
+    }, timeoutMs + 3000);
+
     const req = transport.get(parsed, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
     }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        resolve(fetchText(new URL(res.headers.location, parsed).toString(), timeoutMs));
+        if (maxRedirects <= 0) {
+          finish(reject, new Error('too many redirects'));
+          return;
+        }
+        finish(resolve, fetchText(new URL(res.headers.location, parsed).toString(), timeoutMs, maxRedirects - 1));
         return;
       }
       let body = '';
       res.setEncoding('utf8');
       res.on('data', chunk => { body += chunk; });
-      res.on('end', () => resolve(body));
+      res.on('end', () => finish(resolve, body));
+      res.on('error', err => finish(reject, err));
     });
-    req.on('error', reject);
+    req.on('error', err => finish(reject, err));
     req.setTimeout(timeoutMs, () => {
       req.destroy(new Error('request timeout'));
     });
@@ -1974,7 +1993,7 @@ const server = http.createServer((req, res) => {
       yandex: `https://r.jina.ai/http://yandex.com/search/?text=${encodeURIComponent('"' + target + '"')}`,
     }[engineKey];
 
-    fetchText(searchUrl)
+    fetchText(searchUrl, 12000, 4)
       .then(text => {
         const urls = [...new Set((text.match(/https?:\/\/[^\s"'<>]+/gi) || [])
           .map(item => item.replace(/[),.]+$/, ''))
@@ -1988,7 +2007,9 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: true, target, engine: engineKey, results }));
       })
-      .catch(() => {
+      .catch(err => {
+        console.error('[dork-search] failed:', err && err.message);
+        if (res.writableEnded) return;
         res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: false, error: 'Dork lookup failed.' }));
       });

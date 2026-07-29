@@ -621,25 +621,25 @@ function normalizePivotQuery(value) {
  * current scan target and opened manually by the user. */
 const PIVOT_SOURCES = {
   email: [
-    { name: 'Have I Been Pwned', note: 'Check breach exposure for this email', url: t => `https://haveibeenpwned.com/account/${encodeURIComponent(t)}` },
-    { name: 'Epieos', note: 'Reverse email lookup across linked services', url: t => `https://epieos.com/?q=${encodeURIComponent(t)}&t=email` },
-    { name: 'IntelX', note: 'Deep-index search for leaked and indexed references', url: t => `https://intelx.io/?s=${encodeURIComponent(t)}` },
-    { name: 'Google Search', note: 'Web search pivot for this email address', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
-    { name: 'GitHub Code Search', note: 'Search commits/code for this email', url: t => `https://github.com/search?q=${encodeURIComponent('"' + t + '"')}&type=code` },
+    { name: 'Have I Been Pwned', note: 'Check breach exposure for this email', home: 'https://haveibeenpwned.com/', url: t => `https://haveibeenpwned.com/account/${encodeURIComponent(t)}` },
+    { name: 'Epieos', note: 'Reverse email lookup across linked services', home: 'https://epieos.com/', url: t => `https://epieos.com/?q=${encodeURIComponent(t)}&t=email` },
+    { name: 'IntelX', note: 'Deep-index search for leaked and indexed references', home: 'https://intelx.io/', url: t => `https://intelx.io/?s=${encodeURIComponent(t)}` },
+    { name: 'Google Search', note: 'Web search pivot for this email address', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+    { name: 'GitHub Code Search', note: 'Search commits/code for this email', home: 'https://github.com/', url: t => `https://github.com/search?q=${encodeURIComponent('"' + t + '"')}&type=code` },
   ],
   phone: [
-    { name: 'That\'sThem', note: 'Reverse phone directory lookup', url: t => `https://thatsthem.com/phone/${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
-    { name: 'Sync.me', note: 'Caller ID / reverse phone lookup', url: t => `https://sync.me/search/?number=${encodeURIComponent(t)}` },
-    { name: 'TruePeopleSearch', note: 'Reverse phone number search', url: t => `https://www.truepeoplesearch.com/results?phoneno=${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
-    { name: 'NumLookup', note: 'Carrier and line-type lookup', url: t => `https://www.numlookup.com/${encodeURIComponent(t.replace(/[^0-9+]/g, ''))}` },
-    { name: 'Google Search', note: 'Web search pivot for this phone number', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+    { name: 'That\'sThem', note: 'Reverse phone directory lookup', home: 'https://thatsthem.com/', url: t => `https://thatsthem.com/phone/${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
+    { name: 'Sync.me', note: 'Caller ID / reverse phone lookup', home: 'https://sync.me/', url: t => `https://sync.me/search/?number=${encodeURIComponent(t)}` },
+    { name: 'TruePeopleSearch', note: 'Reverse phone number search', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?phoneno=${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
+    { name: 'NumLookup', note: 'Carrier and line-type lookup', home: 'https://www.numlookup.com/', url: t => `https://www.numlookup.com/${encodeURIComponent(t.replace(/[^0-9+]/g, ''))}` },
+    { name: 'Google Search', note: 'Web search pivot for this phone number', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
   ],
   name: [
-    { name: 'FastPeopleSearch', note: 'Public records and people search', url: t => `https://www.fastpeoplesearch.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-').toLowerCase())}` },
-    { name: 'Whitepages', note: 'Contact and address lookup', url: t => `https://www.whitepages.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'TruePeopleSearch', note: 'Public records search by name', url: t => `https://www.truepeoplesearch.com/results?name=${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'Spokeo', note: 'People search aggregator', url: t => `https://www.spokeo.com/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'Google Search', note: 'Web search pivot for this name', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+    { name: 'FastPeopleSearch', note: 'Public records and people search', home: 'https://www.fastpeoplesearch.com/', url: t => `https://www.fastpeoplesearch.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-').toLowerCase())}` },
+    { name: 'Whitepages', note: 'Contact and address lookup', home: 'https://www.whitepages.com/', url: t => `https://www.whitepages.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'TruePeopleSearch', note: 'Public records search by name', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?name=${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'Spokeo', note: 'People search aggregator', home: 'https://www.spokeo.com/', url: t => `https://www.spokeo.com/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'Google Search', note: 'Web search pivot for this name', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
   ],
 };
 
@@ -649,14 +649,12 @@ function renderPivotSources() {
   const label = activePivotMode.charAt(0).toUpperCase() + activePivotMode.slice(1);
   const sources = PIVOT_SOURCES[activePivotMode] || [];
 
-  if (!target) {
-    pivotStatus.textContent = `Run a scan to activate ${label} pivots.`;
-  } else {
-    pivotStatus.textContent = `${sources.length} ${label} pivot sources for ${target}`;
-  }
+  pivotStatus.textContent = target
+    ? `${sources.length} ${label} pivot sources for ${target}`
+    : `${sources.length} ${label} pivot sources — run a scan to auto-fill the target`;
 
   pivotResultsList.innerHTML = sources.map(source => {
-    const href = target ? safeUrl(source.url(target)) : '#';
+    const href = safeUrl(target ? source.url(target) : source.home);
     return `
       <div class="wmn-source-card">
         <div class="wmn-source-row">
@@ -702,7 +700,9 @@ async function runDorkSearch() {
   if (!lastScannedTarget) return;
   dorkStatus.textContent = `Searching ${activeDorkEngine}…`;
   try {
-    const response = await fetch(`/api/dork-search?target=${encodeURIComponent(lastScannedTarget)}&engine=${encodeURIComponent(activeDorkEngine)}`);
+    const response = await fetch(`/api/dork-search?target=${encodeURIComponent(lastScannedTarget)}&engine=${encodeURIComponent(activeDorkEngine)}`, {
+      signal: AbortSignal.timeout(15000),
+    });
     const payload = await response.json();
     if (!response.ok || !payload.ok) throw new Error(payload.error || 'Dork lookup failed');
     dorkResults = (Array.isArray(payload.results) ? payload.results : []).slice(0, 8).map((item, idx) => ({
@@ -711,9 +711,9 @@ async function runDorkSearch() {
       engine: item.engine || activeDorkEngine,
     }));
     renderDorkResults();
-  } catch (_) {
+  } catch (err) {
     dorkResults = [];
-    dorkStatus.textContent = 'Dork lookup failed.';
+    dorkStatus.textContent = (err && err.name === 'TimeoutError') ? 'Dork lookup timed out.' : 'Dork lookup failed.';
     renderDorkResults();
   }
 }
@@ -1792,4 +1792,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initEvents();
   initFadeIn();
+  renderPivotSources();
 });
