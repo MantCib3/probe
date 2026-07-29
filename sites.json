@@ -3044,7 +3044,8 @@
     "checkMethod": "message",
     "errorMsg": "404. Дару~дар: миру~мир!",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "dateinasia",
@@ -4739,7 +4740,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "This user has not registered and therefore does not have a profile to view.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "meet me",
@@ -6602,7 +6604,8 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, the requested page could not be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Uwumarket",
@@ -6868,7 +6871,8 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, page not found!",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Weibo",
