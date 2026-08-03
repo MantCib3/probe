@@ -275,8 +275,26 @@ function queueQuickCheck(_username) {
   renderQuickChecks([]); /* static mode: no server-side quick-check */
 }
 
-/* fetchPinMeta is a no-op in static mode (metadata capture requires a server) */
-function fetchPinMeta(_idx) {}
+/* fetchPinMeta — call /api/link-preview to resolve og:image for pinned URLs */
+function fetchPinMeta(idx) {
+  const p = pinnedItems[idx];
+  if (!p || !p.url || captures[p.url]) return;
+  fetch(`/api/link-preview?url=${encodeURIComponent(p.url)}`)
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      // Store result (image may be null) — either way clears the loading state
+      captures[p.url] = {
+        metadata: data && data.image ? { ogImage: data.image } : {},
+        screenshot: '',
+        mimeType: '',
+      };
+      updateNotepad();
+    })
+    .catch(() => {
+      captures[p.url] = { metadata: {}, screenshot: '', mimeType: '' };
+      updateNotepad();
+    });
+}
 
 /* ── Floating panel utilities ────────────────────────────────────────── */
 function makeDraggable(panel, handle) {
@@ -1675,9 +1693,9 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(sites => initPlatformsGrid(sites))
     .catch(() => {
-      // Use fallback count
+      // Fallback count — update if site list size changes
       document.querySelectorAll('#heroCount, #siteCount, .step-count').forEach(el => {
-        el.textContent = '100';
+        el.textContent = '377';
       });
     });
 

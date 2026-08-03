@@ -1502,7 +1502,8 @@
     "checkMethod": "message",
     "errorMsg": "join Parler today",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "FACEIT",
@@ -1696,7 +1697,8 @@
     "checkMethod": "message",
     "errorMsg": "Looks like you got lost",
     "allowBrowserFallback": false,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Apex Legends",
@@ -1730,7 +1732,8 @@
     "positiveMsg": "Armor Games Profile",
     "cfProxy": true,
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "speedrun",
@@ -1742,7 +1745,8 @@
     "allowBrowserFallback": false,
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "TETR.IO",
@@ -1797,7 +1801,8 @@
     "checkMethod": "message",
     "errorMsg": "false",
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "LeetCode",
@@ -1915,7 +1920,8 @@
     "allowBrowserFallback": false,
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "GeeksForGeeks",
@@ -2079,7 +2085,8 @@
     "errorMsg": ">No results found</span>",
     "allowBrowserFallback": false,
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "sporcle",
@@ -2121,7 +2128,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>SimplePlanes Airplanes</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "smule",
@@ -2217,7 +2225,8 @@
     "checkMethod": "message",
     "errorMsg": "Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Quizlet",
@@ -2261,7 +2270,8 @@
     "cors": false,
     "positiveMsg": "\"reason\":\"taken\"",
     "errorMsg": "\"reason\":\"available\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "247CTF",
@@ -2282,7 +2292,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>247Sports</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "35photo",
@@ -2292,7 +2303,8 @@
     "checkMethod": "message",
     "positiveMsg": "userNameBlock",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "3dtoday",
@@ -2302,7 +2314,8 @@
     "checkMethod": "message",
     "positiveMsg": "class=\"header_user_name",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "7cup",
@@ -2322,7 +2335,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Ошибка / 7dach.ru",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "ACF",
@@ -2352,7 +2366,8 @@
     "checkMethod": "message",
     "errorMsg": "<title> Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "ADVFN",
@@ -2362,7 +2377,8 @@
     "checkMethod": "message",
     "errorMsg": "ADVFN ERROR - Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Albicla",
@@ -2372,7 +2388,8 @@
     "checkMethod": "message",
     "errorMsg": "404 Nie znaleziono użytkownika",
     "expectedStatus": 500,
-    "notFoundStatus": 200
+    "notFoundStatus": 200,
+    "defunct": true
   },
   {
     "name": "alik",
@@ -2382,7 +2399,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Vizitka nenalezena",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Alura",
@@ -2412,7 +2430,8 @@
     "checkMethod": "message",
     "errorMsg": "title>404 Not Found</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "appian Community",
@@ -2422,7 +2441,8 @@
     "checkMethod": "message",
     "positiveMsg": "class=\"avatar-container",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Arch Linux GitLab",
@@ -2460,7 +2480,8 @@
     "checkMethod": "message",
     "errorMsg": "error-link mt-5",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Artbreeder",
@@ -2490,7 +2511,8 @@
     "checkMethod": "message",
     "errorMsg": "Пользователь не найден",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Avid Community",
@@ -2511,7 +2533,8 @@
     "checkMethod": "message",
     "errorMsg": "Profile not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "BabyPips",
@@ -2530,7 +2553,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "БэбиБлог - беременность, календарь беременности, дневники",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "BDSMLR",
@@ -2539,7 +2563,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "This blog doesn't exist.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "bdsmsingles",
@@ -2549,7 +2574,8 @@
     "checkMethod": "message",
     "positiveMsg": "<title>Profile",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Beacons",
@@ -2568,7 +2594,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "This user is currently not available",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "BiggerPockets",
@@ -2608,7 +2635,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you’re looking for doesn’t exist",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "blogi.pl",
@@ -2617,7 +2645,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Niepoprawny adres.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Blogmarks",
@@ -2636,7 +2665,8 @@
     "checkMethod": "message",
     "errorMsg": "\"message\":\"Profile not found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "defunct": true
   },
   {
     "name": "Bookcrossing",
@@ -2667,7 +2697,8 @@
     "checkMethod": "message",
     "errorMsg": "\"error\":\"blog_not_found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Booth",
@@ -2708,7 +2739,8 @@
     "errorMsg": "Es posible que el enlace que seleccionaste esté roto o que se haya eliminado la página",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Calendy",
@@ -2718,7 +2750,8 @@
     "checkMethod": "message",
     "errorMsg": "\"message\":\"not found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Cameo",
@@ -2767,7 +2800,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Strona na którą chcesz wejść nie istnieje",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Cent",
@@ -2776,7 +2810,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"results\":[]",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "cfx.re",
@@ -2806,7 +2841,8 @@
     "checkMethod": "message",
     "errorMsg": "Strona nie istnieje.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "chatango.com",
@@ -2815,7 +2851,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "<title>Unknown User!",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "chaturbate",
@@ -2825,7 +2862,8 @@
     "checkMethod": "message",
     "errorMsg": "It's probably just a broken link",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "CHEEZburger",
@@ -2845,7 +2883,8 @@
     "checkMethod": "message",
     "errorMsg": "The link might be incorrect or the profile has been deleted.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Chomikuj.pl",
@@ -2855,7 +2894,8 @@
     "checkMethod": "message",
     "errorMsg": "Chomik o takiej nazwie nie istnieje",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Chyoa",
@@ -2865,7 +2905,8 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, I got distracted...",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Cloudflare",
@@ -2925,7 +2966,8 @@
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Community Adobe",
@@ -2934,7 +2976,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "No search results found.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "coroflot",
@@ -2954,7 +2997,8 @@
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Unhandled exception\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "cowboys4angels",
@@ -2964,7 +3008,8 @@
     "checkMethod": "message",
     "errorMsg": "Error Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Cracked",
@@ -2994,7 +3039,8 @@
     "checkMethod": "message",
     "errorMsg": "\"errors\":",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Crowdin",
@@ -3024,7 +3070,8 @@
     "checkMethod": "message",
     "errorMsg": "Profile not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Daily Kos",
@@ -3034,7 +3081,8 @@
     "checkMethod": "message",
     "errorMsg": "Page not found! (404)",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "darudar",
@@ -3055,7 +3103,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for does not exist",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "datezone",
@@ -3074,7 +3123,8 @@
     "checkMethod": "message",
     "errorMsg": "Такой страницы не существует.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Demotywatory",
@@ -3083,7 +3133,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Użytkownik o podanym pseudonimie nie istnieje.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Designspriation",
@@ -3103,7 +3154,8 @@
     "checkMethod": "message",
     "errorMsg": "\"errorMessage\":\"Error happened.\"",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "defunct": true
   },
   {
     "name": "dfgames",
@@ -3113,7 +3165,8 @@
     "checkMethod": "message",
     "errorMsg": "404 Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "DIBIZ",
@@ -3123,7 +3176,8 @@
     "checkMethod": "message",
     "errorMsg": "An Error Has Occurred",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Digitalspy",
@@ -3133,7 +3187,8 @@
     "checkMethod": "message",
     "errorMsg": "User not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "diigo",
@@ -3162,7 +3217,8 @@
     "checkMethod": "message",
     "errorMsg": "Oops!",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Dissenter",
@@ -3172,7 +3228,8 @@
     "checkMethod": "message",
     "errorMsg": "That user is not registered here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Dojoverse",
@@ -3182,7 +3239,8 @@
     "checkMethod": "message",
     "errorMsg": "Looks like you got lost!.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "donate.stream",
@@ -3192,7 +3250,8 @@
     "checkMethod": "message",
     "errorMsg": "\"message\":\"Not found\"",
     "undetectable": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Donatello",
@@ -3202,7 +3261,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Сторінку не знайдено (404) - Donatello</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Donatik",
@@ -3212,7 +3272,8 @@
     "checkMethod": "message",
     "errorMsg": "id=\"__next_error__\"",
     "expectedStatus": 200,
-    "notFoundStatus": 500
+    "notFoundStatus": 500,
+    "defunct": true
   },
   {
     "name": "Donation Alerts",
@@ -3222,7 +3283,8 @@
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "expectedStatus": 200,
-    "notFoundStatus": 202
+    "notFoundStatus": 202,
+    "defunct": true
   },
   {
     "name": "Donatty",
@@ -3233,7 +3295,8 @@
     "errorMsg": "\"error\":\"internal error\"",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "dot.cards",
@@ -3242,7 +3305,8 @@
     "category": "professional",
     "checkMethod": "message",
     "errorMsg": "status\": \"username_not_found",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Dota2.ru",
@@ -3251,7 +3315,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "id=\"no-activity-posts\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "DOU",
@@ -3261,7 +3326,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"page-error\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "DRIVE2.RU",
@@ -3272,7 +3338,8 @@
     "errorMsg": "<title>404 — Страница не найдена</title>",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Droners",
@@ -3282,7 +3349,8 @@
     "checkMethod": "message",
     "errorMsg": "(404)</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "easyen",
@@ -3291,7 +3359,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Пользователь не найден",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Engadget",
@@ -3300,7 +3369,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "<title>,  - Engadget</title>",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Etoro",
@@ -3320,7 +3390,8 @@
     "category": "developer",
     "checkMethod": "message",
     "positiveMsg": "id=\"user-search\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Expressional.social (Mastodon Instance)",
@@ -3330,7 +3401,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Eyeem",
@@ -3349,7 +3421,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "The user you tried to view doesn't seem to be on the site any more",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Faktopedia",
@@ -3358,7 +3431,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "FanCentro",
@@ -3367,7 +3441,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"status\":false",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "fanpop",
@@ -3386,7 +3461,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "No results found for query",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Fansly",
@@ -3396,7 +3472,8 @@
     "checkMethod": "message",
     "errorMsg": "\"response\":[]",
     "undetectable": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Fark",
@@ -3405,7 +3482,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Tastes like chicken.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "FatSecret",
@@ -3415,7 +3493,8 @@
     "checkMethod": "message",
     "errorMsg": "Your Key to Success",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Federated.press (Mastodon Instance)",
@@ -3425,7 +3504,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Figma",
@@ -3445,7 +3525,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "No channels found",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Filmweb",
@@ -3454,7 +3535,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Varnish 404",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "fine_art_america",
@@ -3475,7 +3557,8 @@
     "errorMsg": "content=\"404 Not Found\"",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Flightradar24",
@@ -3485,7 +3568,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"main page-not-found-main",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Flipboard",
@@ -3495,7 +3579,8 @@
     "checkMethod": "message",
     "errorMsg": "<title></title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "flowcode",
@@ -3505,7 +3590,8 @@
     "checkMethod": "message",
     "errorMsg": "Nobody's reserved this Flowpage yet.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Fodors Forum",
@@ -3515,7 +3601,8 @@
     "checkMethod": "message",
     "errorMsg": "Plan Your Trip Online</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Folkd",
@@ -3524,7 +3611,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"result\":\"ok\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "forumprawne.org",
@@ -3534,7 +3622,8 @@
     "checkMethod": "message",
     "positiveMsg": "Wiadomość",
     "expectedStatus": 200,
-    "notFoundStatus": 500
+    "notFoundStatus": 500,
+    "defunct": true
   },
   {
     "name": "Fosstodon.org (Mastodon Instance)",
@@ -3544,7 +3633,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "fotka",
@@ -3593,7 +3683,8 @@
     "checkMethod": "message",
     "errorMsg": "Схоже, дана сторінка не знайдена",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Freelancehunt (Employer)",
@@ -3604,7 +3695,8 @@
     "errorMsg": "User not found.",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "freesound",
@@ -3624,7 +3716,8 @@
     "checkMethod": "message",
     "errorMsg": "error404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "FriendFinder",
@@ -3634,7 +3727,8 @@
     "checkMethod": "message",
     "errorMsg": "302 Found",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "FriendFinder-X",
@@ -3644,7 +3738,8 @@
     "checkMethod": "message",
     "errorMsg": "The document has moved",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Fur Affinity",
@@ -3653,7 +3748,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "<h2>System Error</h2>",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Gab",
@@ -3663,7 +3759,8 @@
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Record not found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "game_debate",
@@ -3673,7 +3770,8 @@
     "checkMethod": "message",
     "errorMsg": "Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Gamer DVR",
@@ -3683,7 +3781,8 @@
     "checkMethod": "message",
     "errorMsg": "<body>You are being <",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Garmin connect",
@@ -3702,7 +3801,8 @@
     "checkMethod": "message",
     "errorMsg": "-1",
     "expectedStatus": 200,
-    "notFoundStatus": 500
+    "notFoundStatus": 500,
+    "defunct": true
   },
   {
     "name": "getmonero",
@@ -3711,7 +3811,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Monero | Page not found. Error: 404",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Gigapan",
@@ -3721,7 +3822,8 @@
     "checkMethod": "message",
     "errorMsg": "<a href=\"/gigapans\">View Gigapans</a>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Gitee",
@@ -3741,7 +3843,8 @@
     "checkMethod": "message",
     "errorMsg": "\"status\": \"404\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "gloria.tv",
@@ -3751,7 +3854,8 @@
     "checkMethod": "message",
     "errorMsg": "Page unavailable",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "GNOME (GitLab)",
@@ -3760,7 +3864,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "[]",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "GNOME (Shell Extensions)",
@@ -3770,7 +3875,8 @@
     "checkMethod": "message",
     "errorMsg": "<h3>404 - Page not Found</h3>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Goodgame_Russia",
@@ -3780,7 +3886,8 @@
     "checkMethod": "message",
     "errorMsg": "Такой страницы не существует",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "defunct": true
   },
   {
     "name": "gpodder.net",
@@ -3790,7 +3897,8 @@
     "checkMethod": "message",
     "errorMsg": "404 - Not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "grandprof",
@@ -3800,7 +3908,8 @@
     "checkMethod": "message",
     "errorMsg": "Mauvaise pioche",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Graphics.social (Mastodon Instance)",
@@ -3810,7 +3919,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Greasy Fork",
@@ -3828,7 +3938,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "<h1>404 Not Found",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "gumroad",
@@ -3848,7 +3959,8 @@
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habbo.com.tr",
@@ -3858,7 +3970,8 @@
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habbo.de",
@@ -3868,7 +3981,8 @@
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habbo.es",
@@ -3878,7 +3992,8 @@
     "checkMethod": "message",
     "errorMsg": "not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habbo.fi",
@@ -3888,7 +4003,8 @@
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habbo.fr",
@@ -3898,7 +4014,8 @@
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habbo.it",
@@ -3908,7 +4025,8 @@
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habbo.nl",
@@ -3918,7 +4036,8 @@
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habr (Q&A)",
@@ -3938,7 +4057,8 @@
     "checkMethod": "message",
     "errorMsg": "tm-error-message",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Habtium",
@@ -3948,7 +4068,8 @@
     "checkMethod": "message",
     "errorMsg": "<h1 class=\"section red\">Oops!",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Hackaday.io",
@@ -3977,7 +4098,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "content=\"HAMAHA  Биткоин форум. Торговля на бирже - ➨ Обучение Криптовалютам, Биткоин и NYSE \"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Hanime",
@@ -3987,7 +4109,8 @@
     "checkMethod": "message",
     "errorMsg": "DYNAMIC",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Hcommons.social (Mastodon Instance)",
@@ -3997,7 +4120,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Heylink",
@@ -4007,7 +4131,8 @@
     "checkMethod": "message",
     "errorMsg": "We can't find the page that you're looking for :(",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "HiHello",
@@ -4017,7 +4142,8 @@
     "checkMethod": "message",
     "errorMsg": "Well, this is awkward",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "HomeDesign3D",
@@ -4027,7 +4153,8 @@
     "checkMethod": "message",
     "errorMsg": "An Error Occurred: Internal Server Error",
     "expectedStatus": 200,
-    "notFoundStatus": 500
+    "notFoundStatus": 500,
+    "defunct": true
   },
   {
     "name": "Hometech.social (Mastodon Instance)",
@@ -4037,7 +4164,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "hoo.be",
@@ -4047,7 +4175,8 @@
     "checkMethod": "message",
     "errorMsg": "Page Not Found</h3>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Hostux.social (Mastodon Instance)",
@@ -4057,7 +4186,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "HubPages",
@@ -4094,7 +4224,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Invalid user.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Iconfinder",
@@ -4114,7 +4245,8 @@
     "checkMethod": "message",
     "errorMsg": "Oops! We ran into some problems",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "IFTTT",
@@ -4124,7 +4256,8 @@
     "checkMethod": "message",
     "errorMsg": "The requested page or file does not exist",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "ifunny",
@@ -4143,7 +4276,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Пользователь не зарегистрирован и не имеет профиля для просмотра.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "ilovegrowingmarijuana",
@@ -4162,7 +4296,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Invalid uid",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "ImageShack",
@@ -4172,7 +4307,8 @@
     "checkMethod": "message",
     "positiveMsg": "s Images</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "iMGSRC.RU",
@@ -4182,7 +4318,8 @@
     "checkMethod": "message",
     "positiveMsg": "Присоединился",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Immunefi",
@@ -4222,7 +4359,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Members | Inkbunny, the Furry Art Community</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "InsaneJournal",
@@ -4242,7 +4380,8 @@
     "errorMsg": "class=\"page-error notfound\"",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 410
+    "notFoundStatus": 410,
+    "defunct": true
   },
   {
     "name": "interpals",
@@ -4280,7 +4419,8 @@
     "checkMethod": "message",
     "errorMsg": "Проверьте регистр написания.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Japandict",
@@ -4290,7 +4430,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you requested could not be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "JBZD",
@@ -4300,7 +4441,8 @@
     "checkMethod": "message",
     "errorMsg": "Błąd 404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "jeja.pl",
@@ -4309,7 +4451,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Niepoprawny login",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Jeuxvideo",
@@ -4319,7 +4462,8 @@
     "checkMethod": "message",
     "errorMsg": "rence des gamers",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Joe Monster",
@@ -4328,7 +4472,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Nie wiem jak ci to powiedzieć",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Justforfans",
@@ -4338,7 +4483,8 @@
     "checkMethod": "message",
     "positiveMsg": "@ JustFor.Fans",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Kickstarter",
@@ -4367,7 +4513,8 @@
     "checkMethod": "message",
     "errorMsg": "Page not found. Link expired, broken or wrong.",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "komi",
@@ -4377,7 +4524,8 @@
     "checkMethod": "message",
     "errorMsg": "The talent profile was not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Kotburger",
@@ -4386,7 +4534,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Kwai",
@@ -4405,7 +4554,8 @@
     "checkMethod": "message",
     "errorMsg": "404 - strona nie została znaleziona - KWEJK.pl",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Kwork",
@@ -4414,7 +4564,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "LeakIX",
@@ -4444,7 +4595,8 @@
     "checkMethod": "message",
     "errorMsg": "{}",
     "expectedStatus": 400,
-    "notFoundStatus": 200
+    "notFoundStatus": 200,
+    "defunct": true
   },
   {
     "name": "Liberapay",
@@ -4465,7 +4617,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "linux.org.ru",
@@ -4475,7 +4628,8 @@
     "checkMethod": "message",
     "errorMsg": "Пользователя не существует",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "livemaster.ru",
@@ -4485,7 +4639,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Вы попали на несуществующую страницу",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "LoLProfile",
@@ -4504,7 +4659,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "lowcygier.pl",
@@ -4514,7 +4670,8 @@
     "checkMethod": "message",
     "errorMsg": "Błąd 404 - Podana strona nie istnieje",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "MAGABOOK",
@@ -4524,7 +4681,8 @@
     "checkMethod": "message",
     "positiveMsg": "Timeline",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Magix",
@@ -4553,7 +4711,8 @@
     "checkMethod": "message",
     "errorMsg": "Outside together",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Mapstodon.space (Mastodon Instance)",
@@ -4563,7 +4722,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Maroc_nl",
@@ -4572,7 +4732,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Deze gebruiker is niet geregistreerd",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Marshmallow",
@@ -4592,7 +4753,8 @@
     "checkMethod": "message",
     "errorMsg": "Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Massage Anywhere",
@@ -4601,7 +4763,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "<title>MassageAnywhere.com: Search Results</title>",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "masto.ai",
@@ -4611,7 +4774,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Masto.nyc (Mastodon Instance)",
@@ -4621,7 +4785,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-101010.pl",
@@ -4631,7 +4796,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-C.IM",
@@ -4641,7 +4807,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>The page you are looking for isn&#39;t here",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-Chaos.social",
@@ -4651,7 +4818,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-Defcon",
@@ -4661,7 +4829,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-meow.social",
@@ -4671,7 +4840,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-mstdn.io",
@@ -4681,7 +4851,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-rigcz.club",
@@ -4691,7 +4862,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn't here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon-social_tchncs",
@@ -4701,7 +4873,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "Mastodon-Toot.Community",
@@ -4711,7 +4884,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodon.online",
@@ -4721,7 +4895,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mastodonbooks.net (Mastodon Instance)",
@@ -4731,7 +4906,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "medyczka.pl",
@@ -4751,7 +4927,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>MeetMe - Chat and Meet New People</title",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Meta-Wiki (Wikimedia)",
@@ -4790,7 +4967,8 @@
     "checkMethod": "message",
     "errorMsg": "Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Mistrzowie",
@@ -4799,7 +4977,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Mix",
@@ -4809,7 +4988,8 @@
     "checkMethod": "message",
     "errorMsg": "The best content from the open web, personalized.",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Mixi",
@@ -4818,7 +4998,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "データがありません",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Mixlr",
@@ -4838,7 +5019,8 @@
     "checkMethod": "message",
     "errorMsg": "404 Not Not_Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "MobileGTA.net",
@@ -4847,7 +5029,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "<h1>404 Not Found",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "MODX.im",
@@ -4857,7 +5040,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"content-error\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Moto Trip",
@@ -4867,7 +5051,8 @@
     "checkMethod": "message",
     "errorMsg": "<h1>Page introuvable</h1>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Motokiller",
@@ -4876,7 +5061,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "mssg.me",
@@ -4906,7 +5092,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "musictraveler",
@@ -4916,7 +5103,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Page Not found</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "MUYZORRAS",
@@ -4926,7 +5114,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Error 404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "my_instants",
@@ -4956,7 +5145,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "MyFitnessPal Community",
@@ -4976,7 +5166,8 @@
     "checkMethod": "message",
     "errorMsg": "/ Whoops!",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "MYM",
@@ -4986,7 +5177,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"page page-404\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "MyNickname",
@@ -4995,7 +5187,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "<h2>Nickname not found. Try searching for similar nicknames.</h2>",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "myportfolio",
@@ -5034,7 +5227,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "- NaijaPlanet!",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "nairaland",
@@ -5044,7 +5238,8 @@
     "checkMethod": "message",
     "errorMsg": "404: Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "NaturalNews",
@@ -5053,7 +5248,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "The page you are looking for cannot be found or is no longer available.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Naver",
@@ -5073,7 +5269,8 @@
     "checkMethod": "message",
     "errorMsg": "Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "newmeet",
@@ -5082,7 +5279,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Chat with , , ,  -",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Nifty Gateway",
@@ -5112,7 +5310,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Nih Buat Jajan</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Nitecrew (Mastodon Instance)",
@@ -5122,7 +5321,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "nnru",
@@ -5132,7 +5332,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Ошибка 404 -",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "NotABug",
@@ -5142,7 +5343,8 @@
     "checkMethod": "message",
     "errorMsg": "alt=\"404\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Note",
@@ -5152,7 +5354,8 @@
     "checkMethod": "message",
     "errorMsg": "お探しのページが見つかりません。",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "oglaszamy24h.pl",
@@ -5162,7 +5365,8 @@
     "checkMethod": "message",
     "errorMsg": "Nieprawidłowy link, w bazie danych nie istnieje użytkownik o podanym loginie",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "ok.ru",
@@ -5182,7 +5386,8 @@
     "checkMethod": "message",
     "errorMsg": "Страница не найдена",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "omg.lol",
@@ -5191,7 +5396,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"success\": false",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Opencollective",
@@ -5219,7 +5425,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"missing\":\"\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Oper.ru",
@@ -5228,7 +5435,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "Нет такого пользователя",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Orbys",
@@ -5238,7 +5446,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for cannot be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Origins.Habbo.com",
@@ -5258,7 +5467,8 @@
     "checkMethod": "message",
     "errorMsg": "not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Origins.Habbo.es",
@@ -5268,7 +5478,8 @@
     "checkMethod": "message",
     "errorMsg": "not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Our Freedom Book",
@@ -5278,7 +5489,8 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "ow.ly",
@@ -5288,7 +5500,8 @@
     "checkMethod": "message",
     "errorMsg": "404 error",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "palnet",
@@ -5298,7 +5511,8 @@
     "checkMethod": "message",
     "errorMsg": "Unknown user account!",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "patch",
@@ -5308,7 +5522,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Page not found</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "PatientsLikeMe",
@@ -5328,7 +5543,8 @@
     "checkMethod": "message",
     "errorMsg": "An error occurred",
     "expectedStatus": 200,
-    "notFoundStatus": 500
+    "notFoundStatus": 500,
+    "defunct": true
   },
   {
     "name": "Patronite",
@@ -5338,7 +5554,8 @@
     "checkMethod": "message",
     "errorMsg": "Nie znaleźliśmy strony której szukasz.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Paypal",
@@ -5357,7 +5574,8 @@
     "checkMethod": "message",
     "errorMsg": "Oops! We ran into some problems",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Peerlist",
@@ -5389,7 +5607,8 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, this page doesn’t exist",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Pewex",
@@ -5398,7 +5617,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Picsart",
@@ -5416,7 +5636,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono użytkownika o podanym loginie.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Pillowfort",
@@ -5426,7 +5647,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>(404)</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "PinkBike",
@@ -5436,7 +5658,8 @@
     "checkMethod": "message",
     "errorMsg": "I couldn't find the page you were looking for",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "pixelfed.social",
@@ -5456,7 +5679,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>PLINK - 404 Page not found</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Poe.com",
@@ -5475,7 +5699,8 @@
     "checkMethod": "message",
     "errorMsg": "Neexistujúci používateľ",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Polarsteps",
@@ -5494,7 +5719,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Wybrany użytkownik nie istnieje.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "policja2009",
@@ -5503,7 +5729,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono tematów ani postów pasujących do Twoich kryteriów",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Poll Everywhere",
@@ -5523,7 +5750,8 @@
     "checkMethod": "message",
     "errorMsg": "404 Not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "popl",
@@ -5532,7 +5760,8 @@
     "category": "professional",
     "checkMethod": "message",
     "errorMsg": "Profile not found",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Pornhub (Model)",
@@ -5542,7 +5771,8 @@
     "checkMethod": "message",
     "positiveMsg": "class=\"topProfileHeader\"",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "Poweredbygay.social (Mastodon Instance)",
@@ -5552,7 +5782,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Pr0gramm",
@@ -5622,7 +5853,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "Użytkownik nie istnieje.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Public.com",
@@ -5642,7 +5874,8 @@
     "checkMethod": "message",
     "errorMsg": "Strona nie została znaleziona",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "quitter.pl",
@@ -5652,7 +5885,8 @@
     "checkMethod": "message",
     "errorMsg": "\"error\":",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Raddle.me",
@@ -5672,7 +5906,8 @@
     "checkMethod": "message",
     "errorMsg": "Are you sure it was ever here?",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Rarible",
@@ -5692,7 +5927,8 @@
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Refsheet",
@@ -5702,7 +5938,8 @@
     "checkMethod": "message",
     "errorMsg": "That's unfortunate. Where did it go?",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "resumes_actorsaccess",
@@ -5711,7 +5948,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "File was not found on this SERVER",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Revolut",
@@ -5731,7 +5969,8 @@
     "checkMethod": "message",
     "errorMsg": "404 — Risk.ru",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "RoutineHub",
@@ -5740,7 +5979,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "A community for Apple Shortcuts</title>",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "rsi",
@@ -5760,7 +6000,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Фотобанк 123RF - Стоковые Фото, Векторы, Видеоролики. Подписка на Фото. Royalty Free контент<",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "RuneScape",
@@ -5778,7 +6019,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Пользователь не найден",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "ruVoIP.net",
@@ -5787,7 +6029,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "Error 404 - Not Found",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Salon24",
@@ -5797,7 +6040,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Salon24 - Blogi, wiadomości, opinie i komentarze",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "Scammer.info",
@@ -5816,7 +6060,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"status\":false",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "ScoutWiki",
@@ -5835,7 +6080,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "class=\"nothing-found\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "secure_donation",
@@ -5845,7 +6091,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>secure.donationpay.org</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "sedisp@ce",
@@ -5855,7 +6102,8 @@
     "checkMethod": "message",
     "errorMsg": "- Page non trouvée!",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Seneporno",
@@ -5865,7 +6113,8 @@
     "checkMethod": "message",
     "errorMsg": "Unexpected error! Please contact us and tell us more how you got to this page!",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "sentimente",
@@ -5875,7 +6124,8 @@
     "checkMethod": "message",
     "errorMsg": "HTTP Error code: 404. Resource not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "SEOClerks",
@@ -5885,7 +6135,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>SEO Marketplace",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Sepia Search (PeerTube)",
@@ -5924,7 +6175,8 @@
     "checkMethod": "message",
     "positiveMsg": "s Profile - ShesFreaky</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Shikimori",
@@ -5934,7 +6186,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"error-404\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "shopify",
@@ -5954,7 +6207,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Darmowe",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "shutterstock",
@@ -5984,7 +6238,8 @@
     "checkMethod": "message",
     "errorMsg": "It looks like nothing was found at this location",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "slant",
@@ -6014,7 +6269,8 @@
     "checkMethod": "message",
     "errorMsg": "no Smashrunner with the username",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "SmugMug",
@@ -6044,7 +6300,8 @@
     "checkMethod": "message",
     "errorMsg": "Nie znaleziono",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "social.bund.de",
@@ -6054,7 +6311,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>The page you are looking for isn&#39;t here.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "social_msdn",
@@ -6084,7 +6342,8 @@
     "checkMethod": "message",
     "errorMsg": "Soup.io - News, Sports, Entertainment, TV, Tech, Gaming",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "SpiceWorks",
@@ -6094,7 +6353,8 @@
     "checkMethod": "message",
     "errorMsg": "Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "SPOJ",
@@ -6103,7 +6363,8 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "<strong>Innopolis Open 2018</strong>",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Sports Tracker",
@@ -6112,7 +6373,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"code\":\"404\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "StackOverflow",
@@ -6151,7 +6413,8 @@
     "checkMethod": "message",
     "errorMsg": "<title></title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "StoryCorps",
@@ -6191,7 +6454,8 @@
     "checkMethod": "message",
     "errorMsg": "[]",
     "expectedStatus": 400,
-    "notFoundStatus": 200
+    "notFoundStatus": 200,
+    "defunct": true
   },
   {
     "name": "Subscribestar",
@@ -6211,7 +6475,8 @@
     "checkMethod": "message",
     "errorMsg": "404 Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Suzuri",
@@ -6230,7 +6495,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "Code: Couldn't find that username or email.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "tabletoptournament",
@@ -6239,7 +6505,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "No player with the nickname",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Tagged",
@@ -6259,7 +6526,8 @@
     "checkMethod": "message",
     "errorMsg": "ТамТам</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "Tanuki.pl",
@@ -6269,7 +6537,8 @@
     "checkMethod": "message",
     "errorMsg": "Nie ma takiego użytkownika",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "TAPiTAG",
@@ -6278,7 +6547,8 @@
     "category": "professional",
     "checkMethod": "message",
     "errorMsg": "The rf number is not valid",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Tappy",
@@ -6287,7 +6557,8 @@
     "category": "professional",
     "checkMethod": "message",
     "errorMsg": "Profile of username Not Found",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Taringa",
@@ -6297,7 +6568,8 @@
     "checkMethod": "message",
     "errorMsg": "Colectiva en Taringa!</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "taskrabbit",
@@ -6346,7 +6618,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"error\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Tenor",
@@ -6376,7 +6649,8 @@
     "checkMethod": "message",
     "errorMsg": "Not found, error 404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "theguardian",
@@ -6416,7 +6690,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Tilde.zone (Mastodon Instance)",
@@ -6426,7 +6701,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Tinder",
@@ -6445,7 +6721,8 @@
     "checkMethod": "message",
     "errorMsg": "\"message\":\"Not found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Tooting.ch (Mastodon Instance)",
@@ -6455,7 +6732,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "toyhou.se",
@@ -6495,7 +6773,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"b-handler-error-404\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Tryst",
@@ -6505,7 +6784,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "tunefind",
@@ -6515,7 +6795,8 @@
     "checkMethod": "message",
     "errorMsg": "\"code\":\"not_found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Twitch",
@@ -6535,7 +6816,8 @@
     "checkMethod": "message",
     "errorMsg": "をご確認ください。",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "UEF CONNECT",
@@ -6545,7 +6827,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Page not found - UEFConnect</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Ultimate Guitar",
@@ -6565,7 +6848,8 @@
     "checkMethod": "message",
     "errorMsg": "Ile masz wyjazdów?",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Unlisted Videos",
@@ -6584,7 +6868,8 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "utip.io",
@@ -6594,7 +6879,8 @@
     "checkMethod": "message",
     "errorMsg": "Not a valid web service key",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "uwu.ai",
@@ -6615,7 +6901,8 @@
     "checkMethod": "message",
     "errorMsg": "Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "vapenews",
@@ -6664,7 +6951,8 @@
     "checkMethod": "message",
     "errorMsg": "id=\"missing-this\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Vine",
@@ -6674,7 +6962,8 @@
     "checkMethod": "message",
     "errorMsg": "That record does not exist",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "VIP-blog",
@@ -6702,7 +6991,8 @@
     "category": "professional",
     "checkMethod": "message",
     "errorMsg": "card_id\": 0",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Vivino",
@@ -6712,7 +7002,8 @@
     "checkMethod": "message",
     "errorMsg": "\"error\":{\"message\":\"Record not found\"}",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Vkl.world (Mastodon Instance)",
@@ -6722,7 +7013,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Vmst.io (Mastodon Instance)",
@@ -6732,7 +7024,8 @@
     "checkMethod": "message",
     "errorMsg": "Record not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Voice123",
@@ -6741,7 +7034,8 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "[]",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Voices.com",
@@ -6761,7 +7055,8 @@
     "checkMethod": "message",
     "errorMsg": "<p>Пользователь с таким именем не найден.</p>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "W3Schools",
@@ -6781,7 +7076,8 @@
     "checkMethod": "message",
     "errorMsg": "<h2>Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "warriorforum",
@@ -6791,7 +7087,8 @@
     "checkMethod": "message",
     "errorMsg": "Oops | Warrior Forum -",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "defunct": true
   },
   {
     "name": "watchmemore.com",
@@ -6801,7 +7098,8 @@
     "checkMethod": "message",
     "errorMsg": "notExists",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "defunct": true
   },
   {
     "name": "Watchmyfeed",
@@ -6811,7 +7109,8 @@
     "checkMethod": "message",
     "positiveMsg": "SEND ME A TIP",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "waytohey",
@@ -6821,7 +7120,8 @@
     "checkMethod": "message",
     "errorMsg": "Unfortunately, this page doesn&#039;t exist.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Weasyl",
@@ -6831,7 +7131,8 @@
     "checkMethod": "message",
     "errorMsg": "This user doesn't seem to be in our database.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Weblancer",
@@ -6841,7 +7142,8 @@
     "checkMethod": "message",
     "errorMsg": "\"page\":\"/404\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Weblate",
@@ -6851,7 +7153,8 @@
     "checkMethod": "message",
     "errorMsg": "<h2>Page Not Found</h2>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "weebly",
@@ -6911,7 +7214,8 @@
     "checkMethod": "message",
     "errorMsg": "The page you are looking for cannot be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Wireclub",
@@ -6921,7 +7225,8 @@
     "checkMethod": "message",
     "errorMsg": "People - Wireclub",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "Wishlistr",
@@ -6940,7 +7245,8 @@
     "checkMethod": "message",
     "errorMsg": "Wordnik: Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "WordPress.org (Forums)",
@@ -6959,7 +7265,8 @@
     "checkMethod": "message",
     "errorMsg": "Wystąpił błąd 404.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Xakep.ru",
@@ -6969,7 +7276,8 @@
     "checkMethod": "message",
     "errorMsg": "Страница не найдена",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Xanga",
@@ -6989,7 +7297,8 @@
     "checkMethod": "message",
     "errorMsg": "User not found</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "XNXX",
@@ -6999,7 +7308,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>Bad request",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "defunct": true
   },
   {
     "name": "XVideos",
@@ -7009,7 +7319,8 @@
     "checkMethod": "message",
     "errorMsg": "\"message\":\"Unknown user\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Yahoo! JAPAN Auction",
@@ -7019,7 +7330,8 @@
     "checkMethod": "message",
     "errorMsg": "Yahoo! JAPAN IDが無効です。",
     "expectedStatus": 200,
-    "notFoundStatus": 500
+    "notFoundStatus": 500,
+    "defunct": true
   },
   {
     "name": "yapishu",
@@ -7029,7 +7341,8 @@
     "checkMethod": "message",
     "errorMsg": "Not Found (#404)",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Yazawaj",
@@ -7039,7 +7352,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>nodata",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "defunct": true
   },
   {
     "name": "YesWeHack",
@@ -7069,7 +7383,8 @@
     "checkMethod": "message",
     "positiveMsg": "INFO",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "Zenn",
@@ -7119,7 +7434,8 @@
     "checkMethod": "message",
     "errorMsg": "<title>خطای ۴۰۴ - صفحه یافت نشد</title>",
     "expectedStatus": 301,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Военное обозрение",
@@ -7129,7 +7445,8 @@
     "checkMethod": "message",
     "errorMsg": "class=\"error-container\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Чатовка.net",

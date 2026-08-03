@@ -1596,14 +1596,19 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .np-pin-item {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 0;
+  flex-direction: column;
+  padding: 4px 0;
   border-bottom: 1px solid #f8f8f8;
   font-size: 0.77rem;
 }
 .np-pin-item:last-child { border-bottom: none; }
-.np-pin-item a {
+.np-pin-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.np-pin-row a {
   color: #333;
   text-decoration: none;
   font-weight: 500;
@@ -1613,7 +1618,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.np-pin-item a:hover { text-decoration: underline; }
+.np-pin-row a:hover { text-decoration: underline; }
 
 .np-pin-status {
   font-size: 0.57rem;
@@ -1630,9 +1635,9 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .np-unpin {
   background: none; border: none; cursor: pointer;
-  font-size: 0.6rem; opacity: 0.25; flex-shrink: 0; padding: 2px; color: #666;
+  font-size: 0.6rem; opacity: 0.5; flex-shrink: 0; padding: 2px; color: #666;
 }
-.np-unpin:hover { opacity: 1; }
+.np-unpin:hover { opacity: 1; color: #c00; }
 
 .np-url-row { display: flex; gap: 5px; margin-top: 0.3rem; }
 
@@ -1676,10 +1681,12 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   color: #aaa;
   padding: 0 5px;
   height: 20px;
+  width: auto;
   border: 1px solid #ebebeb;
   border-radius: 4px;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 .np-export-btn:hover { color: #111; border-color: #aaa; background: #f7f7f7; }
 
@@ -1830,7 +1837,9 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .np-meta-detail em { color: #777; font-style: normal; }
 .np-meta-ts { color: #bbb; font-size: 0.6rem; }
 
+/* .np-unpin — see first definition above */
 
+.float-panel {
   position: fixed;
   width: 300px;
   max-width: calc(100vw - 32px);
@@ -1997,24 +2006,12 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .np-pin-item {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
   padding: 4px 0;
   border-bottom: 1px solid #f0f0f0;
   font-size: 0.8rem;
 }
 .np-pin-item:last-child { border-bottom: none; }
-.np-pin-item a {
-  color: #222;
-  text-decoration: none;
-  font-weight: 500;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.np-pin-item a:hover { text-decoration: underline; }
 
 .np-pin-status {
   font-size: 0.62rem;
@@ -2028,16 +2025,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .np-pin-status.deleted { background: var(--deleted-bg); color: var(--deleted); }
 .np-pin-status.unknown { background: #f4f4f4; color: #888; }
 
-.np-unpin {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.65rem;
-  opacity: 0.3;
-  flex-shrink: 0;
-  padding: 2px;
-}
-.np-unpin:hover { opacity: 1; }
+/* .np-unpin — see first definition above */
 
 .np-divider {
   height: 1px;
