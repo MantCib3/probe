@@ -122,8 +122,6 @@ const resultsGrid       = $('resultsGrid');
 const completionBar     = $('completionBar');
 const completionText    = $('completionText');
 const foundOnlyToggle   = $('foundOnlyToggle');
-const exportCsvBtn      = $('exportCsvBtn');
-const exportJsonBtn     = $('exportJsonBtn');
 const openFoundBtn      = $('openFoundBtn');
 const copyUrlsBtn       = $('copyUrlsBtn');
 const newScanBtn        = $('newScanBtn');
@@ -1463,22 +1461,27 @@ function resetDomainScanControls() {
 }
 
 /* ── Export helpers ──────────────────────────────────────────────────── */
-function exportCsv() {
+function buildCsvRows(subset) {
   const header = 'Name,Category,Status,Confidence,Reasons,URL';
-  const rows = results.map(r =>
-    [
-      r.name,
-      r.category,
-      r.status,
-      typeof r.confidence === 'number' ? Math.round(r.confidence * 100) : '',
-      Array.isArray(r.reasonCodes) ? r.reasonCodes.join('|') : '',
-      r.url,
-    ]
+  const rows = subset.map(r =>
+    [r.name, r.category, r.status,
+     typeof r.confidence === 'number' ? Math.round(r.confidence * 100) : '',
+     Array.isArray(r.reasonCodes) ? r.reasonCodes.join('|') : '', r.url]
       .map(v => `"${String(v).replace(/"/g, '""')}"`)
       .join(',')
   );
-  const csv = [header, ...rows].join('\r\n');
-  downloadText(csv, `probe_${usernameInput.value}_${Date.now()}.csv`, 'text/csv');
+  return [header, ...rows].join('\r\n');
+}
+
+function exportCsv() {
+  const csv = buildCsvRows(results);
+  downloadText(csv, `probe_${usernameInput.value}_all_${Date.now()}.csv`, 'text/csv');
+}
+
+function exportCsvFound() {
+  const subset = results.filter(r => r.status === 'found' || r.status === 'deleted');
+  const csv = buildCsvRows(subset);
+  downloadText(csv, `probe_${usernameInput.value}_found_${Date.now()}.csv`, 'text/csv');
 }
 
 function exportJson() {
@@ -1503,7 +1506,28 @@ function exportJson() {
     },
     results,
   };
-  downloadText(JSON.stringify(payload, null, 2), `probe_${payload.query || 'scan'}_${Date.now()}.json`, 'application/json');
+  downloadText(JSON.stringify(payload, null, 2), `probe_${payload.query || 'scan'}_all_${Date.now()}.json`, 'application/json');
+}
+
+function exportJsonFound() {
+  const found = results.filter(r => r.status === 'found' || r.status === 'deleted');
+  const query = currentMode === 'name'
+    ? (nameInput ? nameInput.value.trim() : '')
+    : currentMode === 'email'
+      ? (emailInput ? emailInput.value.trim() : '')
+      : currentMode === 'phone'
+        ? (phoneInput ? phoneInput.value.trim() : '')
+        : currentMode === 'domain'
+          ? (domainInput ? domainInput.value.trim() : '')
+      : usernameInput.value.trim();
+  const payload = {
+    query,
+    mode: currentMode,
+    generatedAt: new Date().toISOString(),
+    totals: { found: found.filter(r => r.status === 'found').length, deleted: found.filter(r => r.status === 'deleted').length },
+    results: found,
+  };
+  downloadText(JSON.stringify(payload, null, 2), `probe_${payload.query || 'scan'}_found_${Date.now()}.json`, 'application/json');
 }
 
 function openFoundLinks() {
@@ -1631,9 +1655,23 @@ function initEvents() {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); manualCheckToggle.click(); }
   });
 
+  // Download dropdown (progress header)
+  const dlBtn  = $('dlBtn');
+  const dlMenu = $('dlMenu');
+  if (dlBtn && dlMenu) {
+    dlBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = dlMenu.classList.toggle('open');
+      if (open) document.addEventListener('click', () => dlMenu.classList.remove('open'), { once: true });
+    });
+    const wire = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', () => { fn(); dlMenu.classList.remove('open'); }); };
+    wire('dlFoundCsv',  exportCsvFound);
+    wire('dlAllCsv',    exportCsv);
+    wire('dlFoundJson', exportJsonFound);
+    wire('dlAllJson',   exportJson);
+  }
+
   // Export
-  exportCsvBtn.addEventListener('click', exportCsv);
-  if (exportJsonBtn) exportJsonBtn.addEventListener('click', exportJson);
   if (openFoundBtn) openFoundBtn.addEventListener('click', openFoundLinks);
   copyUrlsBtn.addEventListener('click', copyFoundUrls);
 
@@ -1695,7 +1733,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(() => {
       // Fallback count — update if site list size changes
       document.querySelectorAll('#heroCount, #siteCount, .step-count').forEach(el => {
-        el.textContent = '377';
+        el.textContent = '373';
       });
     });
 

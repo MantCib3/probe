@@ -59,7 +59,18 @@
         <div class="progress-status" id="progressStatus">
           Scanning <strong id="currentUsername"></strong>…
         </div>
-        <button class="btn-cancel" id="cancelBtn">✕ Cancel</button>
+        <div class="progress-actions">
+          <div class="dl-wrap" id="dlWrap">
+            <button class="btn-dl" id="dlBtn" title="Download results">↓ Download ▾</button>
+            <div class="dl-menu" id="dlMenu">
+              <button id="dlFoundCsv">↓ Found links (.csv)</button>
+              <button id="dlAllCsv">↓ All results (.csv)</button>
+              <button id="dlFoundJson">↓ Found links (.json)</button>
+              <button id="dlAllJson">↓ All results (.json)</button>
+            </div>
+          </div>
+          <button class="btn-cancel" id="cancelBtn">✕ Cancel</button>
+        </div>
       </div>
       <div class="progress-bar-container">
         <div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div>
@@ -124,10 +135,10 @@
         <div class="manual-check-header" id="manualCheckToggle" role="button" tabindex="0" aria-expanded="false">
           <span class="manual-check-title">
             <span class="manual-check-icon">↗</span>
-            Open to Verify Manually
+            Unknown
             <span class="manual-check-count" id="manualCheckCount">0</span>
           </span>
-          <span class="manual-check-hint">These platforms can't be checked automatically — click a link to open.</span>
+          <span class="manual-check-hint">Open to verify.</span>
           <span class="manual-chevron" id="manualChevron">▼</span>
         </div>
         <div class="manual-check-body" id="manualCheckBody">
@@ -142,8 +153,6 @@
         </div>
         <div class="export-actions">
           <button class="btn btn-outline" id="openFoundBtn">Open Found Links</button>
-          <button class="btn btn-secondary" id="exportCsvBtn">Download CSV</button>
-          <button class="btn btn-secondary" id="exportJsonBtn">Download JSON</button>
           <button class="btn btn-outline" id="copyUrlsBtn">Copy Found URLs</button>
           <button class="btn btn-primary" id="newScanBtn">New Scan</button>
         </div>

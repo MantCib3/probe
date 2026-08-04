@@ -1602,7 +1602,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "0 Minecraft servers recently",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Mod DB",
@@ -3706,7 +3707,8 @@
     "checkMethod": "message",
     "errorMsg": "<h1>Page not found</h1>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "FreeSteamKeys",
@@ -4369,7 +4371,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "The requested URL /profile was not found on this server",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "Instagram (Imginn)",
@@ -4544,7 +4547,8 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "<title>Kwai</title>",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "kwejk.pl",
