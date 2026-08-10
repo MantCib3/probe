@@ -967,20 +967,46 @@ function applyEdgePos(panel, edge, pos) {
 
 /* ── Platforms grid (static, rendered on load) ───────────────────────── */
 function initPlatformsGrid(sites) {
-  // Show only 10 flagship platforms in the section
-  const FEATURED = ['GitHub','Instagram','TikTok','Reddit','YouTube','Twitch','Snapchat','LinkedIn','Pinterest','Steam'];
+  // Platforms to feature in the ticker (order matters for visual variety)
+  const FEATURED_ORDER = [
+    'GitHub','Instagram','TikTok','Reddit','YouTube','Twitch',
+    'Snapchat','LinkedIn','Pinterest','Steam','Discord','Spotify',
+    'SoundCloud','Vimeo','DeviantArt','Medium','Behance','Dribbble',
+    'Patreon','Fiverr','Etsy','GitLab','Telegram','Mastodon','Flickr',
+  ];
+
   const activeSites = (sites || []).filter(s => !s.defunct);
-  const featured = FEATURED
+  const featured = FEATURED_ORDER
     .map(name => activeSites.find(s => s.name === name))
     .filter(Boolean);
-  const frag = document.createDocumentFragment();
-  featured.forEach(site => {
+
+  // Fallback: fill with alphabetical active sites if featured list too short
+  if (featured.length < 12) {
+    activeSites.forEach(s => {
+      if (!featured.find(f => f.name === s.name)) featured.push(s);
+    });
+    featured.length = Math.min(featured.length, 25);
+  }
+
+  function makeChip(site) {
+    let domain = '';
+    try { domain = new URL(site.urlMain || site.url.replace('{}', 'x')).hostname.replace(/^www\./, ''); } catch(_) {}
     const chip = document.createElement('div');
     chip.className = 'platform-chip';
-    chip.innerHTML = `<span class="chip-name">${escHtml(site.name)}</span><span class="chip-cat">${escHtml(site.category)}</span>`;
-    frag.appendChild(chip);
-  });
-  platformsGrid.appendChild(frag);
+    chip.title = site.name;
+    chip.innerHTML = domain
+      ? `<img class="chip-logo" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32" alt="" loading="lazy"><span class="chip-name">${escHtml(site.name)}</span>`
+      : `<span class="chip-name">${escHtml(site.name)}</span>`;
+    return chip;
+  }
+
+  const track = $('platformsGrid');
+  if (!track) return;
+
+  // Build two copies for seamless infinite scroll
+  const frag = document.createDocumentFragment();
+  [...featured, ...featured].forEach(site => frag.appendChild(makeChip(site)));
+  track.appendChild(frag);
 
   // Update count placeholders
   const count = activeSites.length;
@@ -988,10 +1014,7 @@ function initPlatformsGrid(sites) {
     el.textContent = count;
   });
 
-  // Update checklist with real counts per category
-  const catCount = {};
-  activeSites.forEach(s => { catCount[s.category] = (catCount[s.category] || 0) + 1; });
-  // update search hint
+  // Update search hint
   const hint = $('searchHint');
   if (hint) hint.innerHTML = `${count} platforms &nbsp;·&nbsp; social · developer · gaming · content · and more`;
 }

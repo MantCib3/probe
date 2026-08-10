@@ -966,55 +966,53 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .pivot-shell {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  gap: 0.75rem;
+  align-items: stretch;
+  gap: 1rem;
   margin-top: 1.5rem;
-  max-width: 860px;
-  margin-left: auto;
-  margin-right: auto;
   width: 100%;
   box-sizing: border-box;
 }
 
+/* Dork panel — 60 % */
 .dork-column {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 0.65rem 0.85rem;
   background: rgba(255,255,255,0.72);
   backdrop-filter: blur(10px);
-  flex: 1;
+  flex: 3;
   min-width: 0;
   box-sizing: border-box;
 }
 
-/* Three-column pivot grid */
+/* Pivot panel — 40 % */
 .pivot-combined {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 0.65rem 0.8rem;
   background: rgba(255,255,255,0.72);
   backdrop-filter: blur(10px);
-  flex: 1;
+  flex: 2;
   min-width: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
+/* Three-column pivot grid — flex so cards fill equal height within each column */
 .pivot-3grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  /* title row + 5 card rows; subgrid equalises height across all columns */
-  grid-template-rows: auto repeat(5, auto);
-  row-gap: 0.35rem;
-  column-gap: 0;
-  align-items: stretch;
+  gap: 0;
+  height: 100%;
 }
 
 .pivot-box {
-  display: grid;
-  grid-template-rows: subgrid;
-  grid-row: span 6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   padding: 0 0.65rem;
   background: transparent;
+  min-width: 0;
 }
 .pivot-box:not(:last-child) { border-right: 1px solid #ebebeb; }
 .pivot-box:first-child { padding-left: 0; }
@@ -1026,13 +1024,16 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 0.55rem;
   padding-bottom: 0.4rem;
   border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
 }
 
 .pivot-box-list {
-  display: contents; /* children participate directly in parent subgrid rows */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.35rem;
 }
 
 .pivot-header, .dork-header {
@@ -1107,11 +1108,13 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .wmn-source-card {
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.6rem 0.7rem;
+  padding: 0.55rem 0.65rem;
   background: var(--white);
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex: 1; /* fills available row height equally within the column */
+  min-height: 0;
 }
 
 .wmn-source-row {
@@ -1320,28 +1323,59 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 /* ── Platforms Section ───────────────────────────────────────────────── */
 .platforms-section { padding: 5rem 0; }
 
-.platforms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.6rem;
+/* Ticker wrapper — clips overflow and fades edges */
+.platforms-ticker-wrap {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
   margin-top: 2rem;
 }
 
+/* Track — doubled content scrolls left infinitely */
+.platforms-track {
+  display: flex;
+  gap: 0.75rem;
+  width: max-content;
+  animation: platformsTicker 28s linear infinite;
+}
+.platforms-track:hover { animation-play-state: paused; }
+
+@keyframes platformsTicker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
 .platform-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 0.65rem 0.9rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  transition: all 0.18s ease;
+  padding: 0.55rem 0.9rem;
+  flex-shrink: 0;
+  white-space: nowrap;
   cursor: default;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .platform-chip:hover {
   border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+}
+
+.chip-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.chip-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary);
 }
 
 .chip-name {
