@@ -965,9 +965,15 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .pivot-shell {
   display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
   margin-top: 1.5rem;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dork-column {
@@ -976,31 +982,41 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   padding: 0.65rem 0.85rem;
   background: rgba(255,255,255,0.72);
   backdrop-filter: blur(10px);
-  max-width: 860px;
-  margin: 0 auto;
-  width: 100%;
+  flex: 1.3;
+  min-width: 0;
   box-sizing: border-box;
 }
 
 /* Three-column pivot grid */
+.pivot-combined {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.65rem 0.8rem;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(10px);
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .pivot-3grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  gap: 0;
   align-items: start;
-  max-width: 860px;
-  margin: 0 auto;
-  width: 100%;
 }
 
 .pivot-box {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 0.75rem 0.8rem;
-  background: var(--white);
+  border: none;
+  border-radius: 0;
+  padding: 0 0.65rem;
+  background: transparent;
   display: flex;
   flex-direction: column;
 }
+.pivot-box:not(:last-child) { border-right: 1px solid #ebebeb; }
+.pivot-box:first-child { padding-left: 0; }
+.pivot-box:last-child  { padding-right: 0; }
 
 .pivot-box-title {
   font-size: 0.65rem;
@@ -1125,13 +1141,12 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   padding: 0.7rem 0;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 720px) {
   .pivot-shell {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
-  .results-grid {
-    column-count: 2;
-  }
+  .pivot-box { padding: 0.5rem 0; }
+  .pivot-box:not(:last-child) { border-right: none; border-bottom: 1px solid #ebebeb; }
 }
 
 /* ── Manual Check Panel ──────────────────────────────────────────────── */
