@@ -85,21 +85,26 @@
           <span class="stat-num" id="statTotal">0</span>
           <span class="stat-label">total</span>
         </span>
-        <span class="stat-item stat-found">
+        <button class="stat-item stat-pill stat-found" data-status-filter="found" title="Filter: found">
           <span class="dot dot-found">●</span>
           <span class="stat-num" id="statFound">0</span>
           <span class="stat-label">found</span>
-        </span>
-        <span class="stat-item stat-deleted">
-          <span class="dot dot-deleted">●</span>
-          <span class="stat-num" id="statDeleted">0</span>
-          <span class="stat-label">deleted</span>
-        </span>
-        <span class="stat-item stat-notfound">
+        </button>
+        <button class="stat-item stat-pill stat-blocked" data-status-filter="blocked" title="Filter: blocked">
+          <span class="dot dot-blocked">●</span>
+          <span class="stat-num" id="statBlocked">0</span>
+          <span class="stat-label">blocked</span>
+        </button>
+        <button class="stat-item stat-pill stat-notfound" data-status-filter="not_found" title="Filter: not found">
           <span class="dot dot-notfound">●</span>
           <span class="stat-num" id="statNotFound">0</span>
           <span class="stat-label">not found</span>
-        </span>
+        </button>
+        <button class="stat-item stat-pill stat-error" data-status-filter="error" title="Filter: errors">
+          <span class="dot dot-error">●</span>
+          <span class="stat-num" id="statError">0</span>
+          <span class="stat-label">error</span>
+        </button>
       </div>
     </div>
   </div>
@@ -146,17 +151,7 @@
         </div>
       </div>
 
-      <!-- Completion summary -->
-      <div class="completion-bar" id="completionBar" style="display:none">
-        <div class="completion-summary">
-          <span id="completionText">Scan complete</span>
-        </div>
-        <div class="export-actions">
-          <button class="btn btn-outline" id="openFoundBtn">Open Found Links</button>
-          <button class="btn btn-outline" id="copyUrlsBtn">Copy Found URLs</button>
-          <button class="btn btn-primary" id="newScanBtn">New Scan</button>
-        </div>
-      </div>
+
 
     </div>
   </section>
@@ -168,18 +163,6 @@
       <p class="section-intro">Curated reference sources for the current scan target — displayed as static cards you open manually. Nothing here is fetched or searched automatically.</p>
 
       <div class="pivot-shell">
-        <div class="pivot-column">
-          <div class="pivot-header">
-            <div class="pivot-tabs" id="pivotTabs">
-              <button class="pivot-tab active" data-pivot="email">Email</button>
-              <button class="pivot-tab" data-pivot="phone">Phone</button>
-              <button class="pivot-tab" data-pivot="name">Name</button>
-            </div>
-            <div class="pivot-status" id="pivotStatus">Ready for the current scan target.</div>
-          </div>
-          <div class="pivot-results" id="pivotResultsList"></div>
-        </div>
-
         <div class="dork-column">
           <div class="dork-header">
             <div class="dork-tabs" id="dorkTabs">
@@ -191,6 +174,18 @@
             <div class="dork-status" id="dorkStatus">Awaiting scan…</div>
           </div>
           <div class="dork-results" id="dorkResultsList"></div>
+        </div>
+
+        <div class="pivot-column">
+          <div class="pivot-header">
+            <div class="pivot-tabs" id="pivotTabs">
+              <button class="pivot-tab active" data-pivot="email">Email</button>
+              <button class="pivot-tab" data-pivot="phone">Phone</button>
+              <button class="pivot-tab" data-pivot="name">Name</button>
+            </div>
+            <div class="pivot-status" id="pivotStatus">Ready for the current scan target.</div>
+          </div>
+          <div class="pivot-results" id="pivotResultsList"></div>
         </div>
       </div>
     </div>

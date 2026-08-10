@@ -101,6 +101,7 @@ let lastScannedTarget = ''; // current dork panel target
 let activeDorkEngine  = 'google'; // active tab in dork panel
 let activePivotMode = 'email';
 let dorkResults = [];
+let activeStatusFilter = null; // null = no filter, else a status string
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -116,15 +117,11 @@ const cancelBtn         = $('cancelBtn');
 const statChecked       = $('statChecked');
 const statTotal         = $('statTotal');
 const statFound         = $('statFound');
-const statDeleted       = $('statDeleted');
+const statBlocked       = $('statBlocked');
 const statNotFound      = $('statNotFound');
+const statError         = $('statError');
 const resultsGrid       = $('resultsGrid');
-const completionBar     = $('completionBar');
-const completionText    = $('completionText');
 const foundOnlyToggle   = $('foundOnlyToggle');
-const openFoundBtn      = $('openFoundBtn');
-const copyUrlsBtn       = $('copyUrlsBtn');
-const newScanBtn        = $('newScanBtn');
 const platformsGrid     = $('platformsGrid');
 const manualCheckPanel  = $('manualCheckPanel');
 const manualCheckBody   = $('manualCheckBody');
@@ -1120,6 +1117,14 @@ function makeManualItem(r) {
 }
 
 /* ── Filter application ──────────────────────────────────────────────── */
+function statusFilterMatch(cardStatus) {
+  if (activeStatusFilter) {
+    if (activeStatusFilter === 'error') return cardStatus === 'error' || cardStatus === 'timeout';
+    return cardStatus === activeStatusFilter;
+  }
+  return !foundOnly || cardStatus === 'found';
+}
+
 function applyFilters() {
   const cards = resultsGrid.querySelectorAll('.result-card');
   const sections = resultsGrid.querySelectorAll('.result-category-section');
@@ -1128,8 +1133,8 @@ function applyFilters() {
     const visibleCards = [...sectionCards].filter(card => {
       if (card.classList.contains('name-card')) return true;
       const catMatch = activeFilter === 'all' || card.dataset.category === activeFilter;
-      const foundMatch = !foundOnly || card.dataset.status === 'found';
-      return catMatch && foundMatch;
+      const stMatch = statusFilterMatch(card.dataset.status);
+      return catMatch && stMatch;
     });
     const hasVisible = visibleCards.length > 0;
     section.style.display = hasVisible ? '' : 'none';
@@ -1137,22 +1142,24 @@ function applyFilters() {
   cards.forEach(card => {
     if (card.classList.contains('name-card')) return; // name cards always visible
     const catMatch = activeFilter === 'all' || card.dataset.category === activeFilter;
-    const foundMatch = !foundOnly || card.dataset.status === 'found';
-    card.classList.toggle('hidden', !(catMatch && foundMatch));
+    const stMatch = statusFilterMatch(card.dataset.status);
+    card.classList.toggle('hidden', !(catMatch && stMatch));
   });
 }
 
 /* ── Stats ───────────────────────────────────────────────────────────── */
 function updateStats(done, total) {
   const found    = results.filter(r => r.status === 'found').length;
-  const deleted  = results.filter(r => r.status === 'deleted').length;
+  const blocked  = results.filter(r => r.status === 'blocked').length;
   const notFound = results.filter(r => r.status === 'not_found').length;
+  const error    = results.filter(r => r.status === 'error' || r.status === 'timeout').length;
 
   if (done  !== undefined) statChecked.textContent = done;
   if (total !== undefined) statTotal.textContent   = total;
   statFound.textContent    = found;
-  statDeleted.textContent  = deleted;
+  statBlocked.textContent  = blocked;
   statNotFound.textContent = notFound;
+  statError.textContent    = error;
   if (done !== undefined && total !== undefined) {
     progressBarFill.style.width = total ? `${(done / total) * 100}%` : '0%';
   }
@@ -1172,9 +1179,14 @@ function resetScanState() {
   manualCheckPanel.style.display = 'none';
   manualCheckBody.classList.remove('open');
   manualChevron.classList.remove('open');
-  completionBar.style.display = 'none';
   progressBarFill.style.width = '0%';
   progressBarFill.parentElement.classList.add('scanning');
+  // Restore cancel button
+  cancelBtn.textContent = '✕ Cancel';
+  cancelBtn.classList.remove('btn-done');
+  // Clear status filter
+  activeStatusFilter = null;
+  document.querySelectorAll('.stat-pill.active').forEach(el => el.classList.remove('active'));
 }
 
 /* ── Main scan — streams live results from the server via SSE ────────
@@ -1197,6 +1209,8 @@ function startScan(username) {
   currentUsername.textContent = username;
   updateDorkPanel(username);
   renderPivotSources();
+  // Kick off dork search at scan start so results appear early
+  runDorkSearch();
   const fabGrpA = $('fabGroup'); if (fabGrpA) fabGrpA.style.display = 'flex';
   pushCaseEvent(`Username investigation started for ${username}`, 'start');
   scanProgressSec.style.display = 'block';
@@ -1314,9 +1328,9 @@ function finishScan(username, done, total) {
 
   const found = results.filter(r => r.status === 'found').length;
   progressStatus.innerHTML = `Scan complete — <strong>${escHtml(username)}</strong>`;
-  completionText.textContent = `${found} profile${found !== 1 ? 's' : ''} found across ${total} platforms · grouped by category`;
-  completionBar.style.display = 'flex';
   pushCaseEvent(`Username investigation complete: ${found} found across ${total} sources`, 'done');
+  cancelBtn.textContent = '✓ Done';
+  cancelBtn.classList.add('btn-done');
   renderPivotSources();
   runDorkSearch();
   resetScanControls();
@@ -1362,10 +1376,9 @@ function finishNameScan(name, done, total) {
   progressBarFill.style.width = '100%';
 
   progressStatus.innerHTML = `Ready — <strong>${escHtml(name)}</strong>`;
-  const matches = results.filter(r => r.status === 'found').length;
-  completionText.textContent = `${matches} potential match${matches !== 1 ? 'es' : ''} across ${total} people-finder sources`;
-  completionBar.style.display = 'flex';
   pushCaseEvent(`Name investigation complete: ${total} sources processed`, 'done');
+  cancelBtn.textContent = '✓ Done';
+  cancelBtn.classList.add('btn-done');
 
   resetNameScanControls();
 }
@@ -1375,11 +1388,10 @@ function finishEmailScan(email, done, total) {
   progressBarFill.parentElement.classList.remove('scanning');
   progressBarFill.style.width = '100%';
 
-  const pivots = results.filter(r => r.status === 'link').length;
   progressStatus.innerHTML = `Email investigation ready — <strong>${escHtml(email)}</strong>`;
-  completionText.textContent = `${total} email intelligence result${total !== 1 ? 's' : ''} ready, including ${pivots} pivot${pivots !== 1 ? 's' : ''}`;
-  completionBar.style.display = 'flex';
   pushCaseEvent(`Email investigation complete: ${total} sources processed`, 'done');
+  cancelBtn.textContent = '✓ Done';
+  cancelBtn.classList.add('btn-done');
 
   resetEmailScanControls();
 }
@@ -1389,11 +1401,10 @@ function finishPhoneScan(phone, done, total) {
   progressBarFill.parentElement.classList.remove('scanning');
   progressBarFill.style.width = '100%';
 
-  const found = results.filter(r => r.status === 'found').length;
   progressStatus.innerHTML = `Phone investigation ready — <strong>${escHtml(phone)}</strong>`;
-  completionText.textContent = `${found} high-signal result${found !== 1 ? 's' : ''} across ${total} phone sources`;
-  completionBar.style.display = 'flex';
   pushCaseEvent(`Phone investigation complete: ${total} sources processed`, 'done');
+  cancelBtn.textContent = '✓ Done';
+  cancelBtn.classList.add('btn-done');
 
   resetPhoneScanControls();
 }
@@ -1403,11 +1414,10 @@ function finishDomainScan(domain, done, total) {
   progressBarFill.parentElement.classList.remove('scanning');
   progressBarFill.style.width = '100%';
 
-  const found = results.filter(r => r.status === 'found').length;
   progressStatus.innerHTML = `Domain investigation ready — <strong>${escHtml(domain)}</strong>`;
-  completionText.textContent = `${found} high-signal result${found !== 1 ? 's' : ''} across ${total} domain sources`;
-  completionBar.style.display = 'flex';
   pushCaseEvent(`Domain investigation complete: ${total} sources processed`, 'done');
+  cancelBtn.textContent = '✓ Done';
+  cancelBtn.classList.add('btn-done');
 
   resetDomainScanControls();
 }
@@ -1416,9 +1426,9 @@ function cancelScan() {
   if (evtSource) { evtSource.close(); evtSource = null; }
   progressBarFill.parentElement.classList.remove('scanning');
   progressStatus.textContent = 'Scan cancelled.';
-  completionBar.style.display = 'flex';
-  completionText.textContent = `Cancelled — ${results.filter(r => r.status === 'found').length} found so far`;
   pushCaseEvent('Investigation cancelled by user', 'warn');
+  cancelBtn.textContent = '✓ Done';
+  cancelBtn.classList.add('btn-done');
   if (currentMode === 'name') resetNameScanControls();
   else if (currentMode === 'email') resetEmailScanControls();
   else if (currentMode === 'phone') resetPhoneScanControls();
@@ -1547,9 +1557,12 @@ function copyFoundUrls() {
     .map(r => r.url)
     .join('\n');
   navigator.clipboard.writeText(urls).then(() => {
-    const orig = copyUrlsBtn.textContent;
-    copyUrlsBtn.textContent = '✓ Copied!';
-    setTimeout(() => { copyUrlsBtn.textContent = orig; }, 2000);
+    const btn = document.getElementById('copyUrlsBtn');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    }
   }).catch(() => {
     // Fallback for environments without clipboard API
     const ta = document.createElement('textarea');
@@ -1626,22 +1639,32 @@ function initEvents() {
     });
   }
 
-  // Cancel button
-  cancelBtn.addEventListener('click', cancelScan);
+  // Cancel / Done button — same element, dual behaviour
+  cancelBtn.addEventListener('click', () => {
+    if (scanActive) {
+      cancelScan();
+    } else {
+      // "Done" clicked — scroll back to search
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      usernameInput.focus();
+    }
+  });
 
-  // New scan button
-  newScanBtn.addEventListener('click', () => {
-    usernameInput.value = '';
-    if (emailInput) emailInput.value = '';
-    if (phoneInput) phoneInput.value = '';
-    if (domainInput) domainInput.value = '';
-    if (nameInput) nameInput.value = '';
-    if (currentMode === 'email' && emailInput) emailInput.focus();
-    else if (currentMode === 'phone' && phoneInput) phoneInput.focus();
-    else if (currentMode === 'domain' && domainInput) domainInput.focus();
-    else if (currentMode === 'name' && nameInput) nameInput.focus();
-    else usernameInput.focus();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Stat pill click → filter results by that status
+  document.querySelectorAll('.stat-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const filter = pill.dataset.statusFilter || null;
+      if (activeStatusFilter === filter) {
+        // toggle off
+        activeStatusFilter = null;
+        document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active'));
+      } else {
+        activeStatusFilter = filter;
+        document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+      }
+      applyFilters();
+    });
   });
 
   // Manual check toggle
@@ -1670,10 +1693,6 @@ function initEvents() {
     wire('dlFoundJson', exportJsonFound);
     wire('dlAllJson',   exportJson);
   }
-
-  // Export
-  if (openFoundBtn) openFoundBtn.addEventListener('click', openFoundLinks);
-  copyUrlsBtn.addEventListener('click', copyFoundUrls);
 
   // Category filter pills
   filterCategories.addEventListener('click', (e) => {
