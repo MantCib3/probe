@@ -1884,8 +1884,8 @@ function initReportPopover() {
     </div>
     <textarea class="rp-notes" placeholder="Optional: describe the issue…" rows="2" maxlength="500"></textarea>
     <div class="rp-footer">
+      <button class="rp-submit">Send Report</button>
       <button class="rp-cancel">Cancel</button>
-      <button class="rp-submit btn-primary">Send Report</button>
     </div>
     <div class="rp-status"></div>
   `;
