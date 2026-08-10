@@ -642,25 +642,25 @@ function normalizePivotQuery(value) {
  * current scan target and opened manually by the user. */
 const PIVOT_SOURCES = {
   email: [
-    { name: 'Have I Been Pwned', note: 'Check breach exposure for this email', home: 'https://haveibeenpwned.com/', url: t => `https://haveibeenpwned.com/account/${encodeURIComponent(t)}` },
-    { name: 'Epieos', note: 'Reverse email lookup across linked services', home: 'https://epieos.com/', url: t => `https://epieos.com/?q=${encodeURIComponent(t)}&t=email` },
-    { name: 'IntelX', note: 'Deep-index search for leaked and indexed references', home: 'https://intelx.io/', url: t => `https://intelx.io/?s=${encodeURIComponent(t)}` },
-    { name: 'Google Search', note: 'Web search pivot for this email address', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
-    { name: 'GitHub Code Search', note: 'Search commits/code for this email', home: 'https://github.com/', url: t => `https://github.com/search?q=${encodeURIComponent('"' + t + '"')}&type=code` },
+    { name: 'HIBP',        note: 'Check breach exposure for this email', home: 'https://haveibeenpwned.com/', url: t => `https://haveibeenpwned.com/account/${encodeURIComponent(t)}` },
+    { name: 'Epieos',      note: 'Reverse email lookup across linked services', home: 'https://epieos.com/', url: t => `https://epieos.com/?q=${encodeURIComponent(t)}&t=email` },
+    { name: 'IntelX',      note: 'Deep-index search for leaked and indexed references', home: 'https://intelx.io/', url: t => `https://intelx.io/?s=${encodeURIComponent(t)}` },
+    { name: 'Google',      note: 'Web search pivot for this email address', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+    { name: 'GitHub Code', note: 'Search commits/code for this email', home: 'https://github.com/', url: t => `https://github.com/search?q=${encodeURIComponent('"' + t + '"')}&type=code` },
   ],
   phone: [
-    { name: 'That\'sThem', note: 'Reverse phone directory lookup', home: 'https://thatsthem.com/', url: t => `https://thatsthem.com/phone/${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
-    { name: 'Sync.me', note: 'Caller ID / reverse phone lookup', home: 'https://sync.me/', url: t => `https://sync.me/search/?number=${encodeURIComponent(t)}` },
-    { name: 'TruePeopleSearch', note: 'Reverse phone number search', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?phoneno=${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
-    { name: 'NumLookup', note: 'Carrier and line-type lookup', home: 'https://www.numlookup.com/', url: t => `https://www.numlookup.com/${encodeURIComponent(t.replace(/[^0-9+]/g, ''))}` },
-    { name: 'Google Search', note: 'Web search pivot for this phone number', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+    { name: 'ThatsThem',   note: 'Reverse phone directory lookup', home: 'https://thatsthem.com/', url: t => `https://thatsthem.com/phone/${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
+    { name: 'Sync.me',     note: 'Caller ID / reverse phone lookup', home: 'https://sync.me/', url: t => `https://sync.me/search/?number=${encodeURIComponent(t)}` },
+    { name: 'TruePeople',  note: 'Reverse phone number search', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?phoneno=${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
+    { name: 'NumLookup',   note: 'Carrier and line-type lookup', home: 'https://www.numlookup.com/', url: t => `https://www.numlookup.com/${encodeURIComponent(t.replace(/[^0-9+]/g, ''))}` },
+    { name: 'Google',      note: 'Web search pivot for this phone number', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
   ],
   name: [
-    { name: 'FastPeopleSearch', note: 'Public records and people search', home: 'https://www.fastpeoplesearch.com/', url: t => `https://www.fastpeoplesearch.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-').toLowerCase())}` },
-    { name: 'Whitepages', note: 'Contact and address lookup', home: 'https://www.whitepages.com/', url: t => `https://www.whitepages.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'TruePeopleSearch', note: 'Public records search by name', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?name=${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'Spokeo', note: 'People search aggregator', home: 'https://www.spokeo.com/', url: t => `https://www.spokeo.com/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'Google Search', note: 'Web search pivot for this name', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
+    { name: 'FastPeople',  note: 'Public records and people search', home: 'https://www.fastpeoplesearch.com/', url: t => `https://www.fastpeoplesearch.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-').toLowerCase())}` },
+    { name: 'Whitepages',  note: 'Contact and address lookup', home: 'https://www.whitepages.com/', url: t => `https://www.whitepages.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'TruePeople',  note: 'Public records search by name', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?name=${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'Spokeo',      note: 'People search aggregator', home: 'https://www.spokeo.com/', url: t => `https://www.spokeo.com/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
+    { name: 'Google',      note: 'Web search pivot for this name', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
   ],
 };
 
@@ -675,11 +675,8 @@ function renderPivotSources() {
       return `
         <div class="wmn-source-card">
           <div class="wmn-source-row">
-            <div>
-              <div class="wmn-source-name">${escHtml(source.name)}</div>
-              <div class="wmn-source-meta">${escHtml(source.note)}</div>
-            </div>
-            <a class="wmn-source-link" href="${href}" target="_blank" rel="noopener noreferrer">${target ? 'Open' : 'Home'}</a>
+            <span class="wmn-source-name" title="${escHtml(source.note)}">${escHtml(source.name)}</span>
+            <a class="wmn-source-link" href="${href}" target="_blank" rel="noopener noreferrer" title="${escHtml(source.note)}">↗</a>
           </div>
         </div>
       `;
