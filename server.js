@@ -55,7 +55,99 @@ function getClientIp(req) {
   return xff || req.socket.remoteAddress || '0.0.0.0';
 }
 
-/** Verify a Turnstile token server-side. Returns true if valid (or if secret not configured). */
+const _submitRates = new Map(); // ip → { count, resetAt }
+const SUBMIT_LIMIT_MAX    = 5;
+const SUBMIT_LIMIT_WINDOW = 60 * 60 * 1000;
+
+function checkSubmitRateLimit(ip) {
+  const now = Date.now();
+  let entry = _submitRates.get(ip);
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + SUBMIT_LIMIT_WINDOW };
+    _submitRates.set(ip, entry);
+  }
+  return entry.count < SUBMIT_LIMIT_MAX;
+}
+function consumeSubmitRateLimit(ip) {
+  const entry = _submitRates.get(ip);
+  if (entry) entry.count++;
+}
+
+/** Read up to maxLen bytes from req body, resolve as string. */
+function readBody(req, maxLen = 8192) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => {
+      data += chunk;
+      if (data.length > maxLen) { req.destroy(new Error('body_too_large')); }
+    });
+    req.on('end',   () => resolve(data));
+    req.on('error', reject);
+  });
+}
+
+/** Handle POST /api/contact and POST /api/report. */
+async function handlePostEndpoint(pathname, req, res) {
+  const ip = getClientIp(req);
+
+  if (!checkSubmitRateLimit(ip)) {
+    res.writeHead(429, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Too many submissions. Try again later.' }));
+  }
+
+  let body;
+  try {
+    const raw = await readBody(req, 8192);
+    body = JSON.parse(raw);
+    if (typeof body !== 'object' || body === null) throw new Error('not_object');
+  } catch (_) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Invalid request body.' }));
+  }
+
+  const REPORTS_DIR = path.join(__dirname, 'reports');
+  try { fs.mkdirSync(REPORTS_DIR, { recursive: true }); } catch (_) {}
+
+  if (pathname === '/api/contact') {
+    const name    = String(body.name    || '').trim().slice(0, 100);
+    const email   = String(body.email   || '').trim().slice(0, 200);
+    const message = String(body.message || '').trim().slice(0, 2000);
+    if (!name || !email || !message) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Name, email and message are all required.' }));
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Please enter a valid email address.' }));
+    }
+    const entry = JSON.stringify({ type: 'contact', ts: new Date().toISOString(), name, email, message }) + '\n';
+    try { fs.appendFileSync(path.join(REPORTS_DIR, 'contact.jsonl'), entry, 'utf8'); } catch (_) {}
+    consumeSubmitRateLimit(ip);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true }));
+  }
+
+  if (pathname === '/api/report') {
+    const site          = String(body.site          || '').trim().slice(0, 100);
+    const username      = String(body.username      || '').trim().slice(0, 50);
+    const correctStatus = String(body.correctStatus || '').trim().slice(0, 30);
+    const notes         = String(body.notes         || '').trim().slice(0, 500);
+    const VALID_STATUSES = new Set(['should_be_found', 'should_be_not_found', 'other']);
+    if (!site || !VALID_STATUSES.has(correctStatus)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid report payload.' }));
+    }
+    const entry = JSON.stringify({ type: 'report', ts: new Date().toISOString(), site, username, correctStatus, notes }) + '\n';
+    try { fs.appendFileSync(path.join(REPORTS_DIR, 'reports.jsonl'), entry, 'utf8'); } catch (_) {}
+    consumeSubmitRateLimit(ip);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true }));
+  }
+
+  res.writeHead(404); res.end('Not found');
+}
+
+
 function verifyTurnstile(token, ip) {
   if (!TURNSTILE_SECRET) return Promise.resolve(true); // bypass when secret not set (dev mode)
   if (!token)            return Promise.resolve(false);
@@ -1954,9 +2046,22 @@ const server = http.createServer((req, res) => {
 
   const pathname = urlObj.pathname;
 
-  // Only allow GET
+  // Route POST requests to dedicated handlers
+  if (req.method === 'POST') {
+    if (pathname === '/api/contact' || pathname === '/api/report') {
+      handlePostEndpoint(pathname, req, res).catch(() => {
+        if (!res.writableEnded) { res.writeHead(500); res.end('Internal Server Error'); }
+      });
+    } else {
+      res.writeHead(405, { Allow: 'GET' });
+      res.end('Method Not Allowed');
+    }
+    return;
+  }
+
+  // Only allow GET past this point
   if (req.method !== 'GET') {
-    res.writeHead(405, { Allow: 'GET' });
+    res.writeHead(405, { Allow: 'GET, POST' });
     return res.end('Method Not Allowed');
   }
 

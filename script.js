@@ -1031,7 +1031,7 @@ function makeCard(r, animDelay = 0) {
   card.innerHTML = `
     <div class="card-top">
       <span class="status-badge ${r.status}">${STATUS_LABEL[r.status] || r.status.toUpperCase()}</span>
-      <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge">${escHtml(r.category)}</span><button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button></div>
+      <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge">${escHtml(r.category)}</span><button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button><button class="report-btn" data-report-site="${escHtml(r.name)}" title="Report incorrect result">⚑</button></div>
     </div>
     <div class="site-name">${escHtml(r.name)}</div>
     ${displayNameHtml}
@@ -1846,6 +1846,16 @@ function initEvents() {
   });
 
   resultsGrid.addEventListener('click', (e) => {
+    // Report button
+    const reportBtn = e.target.closest('.report-btn');
+    if (reportBtn) {
+      e.stopPropagation();
+      const card     = reportBtn.closest('.result-card');
+      const siteName = reportBtn.dataset.reportSite || '';
+      openReportPopover(siteName, card);
+      return;
+    }
+    // Pin button
     const pinBtn = e.target.closest('.pin-btn');
     if (pinBtn) {
       const name = pinBtn.dataset.pinName;
@@ -1878,6 +1888,134 @@ function initEvents() {
   initSidePanel();
 }
 
+/* ── Report popover ────────────────────────────────────────────────── */
+let _reportPopover   = null;
+let _reportSiteName  = '';
+
+function initReportPopover() {
+  _reportPopover = document.createElement('div');
+  _reportPopover.className = 'report-popover';
+  _reportPopover.innerHTML = `
+    <div class="rp-header">Report incorrect result</div>
+    <div class="rp-options">
+      <label class="rp-opt"><input type="radio" name="rp-status" value="should_be_found"> Should be FOUND</label>
+      <label class="rp-opt"><input type="radio" name="rp-status" value="should_be_not_found"> Should be NOT FOUND</label>
+      <label class="rp-opt"><input type="radio" name="rp-status" value="other"> Other issue</label>
+    </div>
+    <textarea class="rp-notes" placeholder="Optional: describe the issue…" rows="2" maxlength="500"></textarea>
+    <div class="rp-footer">
+      <button class="rp-cancel">Cancel</button>
+      <button class="rp-submit btn-primary">Send Report</button>
+    </div>
+    <div class="rp-status"></div>
+  `;
+  document.body.appendChild(_reportPopover);
+  _reportPopover.querySelector('.rp-cancel').addEventListener('click', closeReportPopover);
+  _reportPopover.querySelector('.rp-submit').addEventListener('click', submitReport);
+  document.addEventListener('click', (e) => {
+    if (_reportPopover.classList.contains('open') &&
+        !_reportPopover.contains(e.target) &&
+        !e.target.closest('.report-btn')) {
+      closeReportPopover();
+    }
+  }, true);
+}
+
+function openReportPopover(siteName, card) {
+  if (!_reportPopover) initReportPopover();
+  _reportSiteName = siteName;
+  _reportPopover.querySelectorAll('input[name="rp-status"]').forEach(r => { r.checked = false; });
+  _reportPopover.querySelector('.rp-notes').value = '';
+  const statusEl = _reportPopover.querySelector('.rp-status');
+  statusEl.textContent = ''; statusEl.className = 'rp-status';
+  _reportPopover.classList.add('open');
+  // Position near the card (prefer right side; flip left if too close to edge)
+  const rect = card.getBoundingClientRect();
+  const popW = 264;
+  let left = Math.round(rect.right + 8);
+  if (left + popW > window.innerWidth - 12) left = Math.round(rect.left - popW - 8);
+  left = Math.max(8, left);
+  const top  = Math.round(window.scrollY + Math.max(12, Math.min(rect.top, window.innerHeight - 300)));
+  _reportPopover.style.left = left + 'px';
+  _reportPopover.style.top  = top  + 'px';
+}
+
+function closeReportPopover() {
+  if (_reportPopover) _reportPopover.classList.remove('open');
+}
+
+async function submitReport() {
+  const selected = _reportPopover.querySelector('input[name="rp-status"]:checked');
+  const statusEl = _reportPopover.querySelector('.rp-status');
+  if (!selected) {
+    statusEl.textContent = 'Please select what should be different.';
+    statusEl.className   = 'rp-status error';
+    return;
+  }
+  const notes = (_reportPopover.querySelector('.rp-notes').value || '').trim();
+  const btn   = _reportPopover.querySelector('.rp-submit');
+  btn.disabled = true;
+  statusEl.textContent = ''; statusEl.className = 'rp-status';
+  try {
+    const r    = await fetch('/api/report', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ site: _reportSiteName, username: lastScannedTarget || '', correctStatus: selected.value, notes }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      statusEl.textContent = '✓ Report sent. Thank you!';
+      statusEl.className   = 'rp-status success';
+      setTimeout(closeReportPopover, 1800);
+    } else {
+      statusEl.textContent = data.error || 'Error. Please try again.';
+      statusEl.className   = 'rp-status error';
+    }
+  } catch (_) {
+    statusEl.textContent = 'Network error. Try again.';
+    statusEl.className   = 'rp-status error';
+  }
+  btn.disabled = false;
+}
+
+/* ── Contact form ──────────────────────────────────────────────── */
+function initContactForm() {
+  const form   = document.getElementById('contactForm');
+  if (!form) return;
+  const status = document.getElementById('cfStatus');
+  const btn    = document.getElementById('cfSubmitBtn');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name    = (document.getElementById('cfName')?.value    || '').trim();
+    const email   = (document.getElementById('cfEmail')?.value   || '').trim();
+    const message = (document.getElementById('cfMessage')?.value || '').trim();
+    if (!name || !email || !message) {
+      status.textContent = 'Please fill in all fields.'; status.className = 'cf-status error'; return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      status.textContent = 'Please enter a valid email address.'; status.className = 'cf-status error'; return;
+    }
+    btn.disabled = true; btn.textContent = 'Sending…'; status.textContent = '';
+    try {
+      const r    = await fetch('/api/contact', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ name, email, message }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        status.textContent = '✓ Message sent! We\'ll get back to you.'; status.className = 'cf-status success';
+        form.reset();
+      } else {
+        status.textContent = data.error || 'Something went wrong. Try again.'; status.className = 'cf-status error';
+      }
+    } catch (_) {
+      status.textContent = 'Network error. Please try again.'; status.className = 'cf-status error';
+    }
+    btn.disabled = false; btn.textContent = 'Send Message';
+  });
+}
+
 /* ── Bootstrap ───────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   // Load sites.json to populate platforms grid + update counts
@@ -1893,6 +2031,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initEvents();
   initFadeIn();
+  initContactForm();
   renderPivotSources();
 
   // Bootstrap Turnstile (may load after DOM; poll until api.js is ready)
