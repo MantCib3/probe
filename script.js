@@ -135,9 +135,6 @@ const filterCategories  = $('filterCategories');
 const navbar            = $('navbar');
 const hamburger         = $('hamburger');
 const navMenu           = $('navMenu');
-const pivotTabs         = $('pivotTabs');
-const pivotResultsList  = $('pivotResultsList');
-const pivotStatus       = $('pivotStatus');
 const dorkTabs          = $('dorkTabs');
 const dorkResultsList   = $('dorkResultsList');
 const dorkStatus        = $('dorkStatus');
@@ -319,12 +316,10 @@ function updateDorkPanel(target) {
   const tabs = $('dorkTabs');
   if (target) {
     if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = false);
-    pivotStatus.textContent = `${activePivotMode.charAt(0).toUpperCase() + activePivotMode.slice(1)} pivot ready for ${target}`;
     dorkStatus.textContent = `Ready to search ${target}`;
     renderPivotSources();
   } else {
     if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = true);
-    pivotStatus.textContent = 'Ready for the current scan target.';
     dorkStatus.textContent = 'Awaiting scan…';
   }
 }
@@ -650,29 +645,26 @@ const PIVOT_SOURCES = {
 };
 
 function renderPivotSources() {
-  if (!pivotResultsList || !pivotStatus) return;
   const target = lastScannedTarget || '';
-  const label = activePivotMode.charAt(0).toUpperCase() + activePivotMode.slice(1);
-  const sources = PIVOT_SOURCES[activePivotMode] || [];
-
-  pivotStatus.textContent = target
-    ? `${sources.length} ${label} pivot sources for ${target}`
-    : `${sources.length} ${label} pivot sources — run a scan to auto-fill the target`;
-
-  pivotResultsList.innerHTML = sources.map(source => {
-    const href = safeUrl(target ? source.url(target) : source.home);
-    return `
-      <div class="wmn-source-card">
-        <div class="wmn-source-row">
-          <div>
-            <div class="wmn-source-name">${escHtml(source.name)}</div>
-            <div class="wmn-source-meta">${escHtml(source.note)}</div>
+  ['email', 'phone', 'name'].forEach(mode => {
+    const listEl = $(`pivot${mode.charAt(0).toUpperCase() + mode.slice(1)}List`);
+    if (!listEl) return;
+    const sources = PIVOT_SOURCES[mode] || [];
+    listEl.innerHTML = sources.map(source => {
+      const href = safeUrl(target ? source.url(target) : source.home);
+      return `
+        <div class="wmn-source-card">
+          <div class="wmn-source-row">
+            <div>
+              <div class="wmn-source-name">${escHtml(source.name)}</div>
+              <div class="wmn-source-meta">${escHtml(source.note)}</div>
+            </div>
+            <a class="wmn-source-link" href="${href}" target="_blank" rel="noopener noreferrer">${target ? 'Open' : 'Home'}</a>
           </div>
-          <a class="wmn-source-link" href="${href}" target="_blank" rel="noopener noreferrer">Open</a>
         </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  });
 }
 
 /* ── Dork results — rendered as a search-engine results page (SERP):
@@ -768,39 +760,69 @@ async function runDorkSearch() {
   }
 }
 
-function initFloatingPanels() {
-  const caseNotepad = $('caseNotepad');
-  const fabGrp      = $('fabGroup');
-  const fabNotepad  = $('fabNotepad');
-  if (!caseNotepad || !fabGrp) return;
+function initSidePanel() {
+  const panel  = $('caseNotepad');
+  const tabBtn = $('sideNotepadTab');
+  const closeBtn = $('notepadCloseBtn');
+  if (!panel || !tabBtn) return;
 
-  makeDraggable(caseNotepad, $('notepadHandle'));
+  // ── Restore edge/position from localStorage ─────────────────────────
+  const savedEdge = localStorage.getItem('np_edge') || 'right';
+  const savedPos  = parseFloat(localStorage.getItem('np_pos') || '50');
+  applyEdgePos(panel, savedEdge, savedPos);
 
-  function hidePanel(panel, fab) {
-    panel.style.display = 'none';
-    if (fab) fab.classList.remove('active');
-  }
+  let panelOpen = false;
+  let dragging  = false;
+  let startX, startY, currentEdge = savedEdge, currentPos = savedPos;
 
-  fabNotepad.addEventListener('click', () => {
-    if (caseNotepad.style.display === 'block') { hidePanel(caseNotepad, fabNotepad); return; }
-    if (!caseNotepad.dataset.positioned) {
-      caseNotepad.style.left   = '20px';
-      caseNotepad.style.bottom = '80px';
-      caseNotepad.style.right  = 'auto';
-      caseNotepad.style.top    = 'auto';
-      caseNotepad.dataset.positioned = '1';
+  function openPanel()  { panelOpen = true;  panel.classList.add('sp-open');    }
+  function closePanel() { panelOpen = false; panel.classList.remove('sp-open'); }
+
+  // Tab click: toggle open/close. Drag detection prevents accidental toggle.
+  tabBtn.addEventListener('pointerdown', (e) => {
+    dragging = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    tabBtn.setPointerCapture(e.pointerId);
+  });
+
+  tabBtn.addEventListener('pointermove', (e) => {
+    if (!e.buttons) return;
+    const dx = Math.abs(e.clientX - startX);
+    const dy = Math.abs(e.clientY - startY);
+    if (dx > 6 || dy > 6) dragging = true;
+    if (!dragging) return;
+
+    // Find closest edge
+    const W = window.innerWidth, H = window.innerHeight;
+    const dists = {
+      right:  W - e.clientX,
+      left:   e.clientX,
+      top:    e.clientY,
+      bottom: H - e.clientY,
+    };
+    currentEdge = Object.keys(dists).reduce((a, b) => dists[a] < dists[b] ? a : b);
+    currentPos  = (currentEdge === 'left' || currentEdge === 'right')
+      ? (e.clientY / H) * 100
+      : (e.clientX / W) * 100;
+
+    applyEdgePos(panel, currentEdge, currentPos);
+  });
+
+  tabBtn.addEventListener('pointerup', () => {
+    if (dragging) {
+      localStorage.setItem('np_edge', currentEdge);
+      localStorage.setItem('np_pos', String(currentPos.toFixed(1)));
+    } else {
+      // Simple click — toggle
+      panelOpen ? closePanel() : openPanel();
     }
-    caseNotepad.style.display = 'block';
-    fabNotepad.classList.add('active');
+    dragging = false;
   });
 
-  $('notepadMinBtn').addEventListener('click', () => {
-    caseNotepad.classList.toggle('minimised');
-    $('notepadMinBtn').textContent = caseNotepad.classList.contains('minimised') ? '+' : '−';
-  });
-  $('notepadCloseBtn').addEventListener('click', () => hidePanel(caseNotepad, fabNotepad));
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
 
-  // Dork panel — pin a URL from search results
+  // ── Pin a URL from dork results ─────────────────────────────────────
   function addPinFromUrl(url, source) {
     const t = (url || '').trim();
     if (!t) return false;
@@ -813,7 +835,7 @@ function initFloatingPanels() {
     return true;
   }
 
-  // Notepad — title + contenteditable editor
+  // ── Notepad content (localStorage) ─────────────────────────────────
   const npTitle  = $('npTitle');
   const npEditor = $('npEditor');
   if (npTitle) {
@@ -827,35 +849,54 @@ function initFloatingPanels() {
     npEditor.addEventListener('input', () => localStorage.setItem('probe_case_content', npEditor.innerHTML));
   }
 
-  $('npFmtBold').addEventListener('mousedown',   (e) => { e.preventDefault(); document.execCommand('bold'); });
-  $('npFmtUnder').addEventListener('mousedown',  (e) => { e.preventDefault(); document.execCommand('underline'); });
-  $('npFmtBullet').addEventListener('mousedown', (e) => { e.preventDefault(); document.execCommand('insertUnorderedList'); });
+  // ── Format bar ──────────────────────────────────────────────────────
+  const fmtBold   = $('npFmtBold');
+  const fmtUnder  = $('npFmtUnder');
+  const fmtBullet = $('npFmtBullet');
+  if (fmtBold)   fmtBold.addEventListener('mousedown',   (e) => { e.preventDefault(); document.execCommand('bold'); });
+  if (fmtUnder)  fmtUnder.addEventListener('mousedown',  (e) => { e.preventDefault(); document.execCommand('underline'); });
+  if (fmtBullet) fmtBullet.addEventListener('mousedown', (e) => { e.preventDefault(); document.execCommand('insertUnorderedList'); });
 
-  // Notepad — paste URL to pin
+  // ── Export (markdown only) ───────────────────────────────────────────
+  const npExportBtn = $('npExportBtn');
+  if (npExportBtn) npExportBtn.addEventListener('click', exportMarkdown);
+
+  // ── URL pin input ────────────────────────────────────────────────────
   const npAddUrl   = $('npAddUrl');
   const npUrlInput = $('npUrlInput');
   if (npAddUrl)   npAddUrl.addEventListener('click', () => { if (addPinFromUrl(npUrlInput ? npUrlInput.value : '', 'manual')) { if (npUrlInput) npUrlInput.value = ''; } });
   if (npUrlInput) npUrlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && addPinFromUrl(npUrlInput.value, 'manual')) npUrlInput.value = ''; });
 
-  // Export dropdown
-  const npExportBtn  = $('npExportBtn');
-  const npExportMenu = $('npExportMenu');
-  const npExportMd   = $('npExportMd');
-  const npExportImg  = $('npExportImg');
-  const npExportJson = $('npExportJson');
-  if (npExportBtn && npExportMenu) {
-    npExportBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const open = npExportMenu.classList.toggle('open');
-      if (open) document.addEventListener('click', () => npExportMenu.classList.remove('open'), { once: true });
-    });
-  }
-  if (npExportMd)   npExportMd.addEventListener('click', () => { exportMarkdown();  npExportMenu && npExportMenu.classList.remove('open'); });
-  if (npExportImg)  npExportImg.addEventListener('click', () => { exportAllImages(); npExportMenu && npExportMenu.classList.remove('open'); });
-  if (npExportJson) npExportJson.addEventListener('click', () => { exportAllMeta();   npExportMenu && npExportMenu.classList.remove('open'); });
-
   updateDorkPanel('');
   updateNotepad();
+}
+
+/* ── Edge/position helper ────────────────────────────────────────────── */
+function applyEdgePos(panel, edge, pos) {
+  const pct = `${Math.max(8, Math.min(92, pos)).toFixed(1)}%`;
+  panel.dataset.edge = edge;
+  panel.style.top    = '';
+  panel.style.bottom = '';
+  panel.style.left   = '';
+  panel.style.right  = '';
+  panel.style.transform = '';
+  if (edge === 'right') {
+    panel.style.right     = '0';
+    panel.style.top       = pct;
+    panel.style.transform = 'translateY(-50%)';
+  } else if (edge === 'left') {
+    panel.style.left      = '0';
+    panel.style.top       = pct;
+    panel.style.transform = 'translateY(-50%)';
+  } else if (edge === 'top') {
+    panel.style.top       = '0';
+    panel.style.left      = pct;
+    panel.style.transform = 'translateX(-50%)';
+  } else {
+    panel.style.bottom    = '0';
+    panel.style.left      = pct;
+    panel.style.transform = 'translateX(-50%)';
+  }
 }
 
 /* ── Platforms grid (static, rendered on load) ───────────────────────── */
@@ -1211,7 +1252,6 @@ function startScan(username) {
   renderPivotSources();
   // Kick off dork search at scan start so results appear early
   runDorkSearch();
-  const fabGrpA = $('fabGroup'); if (fabGrpA) fabGrpA.style.display = 'flex';
   pushCaseEvent(`Username investigation started for ${username}`, 'start');
   scanProgressSec.style.display = 'block';
   resultsSec.style.display = 'block';
@@ -1619,16 +1659,6 @@ function initEvents() {
     queueQuickCheck(e.target.value.trim());
   });
 
-  if (pivotTabs) {
-    pivotTabs.addEventListener('click', (e) => {
-      const tab = e.target.closest('.pivot-tab');
-      if (!tab) return;
-      activePivotMode = tab.dataset.pivot || 'email';
-      pivotTabs.querySelectorAll('.pivot-tab').forEach(btn => btn.classList.toggle('active', btn === tab));
-      renderPivotSources();
-    });
-  }
-
   if (dorkTabs) {
     dorkTabs.addEventListener('click', (e) => {
       const tab = e.target.closest('.dork-tab');
@@ -1740,7 +1770,7 @@ function initEvents() {
     if (e.key === 'Enter' || e.key === ' ') hamburger.click();
   });
 
-  initFloatingPanels();
+  initSidePanel();
 }
 
 /* ── Bootstrap ───────────────────────────────────────────────────────── */

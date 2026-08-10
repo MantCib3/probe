@@ -159,7 +159,7 @@ a.nav-logo {
   background: linear-gradient(135deg, #000, #333);
   color: var(--white);
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+/* hover: shimmer only, no lift */
 
 .btn-secondary {
   background: rgba(0,0,0,0.85);
@@ -985,6 +985,10 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   padding: 1rem;
   background: rgba(255,255,255,0.72);
   backdrop-filter: blur(10px);
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pivot-column {
@@ -993,9 +997,41 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   padding: 1rem;
   background: rgba(255,255,255,0.72);
   backdrop-filter: blur(10px);
-  max-width: 640px;
+  max-width: 860px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
+}
+
+/* Three-column pivot grid */
+.pivot-3grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.pivot-box {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.75rem 0.8rem;
+  background: var(--white);
+  min-height: 120px;
+}
+
+.pivot-box-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pivot-box-list {
+  display: grid;
+  gap: 0.45rem;
 }
 
 .pivot-header, .dork-header {
@@ -1508,6 +1544,110 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .fab:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.13); transform: scale(1.07); border-color: #999; color: #222; }
 .fab.active { background: #111; color: #fff; border-color: #111; box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
 
+/* ── Side Notes Panel ────────────────────────────────────────────────── */
+.side-panel {
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+}
+
+/* Edge positioning helpers — base positions set by JS; data-edge drives layout direction */
+.side-panel[data-edge="right"]  { flex-direction: row-reverse; }
+.side-panel[data-edge="left"]   { flex-direction: row; }
+.side-panel[data-edge="top"]    { flex-direction: column; }
+.side-panel[data-edge="bottom"] { flex-direction: column-reverse; }
+
+/* Tab handle — always visible */
+.sp-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: #fff;
+  border: 1.5px solid #ddd;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.sp-tab:hover { background: #f0f0f0; border-color: #aaa; }
+
+/* Vertical tab (left/right edges) */
+.side-panel[data-edge="right"] .sp-tab,
+.side-panel[data-edge="left"]  .sp-tab {
+  width: 28px;
+  min-height: 80px;
+  padding: 14px 4px;
+  writing-mode: vertical-lr;
+}
+.side-panel[data-edge="right"] .sp-tab {
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -3px 0 10px rgba(0,0,0,0.07);
+}
+.side-panel[data-edge="left"] .sp-tab {
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  box-shadow: 3px 0 10px rgba(0,0,0,0.07);
+  transform: rotate(180deg);
+}
+
+/* Horizontal tab (top/bottom edges) */
+.side-panel[data-edge="top"] .sp-tab,
+.side-panel[data-edge="bottom"] .sp-tab {
+  flex-direction: row;
+  min-width: 80px;
+  height: 28px;
+  padding: 4px 14px;
+  writing-mode: horizontal-tb;
+}
+.side-panel[data-edge="top"] .sp-tab {
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+}
+.side-panel[data-edge="bottom"] .sp-tab {
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -3px 10px rgba(0,0,0,0.07);
+}
+
+.sp-tab-icon { font-size: 0.85rem; line-height: 1; }
+.sp-tab-label {
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #999;
+  font-family: inherit;
+}
+
+/* Panel body — hidden by default, slides in when open */
+.sp-inner {
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.12);
+  width: 300px;
+  min-width: 220px;
+  max-width: 480px;
+  resize: horizontal;
+  overflow: hidden;
+  display: none;  /* toggled by JS */
+}
+
+/* Edge-specific border-radius for sp-inner */
+.side-panel[data-edge="right"]  .sp-inner { border-right: none;   border-radius: 14px 0 0 14px; }
+.side-panel[data-edge="left"]   .sp-inner { border-left: none;    border-radius: 0 14px 14px 0; }
+.side-panel[data-edge="top"]    .sp-inner { border-top: none;     border-radius: 0 0 14px 14px; }
+.side-panel[data-edge="bottom"] .sp-inner { border-bottom: none;  border-radius: 14px 14px 0 0; }
+
+.side-panel.sp-open .sp-inner { display: block; }
+
+/* Overrides for sp-inner — match old float-panel-body usage */
+.sp-inner .np-body { padding: 0; max-height: none; overflow: visible; }
+
 /* ── Pin button ──────────────────────────────────────────────────────── */
 .pin-btn {
   background: none;
@@ -1696,8 +1836,9 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .np-editor {
   min-height: 100px;
-  max-height: 180px;
+  height: 160px;
   overflow-y: auto;
+  resize: vertical;
   padding: 0.45rem 0.9rem 0.55rem;
   font-size: 0.8rem;
   color: #333;
@@ -1705,7 +1846,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   outline: none;
 }
 .np-editor:empty::before {
-  content: 'Type investigation notes\2026';
+  content: 'Type notes…';
   color: #ddd;
   pointer-events: none;
   display: block;

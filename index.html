@@ -177,15 +177,20 @@
         </div>
 
         <div class="pivot-column">
-          <div class="pivot-header">
-            <div class="pivot-tabs" id="pivotTabs">
-              <button class="pivot-tab active" data-pivot="email">Email</button>
-              <button class="pivot-tab" data-pivot="phone">Phone</button>
-              <button class="pivot-tab" data-pivot="name">Name</button>
+          <div class="pivot-3grid">
+            <div class="pivot-box">
+              <div class="pivot-box-title">Email</div>
+              <div id="pivotEmailList" class="pivot-box-list"></div>
             </div>
-            <div class="pivot-status" id="pivotStatus">Ready for the current scan target.</div>
+            <div class="pivot-box">
+              <div class="pivot-box-title">Phone</div>
+              <div id="pivotPhoneList" class="pivot-box-list"></div>
+            </div>
+            <div class="pivot-box">
+              <div class="pivot-box-title">Name</div>
+              <div id="pivotNameList" class="pivot-box-list"></div>
+            </div>
           </div>
-          <div class="pivot-results" id="pivotResultsList"></div>
         </div>
       </div>
     </div>
@@ -268,40 +273,23 @@
     </div>
   </footer>
 
-  <!-- ── Floating Tool Panels ──────────────────────────────────────── -->
-  <div class="fab-group" id="fabGroup" style="display:none" aria-label="Investigation tools">
-    <button class="fab" id="fabNotepad" title="Case Notepad">📋</button>
-  </div>
-
-  <div class="float-panel np-panel" id="caseNotepad" style="display:none">
-    <div class="np-drag-bar" id="notepadHandle">
-      <span class="np-drag-icon">⋯</span>
-      <div class="np-bar-actions">
-        <button class="np-icon-btn" id="notepadMinBtn" title="Minimise">−</button>
-        <button class="np-icon-btn" id="notepadCloseBtn" title="Close">✕</button>
-      </div>
-    </div>
-    <div class="float-panel-body np-body" id="notepadBody">
-      <input class="np-title-input" id="npTitle" type="text" placeholder="Case title…" spellcheck="false" autocomplete="off">
+  <!-- ── Side Notes Panel ─────────────────────────────────────────── -->
+  <div class="side-panel" id="caseNotepad" data-edge="right">
+    <button class="sp-tab" id="sideNotepadTab" title="Toggle notes panel">
+      <span class="sp-tab-icon">📋</span>
+      <span class="sp-tab-label">Notes</span>
+    </button>
+    <div class="sp-inner" id="notepadBody">
+      <input class="np-title-input" id="npTitle" type="text" placeholder="Title…" spellcheck="false" autocomplete="off">
       <div class="np-format-bar">
         <button class="np-fmt-btn" id="npFmtBold" title="Bold"><b>B</b></button>
         <button class="np-fmt-btn" id="npFmtUnder" title="Underline"><u>U</u></button>
         <button class="np-fmt-btn" id="npFmtBullet" title="Bullet list">•</button>
         <span class="np-fmt-sep"></span>
-        <div class="np-export-wrap" id="npExportWrap">
-          <button class="np-fmt-btn np-export-btn" id="npExportBtn" title="Export options">↓ export ▾</button>
-          <div class="np-export-menu" id="npExportMenu" role="menu">
-            <button id="npExportMd" role="menuitem">↓ notes (.txt)</button>
-            <button id="npExportJson" role="menuitem">↓ metadata (.json)</button>
-            <button id="npExportImg" role="menuitem">↓ images</button>
-          </div>
-        </div>
+        <button class="np-fmt-btn np-export-btn" id="npExportBtn" title="Export notes as markdown">↓</button>
+        <button class="np-icon-btn" id="notepadCloseBtn" style="margin-left:auto" title="Close">✕</button>
       </div>
       <div class="np-editor" id="npEditor" contenteditable="true" spellcheck="false"></div>
-      <div class="np-captures-section" id="npCapturesSection" style="display:none">
-        <span class="np-pins-label">captures <span id="npCaptureCount">0</span></span>
-        <div class="np-captures" id="npCaptures"></div>
-      </div>
       <div class="np-pins-section">
         <span class="np-pins-label">pinned <span id="npPinCount">0</span></span>
         <div class="np-pins" id="npPins"><span class="np-empty">No pins yet</span></div>
@@ -314,16 +302,5 @@
   </div>
 
   <script src="script.js" defer></script>
-
-  <!-- Metadata preview modal -->
-  <div id="metaPreviewOverlay" style="display:none">
-    <div id="metaPreviewPanel" role="dialog" aria-modal="true" aria-label="Metadata preview">
-      <div id="metaPreviewHeader">
-        <span id="metaPreviewDomain">metadata</span>
-        <button id="metaPreviewClose" title="Close">✕</button>
-      </div>
-      <div id="metaPreviewBody"></div>
-    </div>
-  </div>
 </body>
 </html>
