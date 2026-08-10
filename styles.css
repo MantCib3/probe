@@ -755,49 +755,33 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
   color: #9ca3af;
 }
 
-/* Results grid — masonry-style multi-column layout. Each category section
- * stays intact (break-inside: avoid) so large categories naturally extend
- * down their own column while smaller categories stack together. */
+/* Results grid — flat 5-column CSS grid, cards fill gaps dynamically */
 .results-grid {
-  column-count: 3;
-  column-gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.55rem;
   min-height: 60px;
 }
 
+/* Category sections become invisible pass-throughs (contents still rendered) */
 .result-category-section {
-  display: inline-block;
-  width: 100%;
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1rem;
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(10px);
-  margin: 0 0 1rem;
+  display: contents;
 }
 
 .result-category-header {
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: var(--muted);
-  margin-bottom: 0.8rem;
+  display: none;
 }
 
 .result-category-list {
-  display: grid;
-  gap: 0.75rem;
+  display: contents;
 }
 
 /* Result cards */
 .result-card {
   background: var(--white);
   border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 1.25rem 1.4rem;
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
   position: relative;
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
@@ -976,7 +960,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 /* Completion bar */
 .pivots-section {
-  padding: 4.5rem 0 5rem;
+  padding: 2.5rem 0 3rem;
 }
 
 .pivot-shell {
@@ -988,8 +972,8 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .dork-column {
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1rem;
+  border-radius: 14px;
+  padding: 0.65rem 0.85rem;
   background: rgba(255,255,255,0.72);
   backdrop-filter: blur(10px);
   max-width: 860px;
@@ -1623,7 +1607,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   .investigation-panels {
     grid-template-columns: 1fr;
   }
-  .results-grid { column-count: 1; }
+  .results-grid { grid-template-columns: repeat(2, 1fr); }
   .name-filters { grid-template-columns: 1fr 1fr; }
   .platforms-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
   .scan-stats { gap: 0.8rem; }
@@ -1793,7 +1777,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   box-shadow: 0 -3px 10px rgba(0,0,0,0.07);
 }
 
-.sp-tab-icon { font-size: 0.85rem; line-height: 1; }
+.sp-tab-icon { font-size: 0.9rem; line-height: 1; filter: grayscale(1) brightness(0); opacity: 0.55; }
 .sp-tab-label {
   font-size: 0.52rem;
   font-weight: 700;

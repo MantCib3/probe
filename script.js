@@ -967,9 +967,14 @@ function applyEdgePos(panel, edge, pos) {
 
 /* ── Platforms grid (static, rendered on load) ───────────────────────── */
 function initPlatformsGrid(sites) {
+  // Show only 10 flagship platforms in the section
+  const FEATURED = ['GitHub','Instagram','TikTok','Reddit','YouTube','Twitch','Snapchat','LinkedIn','Pinterest','Steam'];
   const activeSites = (sites || []).filter(s => !s.defunct);
+  const featured = FEATURED
+    .map(name => activeSites.find(s => s.name === name))
+    .filter(Boolean);
   const frag = document.createDocumentFragment();
-  activeSites.forEach(site => {
+  featured.forEach(site => {
     const chip = document.createElement('div');
     chip.className = 'platform-chip';
     chip.innerHTML = `<span class="chip-name">${escHtml(site.name)}</span><span class="chip-cat">${escHtml(site.category)}</span>`;
@@ -1234,22 +1239,10 @@ function statusFilterMatch(cardStatus) {
 
 function applyFilters() {
   const cards = resultsGrid.querySelectorAll('.result-card');
-  const sections = resultsGrid.querySelectorAll('.result-category-section');
-  sections.forEach(section => {
-    const sectionCards = section.querySelectorAll('.result-card');
-    const visibleCards = [...sectionCards].filter(card => {
-      if (card.classList.contains('name-card')) return true;
-      const catMatch = activeFilter === 'all' || card.dataset.category === activeFilter;
-      const stMatch = statusFilterMatch(card.dataset.status);
-      return catMatch && stMatch;
-    });
-    const hasVisible = visibleCards.length > 0;
-    section.style.display = hasVisible ? '' : 'none';
-  });
   cards.forEach(card => {
     if (card.classList.contains('name-card')) return; // name cards always visible
     const catMatch = activeFilter === 'all' || card.dataset.category === activeFilter;
-    const stMatch = statusFilterMatch(card.dataset.status);
+    const stMatch  = statusFilterMatch(card.dataset.status);
     card.classList.toggle('hidden', !(catMatch && stMatch));
   });
 }
@@ -1330,18 +1323,6 @@ function startScan(username, cfToken) {
   updateStats(0, 0);
   progressStatus.innerHTML = `Scanning <strong>${escHtml(username)}</strong>…`;
 
-  const categoryOrder = ['social','developer','gaming','content','forum','professional','shopping','misc'];
-  const categorySections = {};
-  categoryOrder.forEach(cat => {
-    const section = document.createElement('div');
-    section.className = 'result-category-section';
-    section.dataset.categorySection = cat;
-    section.innerHTML = `<div class="result-category-header">${escHtml(cat)}</div><div class="result-category-list"></div>`;
-    resultsGrid.appendChild(section);
-    categorySections[cat] = section.querySelector('.result-category-list');
-  });
-  const miscSection = categorySections.misc || resultsGrid.appendChild(document.createElement('div'));
-
   if (evtSource) { evtSource.close(); evtSource = null; }
   const tokenParam = cfToken ? `&cf-token=${encodeURIComponent(cfToken)}` : '';
   evtSource = new EventSource(`/api/check?username=${encodeURIComponent(username)}${tokenParam}`);
@@ -1385,8 +1366,7 @@ function startScan(username, cfToken) {
       results.push(result);
       const card = makeCard(result, 0);
       card.dataset.resultIndex = String(results.length - 1);
-      const targetList = categorySections[category] || miscSection;
-      targetList.appendChild(card);
+      resultsGrid.appendChild(card);
       updateStats(msg.done, msg.total);
       applyFilters();
       return;
