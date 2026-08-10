@@ -28,6 +28,61 @@ const STEALTH_TIMEOUT_MS  = 16000;
 const ENABLE_USERNAME_BROWSER_FALLBACK = false;
 const ENABLE_UNDETECTABLE_STEALTH = false;
 
+/* ── Rate limiting & Turnstile ───────────────────────────────────────── */
+const RATE_LIMIT_MAX    = 10;                  // free scans per window per IP
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000;     // 1 hour in ms
+const TURNSTILE_SECRET  = process.env.TURNSTILE_SECRET || ''; // set in Render env vars
+
+const _scanRates = new Map(); // ip → { count: number, resetAt: timestamp }
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  let entry = _scanRates.get(ip);
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
+    _scanRates.set(ip, entry);
+  }
+  return entry.count < RATE_LIMIT_MAX;
+}
+
+function consumeRateLimit(ip) {
+  const entry = _scanRates.get(ip);
+  if (entry) entry.count++;
+}
+
+function getClientIp(req) {
+  const xff = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return xff || req.socket.remoteAddress || '0.0.0.0';
+}
+
+/** Verify a Turnstile token server-side. Returns true if valid (or if secret not configured). */
+function verifyTurnstile(token, ip) {
+  if (!TURNSTILE_SECRET) return Promise.resolve(true); // bypass when secret not set (dev mode)
+  if (!token)            return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const body = Buffer.from(
+      `secret=${encodeURIComponent(TURNSTILE_SECRET)}&response=${encodeURIComponent(token)}&remoteip=${encodeURIComponent(ip)}`
+    );
+    const req = https.request({
+      hostname: 'challenges.cloudflare.com',
+      path    : '/turnstile/v0/siteverify',
+      method  : 'POST',
+      headers : { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': body.length },
+    }, (resp) => {
+      let data = '';
+      resp.on('data', c => { data += c; });
+      resp.on('end',  () => {
+        try { resolve(JSON.parse(data).success === true); }
+        catch (_) { resolve(false); }
+      });
+    });
+    req.setTimeout(8000, () => { req.destroy(); resolve(false); });
+    req.on('error', () => resolve(false));
+    req.write(body);
+    req.end();
+  });
+}
+
 const QUICK_SITE_NAMES = [
   'github', 'instagram', 'tiktok', 'x', 'twitter', 'reddit', 'youtube', 'twitch'
 ];
@@ -1913,6 +1968,9 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ error: 'Invalid username. Use letters, numbers, dots, hyphens, underscores (1-50 chars).' }));
     }
 
+    const ip      = getClientIp(req);
+    const cfToken = (urlObj.searchParams.get('cf-token') || '').trim();
+
     res.writeHead(200, {
       'Content-Type' : 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -1922,74 +1980,98 @@ const server = http.createServer((req, res) => {
     let cancelled = false;
     req.on('close', () => { cancelled = true; });
 
-    const queue = [...SITES];
-    const total = queue.length;
-    let idx = 0, active = 0, done = 0;
-
     const send = (obj) => {
       if (!cancelled && !res.writableEnded) {
         res.write(`data: ${JSON.stringify(obj)}\n\n`);
       }
     };
 
-    send({ type: 'start', total, username });
-
-    function tick() {
-      while (active < CONCURRENCY && idx < total) {
-        const site = queue[idx++];
-        active++;
-        const PROBE_DEADLINE_MS = 15000;
-        const probePromise  = probeWithBrowserFallback(site, username);
-        const timeoutResult = new Promise(resolve =>
-          setTimeout(() => resolve({
-            name: site.name, category: site.category,
-            url:  site.url.replace(/\{\}/g, encodeURIComponent(username)),
-            status: 'timeout', statusCode: 0,
-            reasonCodes: ['probe_timeout'], detectionMethod: 'http', bodyHash: null,
-          }), PROBE_DEADLINE_MS)
-        );
-        Promise.race([probePromise, timeoutResult]).then(result => {
-          active--;
-          done++;
-          const normalized = normalizeResult(result);
-          // Include CORS flag + check info so client can self-verify unknowns
-          const extra = {};
-          if (site.cors)         extra.cors     = true;
-          if (site.cfProxy)      extra.cfProxy  = true;
-          if (site.requiresAuth) extra.auth     = true;
-          if (site.checkMethod)  extra.checkMethod = site.checkMethod;
-          if (site.errorMsg)     extra.errorMsg    = site.errorMsg;
-          if (site.positiveMsg)  extra.positiveMsg = site.positiveMsg;
-          const checkUrl = (site.apiUrl || site.url).replace(/\{\}/g, encodeURIComponent(username));
-          extra.checkUrl = checkUrl;
-          if (!cancelled) send({ type: 'result', ...normalized, done, total, ...extra });
-          tick();
-        }).catch(() => {
-          active--;
-          done++;
-          const fallback = normalizeResult({
-            name: site.name,
-            category: site.category,
-            url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
-            status: 'unknown',
-            statusCode: 0,
-            reasonCodes: ['probe_rejected'],
-            detectionMethod: 'http',
-            bodyHash: null,
-          });
-          if (!cancelled) send({ type: 'result', ...fallback, done, total });
-          tick();
-        });
-      }
-      if (idx >= total && active === 0 && !res.writableEnded) {
-        send({ type: 'done', done, total });
-        res.end();
-      }
+    // Rate limit check (sync — before async Turnstile call)
+    if (!checkRateLimit(ip)) {
+      send({ type: 'error', error: `Scan limit reached — ${RATE_LIMIT_MAX} free scans per hour. Try again later.`, code: 429 });
+      return res.end();
     }
 
-    tick();
+    // Turnstile verification then scan
+    verifyTurnstile(cfToken, ip).then(tsOk => {
+      if (cancelled) return;
+      if (!tsOk) {
+        send({ type: 'error', error: 'Security check failed. Please refresh and try again.', code: 403 });
+        return res.end();
+      }
+
+      consumeRateLimit(ip);
+
+      const queue = [...SITES];
+      const total = queue.length;
+      let idx = 0, active = 0, done = 0;
+
+      send({ type: 'start', total, username });
+
+      function tick() {
+        while (active < CONCURRENCY && idx < total) {
+          const site = queue[idx++];
+          active++;
+          const PROBE_DEADLINE_MS = 15000;
+          const probePromise  = probeWithBrowserFallback(site, username);
+          const timeoutResult = new Promise(resolve =>
+            setTimeout(() => resolve({
+              name: site.name, category: site.category,
+              url:  site.url.replace(/\{\}/g, encodeURIComponent(username)),
+              status: 'timeout', statusCode: 0,
+              reasonCodes: ['probe_timeout'], detectionMethod: 'http', bodyHash: null,
+            }), PROBE_DEADLINE_MS)
+          );
+          Promise.race([probePromise, timeoutResult]).then(result => {
+            active--;
+            done++;
+            const normalized = normalizeResult(result);
+            // Include CORS flag + check info so client can self-verify unknowns
+            const extra = {};
+            if (site.cors)         extra.cors     = true;
+            if (site.cfProxy)      extra.cfProxy  = true;
+            if (site.requiresAuth) extra.auth     = true;
+            if (site.checkMethod)  extra.checkMethod = site.checkMethod;
+            if (site.errorMsg)     extra.errorMsg    = site.errorMsg;
+            if (site.positiveMsg)  extra.positiveMsg = site.positiveMsg;
+            const checkUrl = (site.apiUrl || site.url).replace(/\{\}/g, encodeURIComponent(username));
+            extra.checkUrl = checkUrl;
+            if (!cancelled) send({ type: 'result', ...normalized, done, total, ...extra });
+            tick();
+          }).catch(() => {
+            active--;
+            done++;
+            const fallback = normalizeResult({
+              name: site.name,
+              category: site.category,
+              url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
+              status: 'unknown',
+              statusCode: 0,
+              reasonCodes: ['probe_rejected'],
+              detectionMethod: 'http',
+              bodyHash: null,
+            });
+            if (!cancelled) send({ type: 'result', ...fallback, done, total });
+            tick();
+          });
+        }
+        if (idx >= total && active === 0 && !res.writableEnded) {
+          send({ type: 'done', done, total });
+          res.end();
+        }
+      }
+
+      tick();
+    }).catch(() => {
+      if (!cancelled) {
+        send({ type: 'error', error: 'Server error. Please try again.' });
+        res.end();
+      }
+    });
+
     return;
   }
+
 
   /* ── Quick check endpoint (instant, top platforms) ─────────────────── */
   if (pathname === '/api/quick-check') {

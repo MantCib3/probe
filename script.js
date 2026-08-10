@@ -102,6 +102,26 @@ let activeDorkEngine  = 'google'; // active tab in dork panel
 let activePivotMode = 'email';
 let dorkResults = [];
 let activeStatusFilter = null; // null = no filter, else a status string
+
+/* ── Turnstile state ─────────────────────────────────────────────────── */
+// Replace with your real sitekey from dash.cloudflare.com > Turnstile
+const TURNSTILE_SITEKEY = '1x00000000000000000000AA'; // test key — always passes
+let _cfToken     = null;   // token provided by Turnstile callback
+let _tsWidgetId  = null;   // widget handle for reset()
+
+window.__probeOnTurnstile = function (token) { _cfToken = token; };
+window.__probeOnTsExpire  = function ()      { _cfToken = null;  };
+
+function initTurnstile() {
+  const container = document.getElementById('turnstileContainer');
+  if (!container || !window.turnstile) return;
+  _tsWidgetId = window.turnstile.render(container, {
+    sitekey             : TURNSTILE_SITEKEY,
+    callback            : '__probeOnTurnstile',
+    'expired-callback'  : '__probeOnTsExpire',
+    appearance          : 'interaction-only',
+  });
+}
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
 const usernameInput     = $('usernameInput');
@@ -761,9 +781,12 @@ async function runDorkSearch() {
 }
 
 function initSidePanel() {
-  const panel  = $('caseNotepad');
-  const tabBtn = $('sideNotepadTab');
-  const closeBtn = $('notepadCloseBtn');
+  const panel     = $('caseNotepad');
+  const tabBtn    = $('sideNotepadTab');
+  const closeBtn  = $('notepadCloseBtn');
+  const detachBtn = $('notepadDetachBtn');
+  const detachBar = $('spDetachBar');
+  const formatBar = panel && panel.querySelector('.np-format-bar');
   if (!panel || !tabBtn) return;
 
   // ── Restore edge/position from localStorage ─────────────────────────
@@ -771,12 +794,55 @@ function initSidePanel() {
   const savedPos  = parseFloat(localStorage.getItem('np_pos') || '50');
   applyEdgePos(panel, savedEdge, savedPos);
 
-  let panelOpen = false;
-  let dragging  = false;
+  let panelOpen   = false;
+  let dragging    = false;
   let startX, startY, currentEdge = savedEdge, currentPos = savedPos;
 
   function openPanel()  { panelOpen = true;  panel.classList.add('sp-open');    }
   function closePanel() { panelOpen = false; panel.classList.remove('sp-open'); }
+
+  // ── Detach / Reattach ────────────────────────────────────────────────
+  let isDetached = localStorage.getItem('np_detached') === '1';
+
+  function setDetached(flag) {
+    isDetached = flag;
+    localStorage.setItem('np_detached', flag ? '1' : '0');
+    panel.classList.toggle('detached', flag);
+    if (flag) {
+      // Float the panel
+      panel.classList.add('sp-open');
+      const dx = parseFloat(localStorage.getItem('np_dx') || String(Math.max(20, window.innerWidth  - 340)));
+      const dy = parseFloat(localStorage.getItem('np_dy') || String(Math.max(20, window.innerHeight - 420)));
+      panel.style.left   = dx + 'px';
+      panel.style.top    = dy + 'px';
+      panel.style.right  = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.transform = '';
+      // Make drag bar the move handle; save position on mouseup
+      if (detachBar) {
+        makeDraggable(panel, detachBar);
+        // Persist position when dragging ends
+        document.addEventListener('mouseup', function saveDrag() {
+          if (!isDetached) { document.removeEventListener('mouseup', saveDrag); return; }
+          localStorage.setItem('np_dx', String(Math.round(parseFloat(panel.style.left)  || 0)));
+          localStorage.setItem('np_dy', String(Math.round(parseFloat(panel.style.top)   || 0)));
+        });
+      }
+      if (detachBtn) { detachBtn.textContent = '\u229f'; detachBtn.title = 'Re-attach to edge'; }
+    } else {
+      // Return to edge
+      applyEdgePos(panel, currentEdge, currentPos);
+      if (!panelOpen) closePanel();
+      if (detachBtn) { detachBtn.textContent = '\u229e'; detachBtn.title = 'Detach from edge'; }
+    }
+  }
+
+  if (detachBtn) detachBtn.addEventListener('click', () => setDetached(!isDetached));
+
+  // Restore detached state on load
+  if (isDetached) {
+    setDetached(true);
+  }
 
   // Tab click: toggle open/close. Drag detection prevents accidental toggle.
   tabBtn.addEventListener('pointerdown', (e) => {
@@ -1238,7 +1304,7 @@ function resetScanState() {
  * count — that's what drives an accurate progress bar (as opposed to
  * the old approach of building every card up-front and only then
  * kicking off async verification). */
-function startScan(username) {
+function startScan(username, cfToken) {
   if (scanActive) return;
   scanActive = true;
 
@@ -1277,11 +1343,31 @@ function startScan(username) {
   const miscSection = categorySections.misc || resultsGrid.appendChild(document.createElement('div'));
 
   if (evtSource) { evtSource.close(); evtSource = null; }
-  evtSource = new EventSource(`/api/check?username=${encodeURIComponent(username)}`);
+  const tokenParam = cfToken ? `&cf-token=${encodeURIComponent(cfToken)}` : '';
+  evtSource = new EventSource(`/api/check?username=${encodeURIComponent(username)}${tokenParam}`);
 
   evtSource.onmessage = (ev) => {
     let msg;
     try { msg = JSON.parse(ev.data); } catch (_) { return; }
+
+    // Rate-limit or Turnstile failure from server
+    if (msg.type === 'error') {
+      if (evtSource) { evtSource.close(); evtSource = null; }
+      scanActive = false;
+      scanBtn.disabled = false;
+      scanBtn.textContent = 'SCAN';
+      progressBarFill.parentElement.classList.remove('scanning');
+      cancelBtn.textContent = '\u2715 Cancel';
+      cancelBtn.classList.remove('btn-done');
+      scanProgressSec.style.display = 'none';
+      resultsSec.style.display = 'none';
+      searchError.textContent = msg.error || 'Scan failed. Please try again.';
+      searchError.style.display = 'block';
+      if (window.turnstile && _tsWidgetId !== null) {
+        try { window.turnstile.reset(_tsWidgetId); } catch (_) {}
+      }
+      return;
+    }
 
     if (msg.type === 'result') {
       const category = msg.category || 'misc';
@@ -1638,7 +1724,7 @@ function initFadeIn() {
 /* ── Event wiring ────────────────────────────────────────────────────── */
 function initEvents() {
   // Scan button
-  scanBtn.addEventListener('click', () => {
+  scanBtn.addEventListener('click', async () => {
     const val = usernameInput.value.trim();
     const err = validateUsername(val);
     if (err) {
@@ -1648,7 +1734,26 @@ function initEvents() {
       return;
     }
     searchError.style.display = 'none';
-    startScan(val);
+
+    // If Turnstile is loaded but token not yet ready, wait up to 3s
+    if (!_cfToken && window.turnstile) {
+      const origText = scanBtn.textContent;
+      scanBtn.disabled = true;
+      scanBtn.textContent = 'VERIFYING…';
+      for (let i = 0; i < 30 && !_cfToken; i++) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      scanBtn.disabled = false;
+      scanBtn.textContent = origText;
+    }
+
+    const token = _cfToken || '';
+    _cfToken = null;
+    // Pre-emptively reset so a fresh token is ready for the next scan
+    if (window.turnstile && _tsWidgetId !== null) {
+      try { window.turnstile.reset(_tsWidgetId); } catch (_) {}
+    }
+    startScan(val, token);
   });
 
   // Enter key in input
@@ -1789,4 +1894,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initEvents();
   initFadeIn();
   renderPivotSources();
+
+  // Bootstrap Turnstile (may load after DOM; poll until api.js is ready)
+  function tryInitTurnstile() {
+    if (window.turnstile) { initTurnstile(); return; }
+    const tid = setInterval(() => {
+      if (window.turnstile) { clearInterval(tid); initTurnstile(); }
+    }, 150);
+    setTimeout(() => clearInterval(tid), 8000);
+  }
+  tryInitTurnstile();
 });

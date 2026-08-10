@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <!-- Cloudflare Turnstile — replace data-sitekey with your own key from dash.cloudflare.com -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </head>
 <body>
 
@@ -49,6 +51,8 @@
 
       <p class="search-hint" id="searchHint"><span id="siteCount">377</span> platforms <!-- hint updated by JS --></p>
       <p class="search-error" id="searchError" style="display:none"></p>
+      <!-- Turnstile security widget (invisible mode — only shows UI if challenge needed) -->
+      <div id="turnstileContainer" style="margin-top:0.25rem;"></div>
     </div>
   </section>
 
@@ -176,8 +180,7 @@
           <div class="dork-results" id="dorkResultsList"></div>
         </div>
 
-        <div class="pivot-column">
-          <div class="pivot-3grid">
+        <div class="pivot-3grid">
             <div class="pivot-box">
               <div class="pivot-box-title">Email</div>
               <div id="pivotEmailList" class="pivot-box-list"></div>
@@ -191,7 +194,6 @@
               <div id="pivotNameList" class="pivot-box-list"></div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   </section>
@@ -280,6 +282,10 @@
       <span class="sp-tab-label">Notes</span>
     </button>
     <div class="sp-inner" id="notepadBody">
+      <!-- Drag bar: hidden in side-tab mode, visible when detached -->
+      <div class="sp-detach-bar" id="spDetachBar">
+        <span class="np-drag-icon">⋯</span>
+      </div>
       <input class="np-title-input" id="npTitle" type="text" placeholder="Title…" spellcheck="false" autocomplete="off">
       <div class="np-format-bar">
         <button class="np-fmt-btn" id="npFmtBold" title="Bold"><b>B</b></button>
@@ -287,7 +293,8 @@
         <button class="np-fmt-btn" id="npFmtBullet" title="Bullet list">•</button>
         <span class="np-fmt-sep"></span>
         <button class="np-fmt-btn np-export-btn" id="npExportBtn" title="Export notes as markdown">↓</button>
-        <button class="np-icon-btn" id="notepadCloseBtn" style="margin-left:auto" title="Close">✕</button>
+        <button class="np-icon-btn" id="notepadDetachBtn" title="Detach from edge">⊞</button>
+        <button class="np-icon-btn" id="notepadCloseBtn" title="Close">✕</button>
       </div>
       <div class="np-editor" id="npEditor" contenteditable="true" spellcheck="false"></div>
       <div class="np-pins-section">

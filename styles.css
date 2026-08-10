@@ -466,6 +466,13 @@ a.nav-logo {
   font-weight: 500;
 }
 
+/* Cloudflare Turnstile widget container */
+#turnstileContainer {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+}
+
 /* Hero checklist card (about section) */
 .hero-checklist {
   align-self: center;
@@ -991,23 +998,15 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   box-sizing: border-box;
 }
 
-.pivot-column {
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1rem;
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(10px);
-  max-width: 860px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
 /* Three-column pivot grid */
 .pivot-3grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
+  align-items: start;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .pivot-box {
@@ -1015,7 +1014,8 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   border-radius: 14px;
   padding: 0.75rem 0.8rem;
   background: var(--white);
-  min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 
 .pivot-box-title {
@@ -1032,6 +1032,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .pivot-box-list {
   display: grid;
   gap: 0.45rem;
+  flex: 1;
 }
 
 .pivot-header, .dork-header {
@@ -1644,6 +1645,33 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 .side-panel[data-edge="bottom"] .sp-inner { border-bottom: none;  border-radius: 14px 14px 0 0; }
 
 .side-panel.sp-open .sp-inner { display: block; }
+
+/* Detached mode — freely floating, draggable */
+.side-panel.detached {
+  flex-direction: column !important;
+}
+.side-panel.detached .sp-tab { display: none !important; }
+.side-panel.detached .sp-inner {
+  display: block !important;
+  border-radius: 14px !important;
+  border: 1.5px solid #e0e0e0 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16) !important;
+}
+.side-panel.detached .sp-detach-bar { display: flex !important; }
+
+/* Drag bar (top of panel in detached mode) */
+.sp-detach-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px 5px 12px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: grab;
+  user-select: none;
+  border-radius: 14px 14px 0 0;
+}
+.sp-detach-bar:active { cursor: grabbing; }
 
 /* Overrides for sp-inner — match old float-panel-body usage */
 .sp-inner .np-body { padding: 0; max-height: none; overflow: visible; }
