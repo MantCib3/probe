@@ -3,6 +3,9 @@ server.out.log
 server.err.log
 scan-result.txt
 
+# PII collected via /api/contact and /api/report — never commit
+reports/
+
 # dev/temp scripts
 _*.js
 fix-unknowns.js

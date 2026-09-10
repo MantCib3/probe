@@ -104,13 +104,27 @@ let dorkResults = [];
 let activeStatusFilter = null; // null = no filter, else a status string
 
 /* ── Turnstile state ─────────────────────────────────────────────────── */
-// Replace with your real sitekey from dash.cloudflare.com > Turnstile
-const TURNSTILE_SITEKEY = '1x00000000000000000000AA'; // test key — always passes
+// Real production sitekey is fetched from /api/config at load time (see
+// loadTurnstileConfig below); this is only a fallback for local dev when
+// that endpoint hasn't responded yet or the server has none configured.
+let TURNSTILE_SITEKEY = '1x00000000000000000000AA'; // test key — always passes
 let _cfToken     = null;   // token provided by Turnstile callback
 let _tsWidgetId  = null;   // widget handle for reset()
 
 window.__probeOnTurnstile = function (token) { _cfToken = token; };
 window.__probeOnTsExpire  = function ()      { _cfToken = null;  };
+
+async function loadTurnstileConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const cfg = await res.json();
+      if (cfg && typeof cfg.turnstileSiteKey === 'string' && cfg.turnstileSiteKey) {
+        TURNSTILE_SITEKEY = cfg.turnstileSiteKey;
+      }
+    }
+  } catch (_) { /* keep fallback test key */ }
+}
 
 function initTurnstile() {
   const container = document.getElementById('turnstileContainer');
@@ -2042,5 +2056,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 150);
     setTimeout(() => clearInterval(tid), 8000);
   }
-  tryInitTurnstile();
+  loadTurnstileConfig().finally(tryInitTurnstile);
 });

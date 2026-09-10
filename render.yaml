@@ -7,3 +7,24 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Set these in the Render dashboard (Environment tab) — do not commit
+      # real values here. See SECURITY notes / conversation for details.
+      - key: TURNSTILE_SECRET
+        sync: false
+      - key: TURNSTILE_SITEKEY
+        sync: false
+      - key: TRUST_PROXY
+        value: "1"   # Render's own edge always proxies to this process
+      - key: CF_FRONTED
+        sync: false  # set to "1" only if this domain is orange-clouded through Cloudflare
+      # Optional: email notifications for /api/contact and /api/report
+      # (local JSONL storage in reports/ always happens regardless).
+      # Requires a domain onboarded via `npx wrangler email sending enable`.
+      - key: CF_EMAIL_ACCOUNT_ID
+        sync: false
+      - key: CF_EMAIL_API_TOKEN
+        sync: false
+      - key: CF_EMAIL_FROM
+        sync: false
+      - key: CF_EMAIL_TO
+        sync: false

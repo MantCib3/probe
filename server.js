@@ -28,10 +28,50 @@ const STEALTH_TIMEOUT_MS  = 16000;
 const ENABLE_USERNAME_BROWSER_FALLBACK = false;
 const ENABLE_UNDETECTABLE_STEALTH = false;
 
+/* ── Environment / trust configuration ────────────────────────────────
+ * IS_PRODUCTION — true when running on Render. Used to decide whether a
+ *                 missing Turnstile secret should fail OPEN (dev) or fail
+ *                 CLOSED (prod — safer default for a public deployment).
+ * TRUST_PROXY   — set to '1' once you've confirmed exactly one trusted
+ *                 reverse proxy sits in front of this process (Render's
+ *                 own edge always does this). When true, the right-most
+ *                 entry in X-Forwarded-For is trusted as the client IP —
+ *                 that's the hop the trusted proxy itself appended;
+ *                 anything to its left can be forged by the client.
+ * CF_FRONTED    — set to '1' if Cloudflare is proxying in front of this
+ *                 origin (orange-clouded DNS). Cloudflare overwrites
+ *                 CF-Connecting-IP at its edge, so that header is safe to
+ *                 trust for the real client IP in that case, and takes
+ *                 priority over X-Forwarded-For when present. */
+const IS_PRODUCTION = !!process.env.RENDER || process.env.NODE_ENV === 'production';
+const TRUST_PROXY   = process.env.TRUST_PROXY === '1';
+const CF_FRONTED     = process.env.CF_FRONTED === '1';
+
 /* ── Rate limiting & Turnstile ───────────────────────────────────────── */
 const RATE_LIMIT_MAX    = 10;                  // free scans per window per IP
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000;     // 1 hour in ms
 const TURNSTILE_SECRET  = process.env.TURNSTILE_SECRET || ''; // set in Render env vars
+// Public widget sitekey — safe to expose to the client. Falls back to
+// Cloudflare's official "always passes" test key so local dev keeps
+// working without any setup. Set TURNSTILE_SITEKEY in production.
+const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || '1x00000000000000000000AA';
+
+if (IS_PRODUCTION && !TURNSTILE_SECRET) {
+  console.error('\n  [SECURITY] TURNSTILE_SECRET is not set in a production environment.');
+  console.error('  All scan requests will be rejected (fail-closed) until it is configured.\n');
+}
+
+// Bound in-memory rate-limit maps so a spoofed-IP flood can't grow them
+// without limit. When a map exceeds MAX_TRACKED_IPS, the oldest entry
+// (Map preserves insertion order) is evicted first.
+const MAX_TRACKED_IPS = 20000;
+function boundedSet(map, key, value) {
+  if (map.size >= MAX_TRACKED_IPS && !map.has(key)) {
+    const oldestKey = map.keys().next().value;
+    map.delete(oldestKey);
+  }
+  map.set(key, value);
+}
 
 const _scanRates = new Map(); // ip → { count: number, resetAt: timestamp }
 
@@ -40,7 +80,7 @@ function checkRateLimit(ip) {
   let entry = _scanRates.get(ip);
   if (!entry || now > entry.resetAt) {
     entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
-    _scanRates.set(ip, entry);
+    boundedSet(_scanRates, ip, entry);
   }
   return entry.count < RATE_LIMIT_MAX;
 }
@@ -48,11 +88,6 @@ function checkRateLimit(ip) {
 function consumeRateLimit(ip) {
   const entry = _scanRates.get(ip);
   if (entry) entry.count++;
-}
-
-function getClientIp(req) {
-  const xff = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return xff || req.socket.remoteAddress || '0.0.0.0';
 }
 
 const _submitRates = new Map(); // ip → { count, resetAt }
@@ -64,13 +99,45 @@ function checkSubmitRateLimit(ip) {
   let entry = _submitRates.get(ip);
   if (!entry || now > entry.resetAt) {
     entry = { count: 0, resetAt: now + SUBMIT_LIMIT_WINDOW };
-    _submitRates.set(ip, entry);
+    boundedSet(_submitRates, ip, entry);
   }
   return entry.count < SUBMIT_LIMIT_MAX;
 }
 function consumeSubmitRateLimit(ip) {
   const entry = _submitRates.get(ip);
   if (entry) entry.count++;
+}
+
+// Periodic sweep — drops fully-expired entries so a long-lived process
+// doesn't accumulate stale IPs between the size-based evictions above.
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of _scanRates)   if (now > entry.resetAt) _scanRates.delete(ip);
+  for (const [ip, entry] of _submitRates) if (now > entry.resetAt) _submitRates.delete(ip);
+}, 10 * 60 * 1000).unref();
+
+/**
+ * Resolve the client IP using an explicit trust chain instead of blindly
+ * reading X-Forwarded-For (which any client can set to an arbitrary value
+ * to evade rate limiting). Preference order:
+ *   1. CF-Connecting-IP — only trusted if CF_FRONTED=1 (Cloudflare
+ *      overwrites this header at its edge; the raw origin never sees a
+ *      client-supplied value once traffic is actually proxied through CF).
+ *   2. Right-most X-Forwarded-For entry — only trusted if TRUST_PROXY=1
+ *      (that hop is the one appended by our own trusted reverse proxy;
+ *      anything the client prepended to the left is untrustworthy).
+ *   3. Raw socket address — always safe, used when neither flag is set.
+ */
+function getClientIp(req) {
+  if (CF_FRONTED) {
+    const cfIp = (req.headers['cf-connecting-ip'] || '').trim();
+    if (cfIp) return cfIp;
+  }
+  if (TRUST_PROXY) {
+    const xff = (req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (xff.length) return xff[xff.length - 1];
+  }
+  return req.socket.remoteAddress || '0.0.0.0';
 }
 
 /** Read up to maxLen bytes from req body, resolve as string. */
@@ -121,8 +188,9 @@ async function handlePostEndpoint(pathname, req, res) {
       return res.end(JSON.stringify({ error: 'Please enter a valid email address.' }));
     }
     const entry = JSON.stringify({ type: 'contact', ts: new Date().toISOString(), name, email, message }) + '\n';
-    try { fs.appendFileSync(path.join(REPORTS_DIR, 'contact.jsonl'), entry, 'utf8'); } catch (_) {}
+    fs.appendFile(path.join(REPORTS_DIR, 'contact.jsonl'), entry, 'utf8', () => {});
     consumeSubmitRateLimit(ip);
+    notifyByEmail('New contact form submission', `Name: ${name}\nEmail: ${email}\n\n${message}`);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ ok: true }));
   }
@@ -138,8 +206,9 @@ async function handlePostEndpoint(pathname, req, res) {
       return res.end(JSON.stringify({ error: 'Invalid report payload.' }));
     }
     const entry = JSON.stringify({ type: 'report', ts: new Date().toISOString(), site, username, correctStatus, notes }) + '\n';
-    try { fs.appendFileSync(path.join(REPORTS_DIR, 'reports.jsonl'), entry, 'utf8'); } catch (_) {}
+    fs.appendFile(path.join(REPORTS_DIR, 'reports.jsonl'), entry, 'utf8', () => {});
     consumeSubmitRateLimit(ip);
+    notifyByEmail('New accuracy report', `Site: ${site}\nUsername: ${username}\nCorrect status: ${correctStatus}\n\n${notes}`);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ ok: true }));
   }
@@ -147,9 +216,45 @@ async function handlePostEndpoint(pathname, req, res) {
   res.writeHead(404); res.end('Not found');
 }
 
+/**
+ * Fire-and-forget email notification via the Cloudflare Email Sending
+ * REST API. No-op unless CF_EMAIL_ACCOUNT_ID / CF_EMAIL_API_TOKEN /
+ * CF_EMAIL_FROM / CF_EMAIL_TO are all set — local JSONL storage above
+ * remains the source of truth either way, this is just a convenience
+ * ping so submissions don't require manually checking the server disk.
+ */
+function notifyByEmail(subject, text) {
+  const accountId = process.env.CF_EMAIL_ACCOUNT_ID;
+  const apiToken  = process.env.CF_EMAIL_API_TOKEN;
+  const from      = process.env.CF_EMAIL_FROM;
+  const to        = process.env.CF_EMAIL_TO;
+  if (!accountId || !apiToken || !from || !to) return;
+
+  const payload = JSON.stringify({ to, from, subject: `[PROBE] ${subject}`, text });
+  const req = https.request({
+    hostname: 'api.cloudflare.com',
+    path    : `/client/v4/accounts/${accountId}/email/sending/send`,
+    method  : 'POST',
+    headers : {
+      'Authorization': `Bearer ${apiToken}`,
+      'Content-Type' : 'application/json',
+      'Content-Length': Buffer.byteLength(payload),
+    },
+  }, (resp) => { resp.on('data', () => {}); resp.on('end', () => {}); });
+  req.setTimeout(8000, () => req.destroy());
+  req.on('error', () => {}); // best-effort — never blocks or breaks the submission
+  req.write(payload);
+  req.end();
+}
+
 
 function verifyTurnstile(token, ip) {
-  if (!TURNSTILE_SECRET) return Promise.resolve(true); // bypass when secret not set (dev mode)
+  if (!TURNSTILE_SECRET) {
+    // No secret configured: only bypass verification in non-production
+    // (local dev). In production, fail CLOSED so scans are blocked rather
+    // than silently unprotected until the secret is set.
+    return Promise.resolve(!IS_PRODUCTION);
+  }
   if (!token)            return Promise.resolve(false);
   return new Promise((resolve) => {
     const body = Buffer.from(
@@ -2008,12 +2113,55 @@ function proxyImage(rawUrl, res) {
   req.setTimeout(8000, () => req.destroy());
 }
 
+/* ── Security headers ─────────────────────────────────────────────────
+ * Applied to every response. CSP allows same-origin scripts/styles plus
+ * the Cloudflare Turnstile script/frame (widget + its own beacon calls).
+ * `style-src 'unsafe-inline'` is required because index.html uses a
+ * handful of inline style="" attributes; script-src does NOT need
+ * 'unsafe-inline' since there are no inline <script> blocks or on*=
+ * handlers in the markup. */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' https://challenges.cloudflare.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https:",
+  "connect-src 'self' https://challenges.cloudflare.com",
+  "frame-src https://challenges.cloudflare.com",
+  "base-uri 'none'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join('; ');
+
+function setSecurityHeaders(res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Content-Security-Policy', CSP);
+  if (IS_PRODUCTION) {
+    // Render terminates TLS in front of this process, so it's safe to
+    // tell browsers to always use HTTPS for this origin going forward.
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  }
+}
+
 /* ── Static file helper ───────────────────────────────────────────────── */
+// Small in-memory cache for immutable-ish static assets (html/css/js) to
+// avoid a synchronous disk read on every single request. Data files that
+// may be regenerated at runtime (sites.json, name-sites.json) are
+// intentionally excluded so edits are picked up without a restart.
+const _staticCache = new Map(); // filePath → Buffer
+const CACHEABLE_EXT = new Set(['.html', '.css', '.js']);
+
 function serveStatic(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const ct  = MIME[ext] || 'application/octet-stream';
   try {
-    const data = fs.readFileSync(filePath);
+    let data = CACHEABLE_EXT.has(ext) ? _staticCache.get(filePath) : undefined;
+    if (!data) {
+      data = fs.readFileSync(filePath);
+      if (CACHEABLE_EXT.has(ext)) _staticCache.set(filePath, data);
+    }
     res.writeHead(200, { 'Content-Type': ct });
     res.end(data);
   } catch (_) {
@@ -2040,6 +2188,7 @@ async function streamTaskResults(send, startPayload, taskFactories) {
 
 /* ── HTTP server ──────────────────────────────────────────────────────── */
 const server = http.createServer((req, res) => {
+  setSecurityHeaders(res);
   let urlObj;
   try { urlObj = new URL(req.url, `http://localhost:${PORT}`); }
   catch (_) { res.writeHead(400); return res.end('Bad Request'); }
@@ -2789,6 +2938,12 @@ const server = http.createServer((req, res) => {
       }
     })();
     return;
+  }
+
+  /* ── Public runtime config for the client ────────────────────────────── */
+  if (pathname === '/api/config') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ turnstileSiteKey: TURNSTILE_SITEKEY }));
   }
 
   /* ── Serve sites.json for client ────────────────────────────────────── */

@@ -1,15 +1,17 @@
 /**
  * probe-proxy — Cloudflare Worker
  *
- * Proxies HTTP GET requests for a fixed allowlist of hostnames so the
- * browser-side scan can reach CF-protected sites using CF's own network.
+ * Proxies HTTP GET requests for a fixed allowlist of hostnames so a scan
+ * can reach CF-protected sites using CF's own network.
  *
- * Deploy:
- *   npx wrangler deploy          (after `npx wrangler login`)
- *   OR paste this file into the Cloudflare dashboard → Workers & Pages.
- *
- * After deploy, copy the worker URL (e.g. https://probe-proxy.xxx.workers.dev)
- * into script.js → CF_WORKER_URL constant.
+ * SECURITY: this Worker should be called SERVER-SIDE (from server.js),
+ * never directly from the browser — that's the only way the shared
+ * secret below stays secret. Set two Worker secrets before relying on
+ * this in production:
+ *   npx wrangler secret put PROBE_SHARED_SECRET   (any long random value)
+ *   npx wrangler secret put X_BEARER_TOKEN         (your own X/Twitter app token)
+ * Then have the caller send `X-Probe-Key: <PROBE_SHARED_SECRET>` and set
+ * ALLOWED_ORIGIN in wrangler.toml [vars] to your production origin(s).
  *
  * Free tier: 100,000 requests / day — plenty for personal OSINT scans.
  */
@@ -111,33 +113,52 @@ function allowed(hostname) {
   return false;
 }
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+function corsHeaders(request, env) {
+  // Only reflect Access-Control-Allow-Origin for an explicitly configured
+  // origin (comma-separated list in the ALLOWED_ORIGIN var/secret) instead
+  // of the previous wildcard '*', which let any website's frontend read
+  // proxied responses (and, combined with no auth, made this an open proxy).
+  const allowedOrigins = (env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+  const origin = request.headers.get('Origin') || '';
+  const headers = {
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Probe-Key',
+  };
+  if (allowedOrigins.includes(origin)) headers['Access-Control-Allow-Origin'] = origin;
+  return headers;
+}
 
-function corsResp(body, status, extra = {}) {
+function corsResp(request, env, body, status, extra = {}) {
   return new Response(body, {
     status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'text/plain; charset=utf-8', ...extra },
+    headers: { ...corsHeaders(request, env), 'Content-Type': 'text/plain; charset=utf-8', ...extra },
   });
 }
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     }
 
     if (request.method !== 'GET') {
-      return corsResp('Method not allowed', 405);
+      return corsResp(request, env, 'Method not allowed', 405);
+    }
+
+    // Require a shared secret so this can't be used as an open/anonymous
+    // proxy by anyone who discovers the workers.dev URL. Configure via
+    // `npx wrangler secret put PROBE_SHARED_SECRET`.
+    if (env.PROBE_SHARED_SECRET) {
+      const provided = request.headers.get('X-Probe-Key') || '';
+      if (provided !== env.PROBE_SHARED_SECRET) {
+        return corsResp(request, env, 'Unauthorized', 401);
+      }
     }
 
     const { searchParams } = new URL(request.url);
     const target = searchParams.get('url');
-    if (!target) return corsResp('Missing ?url= parameter', 400);
+    if (!target) return corsResp(request, env, 'Missing ?url= parameter', 400);
 
     let targetUrl;
     try {
@@ -148,10 +169,10 @@ export default {
 
     // SSRF + allowlist guard
     if (!['http:', 'https:'].includes(targetUrl.protocol)) {
-      return corsResp('Protocol not allowed', 403);
+      return corsResp(request, env, 'Protocol not allowed', 403);
     }
     if (!allowed(targetUrl.hostname)) {
-      return corsResp('Host not in allowlist', 403);
+      return corsResp(request, env, 'Host not in allowlist', 403);
     }
 
     try {
@@ -162,8 +183,8 @@ export default {
         extraHeaders['X-IG-App-ID'] = '936619743392459';
         extraHeaders['X-Requested-With'] = 'XMLHttpRequest';
       }
-      if (h === 'api.x.com' || h === 'x.com') {
-        extraHeaders['Authorization'] = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+      if ((h === 'api.x.com' || h === 'x.com') && env.X_BEARER_TOKEN) {
+        extraHeaders['Authorization'] = `Bearer ${env.X_BEARER_TOKEN}`;
       }
 
       const upstream = await fetch(targetUrl.toString(), {
@@ -207,9 +228,9 @@ export default {
       // so the body (containing errorMsg patterns) still reaches the client.
       const st = upstream.status;
       const safeStatus = (st >= 200 && st <= 599) ? st : 200;
-      return corsResp(body, safeStatus, { 'X-Proxy-Status': String(st) });
+      return corsResp(request, env, body, safeStatus, { 'X-Proxy-Status': String(st) });
     } catch (err) {
-      return corsResp('Proxy error: ' + err.message, 502);
+      return corsResp(request, env, 'Proxy error: ' + err.message, 502);
     }
   },
 };
