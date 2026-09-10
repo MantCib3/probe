@@ -286,9 +286,13 @@ function verifyTurnstile(token, ip, expectedAction) {
     // No secret configured: only bypass verification in non-production
     // (local dev). In production, fail CLOSED so requests are blocked rather
     // than silently unprotected until the secret is set.
+    console.error(`[turnstile] TURNSTILE_SECRET is empty at request time (IS_PRODUCTION=${IS_PRODUCTION}) — ${IS_PRODUCTION ? 'failing closed' : 'bypassing in dev'}.`);
     return Promise.resolve(!IS_PRODUCTION);
   }
-  if (!token)            return Promise.resolve(false);
+  if (!token) {
+    console.error(`[turnstile] no token provided for action="${expectedAction}" (client never sent cf-token, or it was empty).`);
+    return Promise.resolve(false);
+  }
   return new Promise((resolve) => {
     const body = Buffer.from(
       `secret=${encodeURIComponent(TURNSTILE_SECRET)}&response=${encodeURIComponent(token)}&remoteip=${encodeURIComponent(ip)}`
