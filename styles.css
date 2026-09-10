@@ -466,11 +466,14 @@ a.nav-logo {
   font-weight: 500;
 }
 
-/* Cloudflare Turnstile widget container */
+/* Cloudflare Turnstile widget container — mounted lazily on Scan click.
+   theme:'light' (set in script.js) keeps the widget itself on a white
+   card; this wrapper just centers it and matches the page background. */
 #turnstileContainer {
   display: flex;
   justify-content: center;
   min-height: 0;
+  background: var(--white);
 }
 
 /* Hero checklist card (about section) */
@@ -1666,6 +1669,11 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   .hamburger.open span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
   .hamburger.open span:nth-child(2) { opacity: 0; }
   .hamburger.open span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+  /* Case notes side panel — desktop-only feature. Mobile visitors are
+     unlikely to be running a full investigation, and if they are, their
+     own notes app covers it just as well. */
+  .side-panel { display: none; }
 }
 
 @media (max-width: 600px) {

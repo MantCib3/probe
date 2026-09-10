@@ -110,6 +110,7 @@ let activeStatusFilter = null; // null = no filter, else a status string
 let TURNSTILE_SITEKEY = '1x00000000000000000000AA'; // test key — always passes
 let _cfToken     = null;   // token provided by Turnstile callback
 let _tsWidgetId  = null;   // widget handle for reset()
+let _tsRendered  = false;  // whether the widget has been mounted yet
 
 window.__probeOnTurnstile = function (token) { _cfToken = token; };
 window.__probeOnTsExpire  = function ()      { _cfToken = null;  };
@@ -126,14 +127,21 @@ async function loadTurnstileConfig() {
   } catch (_) { /* keep fallback test key */ }
 }
 
+// Mounts the widget the first time it's needed (on Scan click) rather than
+// at page load, so visitors aren't shown a verification box before they've
+// even interacted with the page. `theme: 'light'` keeps it on a plain white
+// card matching the page background instead of following OS dark-mode.
 function initTurnstile() {
+  if (_tsRendered) return;
   const container = document.getElementById('turnstileContainer');
   if (!container || !window.turnstile) return;
+  _tsRendered = true;
   _tsWidgetId = window.turnstile.render(container, {
     sitekey             : TURNSTILE_SITEKEY,
     callback            : '__probeOnTurnstile',
     'expired-callback'  : '__probeOnTsExpire',
     appearance          : 'interaction-only',
+    theme               : 'light',
   });
 }
 /* ── DOM refs ────────────────────────────────────────────────────────── */
@@ -1749,12 +1757,21 @@ function initEvents() {
     }
     searchError.style.display = 'none';
 
-    // If Turnstile is loaded but token not yet ready, wait up to 3s
-    if (!_cfToken && window.turnstile) {
+    if (!_cfToken) {
       const origText = scanBtn.textContent;
       scanBtn.disabled = true;
       scanBtn.textContent = 'VERIFYING…';
-      for (let i = 0; i < 30 && !_cfToken; i++) {
+
+      // The Turnstile <script> tag is deferred, so window.turnstile may not
+      // exist yet on a very fast click — wait briefly for it before mounting.
+      for (let i = 0; i < 20 && !window.turnstile; i++) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      initTurnstile(); // no-op if already mounted from a previous click
+
+      // Give the widget time to run its check and, if needed, for the user
+      // to interact with the visible challenge before we give up.
+      for (let i = 0; i < 150 && !_cfToken; i++) {
         await new Promise(r => setTimeout(r, 100));
       }
       scanBtn.disabled = false;
@@ -2048,13 +2065,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initContactForm();
   renderPivotSources();
 
-  // Bootstrap Turnstile (may load after DOM; poll until api.js is ready)
-  function tryInitTurnstile() {
-    if (window.turnstile) { initTurnstile(); return; }
-    const tid = setInterval(() => {
-      if (window.turnstile) { clearInterval(tid); initTurnstile(); }
-    }, 150);
-    setTimeout(() => clearInterval(tid), 8000);
-  }
-  loadTurnstileConfig().finally(tryInitTurnstile);
+  // Fetch the sitekey ahead of time so it's ready the moment the widget
+  // needs to be rendered (on Scan click) — the widget itself is mounted
+  // lazily, not here, so it isn't shown before the user does anything.
+  loadTurnstileConfig();
 });
