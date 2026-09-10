@@ -140,7 +140,11 @@ async function loadTurnstileConfig() {
 // visitors aren't shown a verification box before they've interacted with
 // that form. `theme: 'light'` keeps it on a plain white card matching the
 // page background instead of following OS dark mode. `size: 'flexible'`
-// lets it fit narrow containers (e.g. the report popover) on mobile.
+// is only used for the narrow contact/report containers — the scan
+// widget's container is full-width so it uses the default 'normal' size
+// (flexible mode occasionally fails to render if the container's width
+// isn't fully resolved yet at render time). `error-callback` logs to the
+// console so a silent widget failure isn't mistaken for "still waiting".
 // `action` is cross-checked server-side against siteverify's response.
 function mountTurnstile(surface, containerId) {
   const state = _ts[surface];
@@ -153,9 +157,10 @@ function mountTurnstile(surface, containerId) {
     action              : TURNSTILE_ACTIONS[surface] || surface,
     callback            : (token) => { state.token = token; },
     'expired-callback'  : ()      => { state.token = null; },
+    'error-callback'    : (code)  => { console.error(`[turnstile] widget error on "${surface}":`, code); state.token = null; },
     appearance          : 'interaction-only',
     theme               : 'light',
-    size                : 'flexible',
+    size                : surface === 'scan' ? 'normal' : 'flexible',
   });
 }
 
