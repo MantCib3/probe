@@ -50,7 +50,10 @@ const CF_FRONTED     = process.env.CF_FRONTED === '1';
 /* ── Rate limiting & Turnstile ───────────────────────────────────────── */
 const RATE_LIMIT_MAX    = 10;                  // free scans per window per IP
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000;     // 1 hour in ms
-const TURNSTILE_SECRET  = process.env.TURNSTILE_SECRET || ''; // set in Render env vars
+// .trim() matters: a stray trailing newline/space from copy-pasting into
+// Render's Environment tab produces a secret that LOOKS right but makes
+// every siteverify call fail with 'invalid-input-secret' silently.
+const TURNSTILE_SECRET  = (process.env.TURNSTILE_SECRET || '').trim(); // set in Render env vars
 // Public widget sitekey — safe to expose to the client (site keys are not
 // secret, unlike TURNSTILE_SECRET). Defaults to the real production widget
 // created for this project; override via TURNSTILE_SITEKEY if it's ever
@@ -301,19 +304,34 @@ function verifyTurnstile(token, ip, expectedAction) {
       resp.on('end',  () => {
         try {
           const result = JSON.parse(data);
-          if (result.success !== true) return resolve(false);
+          if (result.success !== true) {
+            // Cloudflare's own error-codes explain exactly why (e.g.
+            // 'invalid-input-secret', 'timeout-or-duplicate') — log them
+            // since a bare `false` here is otherwise a black box.
+            console.error(`[turnstile] siteverify failed for action="${expectedAction}": ${JSON.stringify(result['error-codes'] || result.errorCodes || result)}`);
+            return resolve(false);
+          }
           // Reject tokens minted for a different action so one form's token
           // can't be replayed against another.
-          if (result.action && result.action !== expectedAction) return resolve(false);
+          if (result.action && result.action !== expectedAction) {
+            console.error(`[turnstile] action mismatch: expected "${expectedAction}", got "${result.action}"`);
+            return resolve(false);
+          }
           // Only enforced once TURNSTILE_HOSTNAMES is configured, so this
           // doesn't add a fourth way for requests to fail during domain setup.
-          if (TURNSTILE_HOSTNAMES.length && !TURNSTILE_HOSTNAMES.includes(result.hostname)) return resolve(false);
+          if (TURNSTILE_HOSTNAMES.length && !TURNSTILE_HOSTNAMES.includes(result.hostname)) {
+            console.error(`[turnstile] hostname "${result.hostname}" not in TURNSTILE_HOSTNAMES allowlist`);
+            return resolve(false);
+          }
           resolve(true);
-        } catch (_) { resolve(false); }
+        } catch (_) {
+          console.error(`[turnstile] siteverify response was not valid JSON: ${data.slice(0, 200)}`);
+          resolve(false);
+        }
       });
     });
-    req.setTimeout(8000, () => { req.destroy(); resolve(false); });
-    req.on('error', () => resolve(false));
+    req.setTimeout(8000, () => { console.error('[turnstile] siteverify request timed out'); req.destroy(); resolve(false); });
+    req.on('error', (err) => { console.error(`[turnstile] siteverify request error: ${err.message}`); resolve(false); });
     req.write(body);
     req.end();
   });
