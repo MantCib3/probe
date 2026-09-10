@@ -104,10 +104,11 @@ let dorkResults = [];
 let activeStatusFilter = null; // null = no filter, else a status string
 
 /* ── Turnstile state ─────────────────────────────────────────────────── */
-// Real production sitekey is fetched from /api/config at load time (see
-// loadTurnstileConfig below); this is only a fallback for local dev when
-// that endpoint hasn't responded yet or the server has none configured.
-let TURNSTILE_SITEKEY = '1x00000000000000000000AA'; // test key — always passes
+// Real production sitekey/action are fetched from /api/config at load time
+// (see loadTurnstileConfig below); these are only fallbacks for local dev
+// when that endpoint hasn't responded yet.
+let TURNSTILE_SITEKEY = '0x4AAAAAADFTcr011fUWBkXS';
+let TURNSTILE_ACTION  = 'scan';
 let _cfToken     = null;   // token provided by Turnstile callback
 let _tsWidgetId  = null;   // widget handle for reset()
 let _tsRendered  = false;  // whether the widget has been mounted yet
@@ -123,6 +124,9 @@ async function loadTurnstileConfig() {
       if (cfg && typeof cfg.turnstileSiteKey === 'string' && cfg.turnstileSiteKey) {
         TURNSTILE_SITEKEY = cfg.turnstileSiteKey;
       }
+      if (cfg && typeof cfg.turnstileAction === 'string' && cfg.turnstileAction) {
+        TURNSTILE_ACTION = cfg.turnstileAction;
+      }
     }
   } catch (_) { /* keep fallback test key */ }
 }
@@ -131,6 +135,7 @@ async function loadTurnstileConfig() {
 // at page load, so visitors aren't shown a verification box before they've
 // even interacted with the page. `theme: 'light'` keeps it on a plain white
 // card matching the page background instead of following OS dark-mode.
+// `action` is cross-checked server-side against siteverify's response.
 function initTurnstile() {
   if (_tsRendered) return;
   const container = document.getElementById('turnstileContainer');
@@ -138,6 +143,7 @@ function initTurnstile() {
   _tsRendered = true;
   _tsWidgetId = window.turnstile.render(container, {
     sitekey             : TURNSTILE_SITEKEY,
+    action              : TURNSTILE_ACTION,
     callback            : '__probeOnTurnstile',
     'expired-callback'  : '__probeOnTsExpire',
     appearance          : 'interaction-only',

@@ -51,10 +51,22 @@ const CF_FRONTED     = process.env.CF_FRONTED === '1';
 const RATE_LIMIT_MAX    = 10;                  // free scans per window per IP
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000;     // 1 hour in ms
 const TURNSTILE_SECRET  = process.env.TURNSTILE_SECRET || ''; // set in Render env vars
-// Public widget sitekey — safe to expose to the client. Falls back to
-// Cloudflare's official "always passes" test key so local dev keeps
-// working without any setup. Set TURNSTILE_SITEKEY in production.
-const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || '1x00000000000000000000AA';
+// Public widget sitekey — safe to expose to the client (site keys are not
+// secret, unlike TURNSTILE_SECRET). Defaults to the real production widget
+// created for this project; override via TURNSTILE_SITEKEY if it's ever
+// rotated. Still falls back to Cloudflare's official test key only if
+// someone explicitly sets TURNSTILE_SITEKEY to an empty string.
+const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || '0x4AAAAAADFTcr011fUWBkXS';
+// The `action` every widget render() call uses (script.js) — cross-checked
+// against siteverify's response below so a token minted for a different
+// action/surface can't be replayed here.
+const TURNSTILE_ACTION  = 'scan';
+// Optional comma-separated allowlist of hostnames siteverify is allowed to
+// report back (e.g. "usernameprobe.com,www.usernameprobe.com"). Skipped
+// when unset so this doesn't become a third way for scans to fail while
+// the domain is still being set up — set it once the domain is live.
+const TURNSTILE_HOSTNAMES = (process.env.TURNSTILE_HOSTNAMES || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
 
 if (IS_PRODUCTION && !TURNSTILE_SECRET) {
   console.error('\n  [SECURITY] TURNSTILE_SECRET is not set in a production environment.');
@@ -269,8 +281,18 @@ function verifyTurnstile(token, ip) {
       let data = '';
       resp.on('data', c => { data += c; });
       resp.on('end',  () => {
-        try { resolve(JSON.parse(data).success === true); }
-        catch (_) { resolve(false); }
+        try {
+          const result = JSON.parse(data);
+          if (result.success !== true) return resolve(false);
+          // Reject tokens minted for a different action (defense in depth —
+          // there's currently only one action, but this stops a token from
+          // one surface being replayed against another if more are added).
+          if (result.action && result.action !== TURNSTILE_ACTION) return resolve(false);
+          // Only enforced once TURNSTILE_HOSTNAMES is configured, so this
+          // doesn't add a fourth way for scans to fail during domain setup.
+          if (TURNSTILE_HOSTNAMES.length && !TURNSTILE_HOSTNAMES.includes(result.hostname)) return resolve(false);
+          resolve(true);
+        } catch (_) { resolve(false); }
       });
     });
     req.setTimeout(8000, () => { req.destroy(); resolve(false); });
@@ -2943,7 +2965,7 @@ const server = http.createServer((req, res) => {
   /* ── Public runtime config for the client ────────────────────────────── */
   if (pathname === '/api/config') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ turnstileSiteKey: TURNSTILE_SITEKEY }));
+    return res.end(JSON.stringify({ turnstileSiteKey: TURNSTILE_SITEKEY, turnstileAction: TURNSTILE_ACTION }));
   }
 
   /* ── Serve sites.json for client ────────────────────────────────────── */

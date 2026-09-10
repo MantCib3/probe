@@ -9,9 +9,16 @@ services:
         value: production
       # Set these in the Render dashboard (Environment tab) — do not commit
       # real values here. See SECURITY notes / conversation for details.
+      # TURNSTILE_SITEKEY defaults to the real widget's site key in code
+      # (server.js) since it's public — only set it here if it's rotated.
       - key: TURNSTILE_SECRET
         sync: false
       - key: TURNSTILE_SITEKEY
+        sync: false
+      # Optional: restricts which frontend hostnames a Turnstile token can
+      # claim to come from, once the production domain is live, e.g.
+      # "usernameprobe.com,www.usernameprobe.com"
+      - key: TURNSTILE_HOSTNAMES
         sync: false
       - key: TRUST_PROXY
         value: "1"   # Render's own edge always proxies to this process
