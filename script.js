@@ -104,17 +104,21 @@ let dorkResults = [];
 let activeStatusFilter = null; // null = no filter, else a status string
 
 /* ── Turnstile state ─────────────────────────────────────────────────── */
-// Real production sitekey/action are fetched from /api/config at load time
+// Real production sitekey/actions are fetched from /api/config at load time
 // (see loadTurnstileConfig below); these are only fallbacks for local dev
-// when that endpoint hasn't responded yet.
-let TURNSTILE_SITEKEY = '0x4AAAAAADFTcr011fUWBkXS';
-let TURNSTILE_ACTION  = 'scan';
-let _cfToken     = null;   // token provided by Turnstile callback
-let _tsWidgetId  = null;   // widget handle for reset()
-let _tsRendered  = false;  // whether the widget has been mounted yet
+// when that endpoint hasn't responded yet. Each surface (scan/contact/
+// report) uses its own action + widget so a token minted for one form
+// can't be replayed against another — the server cross-checks this.
+let TURNSTILE_SITEKEY  = '0x4AAAAAADFTcr011fUWBkXS';
+let TURNSTILE_ACTIONS  = { scan: 'scan', contact: 'contact', report: 'report' };
 
-window.__probeOnTurnstile = function (token) { _cfToken = token; };
-window.__probeOnTsExpire  = function ()      { _cfToken = null;  };
+// Per-surface widget state: token from the callback, widget handle (for
+// reset()), and whether it's been mounted yet.
+const _ts = {
+  scan   : { token: null, widgetId: null, rendered: false },
+  contact: { token: null, widgetId: null, rendered: false },
+  report : { token: null, widgetId: null, rendered: false },
+};
 
 async function loadTurnstileConfig() {
   try {
@@ -124,31 +128,56 @@ async function loadTurnstileConfig() {
       if (cfg && typeof cfg.turnstileSiteKey === 'string' && cfg.turnstileSiteKey) {
         TURNSTILE_SITEKEY = cfg.turnstileSiteKey;
       }
-      if (cfg && typeof cfg.turnstileAction === 'string' && cfg.turnstileAction) {
-        TURNSTILE_ACTION = cfg.turnstileAction;
+      if (cfg && cfg.turnstileActions && typeof cfg.turnstileActions === 'object') {
+        TURNSTILE_ACTIONS = Object.assign({}, TURNSTILE_ACTIONS, cfg.turnstileActions);
       }
     }
   } catch (_) { /* keep fallback test key */ }
 }
 
-// Mounts the widget the first time it's needed (on Scan click) rather than
-// at page load, so visitors aren't shown a verification box before they've
-// even interacted with the page. `theme: 'light'` keeps it on a plain white
-// card matching the page background instead of following OS dark-mode.
+// Mounts the widget for `surface` ('scan' | 'contact' | 'report') into
+// `containerId` the first time it's needed, rather than at page load, so
+// visitors aren't shown a verification box before they've interacted with
+// that form. `theme: 'light'` keeps it on a plain white card matching the
+// page background instead of following OS dark mode. `size: 'flexible'`
+// lets it fit narrow containers (e.g. the report popover) on mobile.
 // `action` is cross-checked server-side against siteverify's response.
-function initTurnstile() {
-  if (_tsRendered) return;
-  const container = document.getElementById('turnstileContainer');
+function mountTurnstile(surface, containerId) {
+  const state = _ts[surface];
+  if (state.rendered) return;
+  const container = document.getElementById(containerId);
   if (!container || !window.turnstile) return;
-  _tsRendered = true;
-  _tsWidgetId = window.turnstile.render(container, {
+  state.rendered = true;
+  state.widgetId = window.turnstile.render(container, {
     sitekey             : TURNSTILE_SITEKEY,
-    action              : TURNSTILE_ACTION,
-    callback            : '__probeOnTurnstile',
-    'expired-callback'  : '__probeOnTsExpire',
+    action              : TURNSTILE_ACTIONS[surface] || surface,
+    callback            : (token) => { state.token = token; },
+    'expired-callback'  : ()      => { state.token = null; },
     appearance          : 'interaction-only',
     theme               : 'light',
+    size                : 'flexible',
   });
+}
+
+// Ensures window.turnstile is loaded, mounts (if needed) the widget for
+// `surface`, waits briefly for a token — giving the user time to complete
+// an interactive challenge if Cloudflare decides to show one — then
+// returns it, resetting the widget so a fresh token is ready next time.
+async function acquireTurnstileToken(surface, containerId) {
+  for (let i = 0; i < 20 && !window.turnstile; i++) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  mountTurnstile(surface, containerId);
+  const state = _ts[surface];
+  for (let i = 0; i < 150 && !state.token; i++) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  const token = state.token || '';
+  state.token = null;
+  if (window.turnstile && state.widgetId !== null) {
+    try { window.turnstile.reset(state.widgetId); } catch (_) {}
+  }
+  return token;
 }
 /* ── DOM refs ────────────────────────────────────────────────────────── */
 const $  = (id) => document.getElementById(id);
@@ -1392,8 +1421,8 @@ function startScan(username, cfToken) {
       resultsSec.style.display = 'none';
       searchError.textContent = msg.error || 'Scan failed. Please try again.';
       searchError.style.display = 'block';
-      if (window.turnstile && _tsWidgetId !== null) {
-        try { window.turnstile.reset(_tsWidgetId); } catch (_) {}
+      if (window.turnstile && _ts.scan.widgetId !== null) {
+        try { window.turnstile.reset(_ts.scan.widgetId); } catch (_) {}
       }
       return;
     }
@@ -1763,33 +1792,18 @@ function initEvents() {
     }
     searchError.style.display = 'none';
 
-    if (!_cfToken) {
-      const origText = scanBtn.textContent;
+    const hadToken = !!_ts.scan.token;
+    const origText = scanBtn.textContent;
+    if (!hadToken) {
       scanBtn.disabled = true;
       scanBtn.textContent = 'VERIFYING…';
-
-      // The Turnstile <script> tag is deferred, so window.turnstile may not
-      // exist yet on a very fast click — wait briefly for it before mounting.
-      for (let i = 0; i < 20 && !window.turnstile; i++) {
-        await new Promise(r => setTimeout(r, 100));
-      }
-      initTurnstile(); // no-op if already mounted from a previous click
-
-      // Give the widget time to run its check and, if needed, for the user
-      // to interact with the visible challenge before we give up.
-      for (let i = 0; i < 150 && !_cfToken; i++) {
-        await new Promise(r => setTimeout(r, 100));
-      }
+    }
+    const token = await acquireTurnstileToken('scan', 'turnstileContainer');
+    if (!hadToken) {
       scanBtn.disabled = false;
       scanBtn.textContent = origText;
     }
 
-    const token = _cfToken || '';
-    _cfToken = null;
-    // Pre-emptively reset so a fresh token is ready for the next scan
-    if (window.turnstile && _tsWidgetId !== null) {
-      try { window.turnstile.reset(_tsWidgetId); } catch (_) {}
-    }
     startScan(val, token);
   });
 
@@ -1940,6 +1954,7 @@ function initReportPopover() {
       <label class="rp-opt"><input type="radio" name="rp-status" value="other"> Other issue</label>
     </div>
     <textarea class="rp-notes" placeholder="Optional: describe the issue…" rows="2" maxlength="500"></textarea>
+    <div id="turnstileContainerReport" style="margin-top:0.35rem;"></div>
     <div class="rp-footer">
       <button class="rp-submit">Send Report</button>
       <button class="rp-cancel">Cancel</button>
@@ -1993,11 +2008,18 @@ async function submitReport() {
   const btn   = _reportPopover.querySelector('.rp-submit');
   btn.disabled = true;
   statusEl.textContent = ''; statusEl.className = 'rp-status';
+  const cfToken = await acquireTurnstileToken('report', 'turnstileContainerReport');
+  if (!cfToken) {
+    statusEl.textContent = 'Security check failed. Please try again.';
+    statusEl.className   = 'rp-status error';
+    btn.disabled = false;
+    return;
+  }
   try {
     const r    = await fetch('/api/report', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ site: _reportSiteName, username: lastScannedTarget || '', correctStatus: selected.value, notes }),
+      body   : JSON.stringify({ site: _reportSiteName, username: lastScannedTarget || '', correctStatus: selected.value, notes, cfToken }),
     });
     const data = await r.json();
     if (data.ok) {
@@ -2033,11 +2055,17 @@ function initContactForm() {
       status.textContent = 'Please enter a valid email address.'; status.className = 'cf-status error'; return;
     }
     btn.disabled = true; btn.textContent = 'Sending…'; status.textContent = '';
+    const cfToken = await acquireTurnstileToken('contact', 'turnstileContainerContact');
+    if (!cfToken) {
+      status.textContent = 'Security check failed. Please try again.'; status.className = 'cf-status error';
+      btn.disabled = false; btn.textContent = 'Send Message';
+      return;
+    }
     try {
       const r    = await fetch('/api/contact', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ name, email, message }),
+        body   : JSON.stringify({ name, email, message, cfToken }),
       });
       const data = await r.json();
       if (data.ok) {

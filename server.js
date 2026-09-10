@@ -57,10 +57,11 @@ const TURNSTILE_SECRET  = process.env.TURNSTILE_SECRET || ''; // set in Render e
 // rotated. Still falls back to Cloudflare's official test key only if
 // someone explicitly sets TURNSTILE_SITEKEY to an empty string.
 const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || '0x4AAAAAADFTcr011fUWBkXS';
-// The `action` every widget render() call uses (script.js) — cross-checked
-// against siteverify's response below so a token minted for a different
-// action/surface can't be replayed here.
-const TURNSTILE_ACTION  = 'scan';
+// The `action` each surface's widget render() call uses (script.js) —
+// cross-checked against siteverify's response below so a token minted for
+// one form can't be replayed against another (e.g. a scan token reused to
+// spam the contact form).
+const TURNSTILE_ACTIONS = { scan: 'scan', contact: 'contact', report: 'report' };
 // Optional comma-separated allowlist of hostnames siteverify is allowed to
 // report back (e.g. "usernameprobe.com,www.usernameprobe.com"). Skipped
 // when unset so this doesn't become a third way for scans to fail while
@@ -184,6 +185,17 @@ async function handlePostEndpoint(pathname, req, res) {
     return res.end(JSON.stringify({ error: 'Invalid request body.' }));
   }
 
+  // Every form submission must carry a valid Turnstile token for its own
+  // action — without this, siteverify is never called and the form is
+  // wide open to automated bot submissions.
+  const expectedAction = pathname === '/api/contact' ? TURNSTILE_ACTIONS.contact : TURNSTILE_ACTIONS.report;
+  const cfToken = String(body.cfToken || '').trim();
+  const tsOk = await verifyTurnstile(cfToken, ip, expectedAction);
+  if (!tsOk) {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Security check failed. Please refresh and try again.' }));
+  }
+
   const REPORTS_DIR = path.join(__dirname, 'reports');
   try { fs.mkdirSync(REPORTS_DIR, { recursive: true }); } catch (_) {}
 
@@ -260,10 +272,16 @@ function notifyByEmail(subject, text) {
 }
 
 
-function verifyTurnstile(token, ip) {
+/**
+ * Calls Cloudflare's siteverify endpoint to validate a Turnstile response
+ * token. `expectedAction` must match one of TURNSTILE_ACTIONS's values —
+ * every caller (scan, contact, report) MUST pass its own action so a token
+ * minted for one form can't be replayed against another.
+ */
+function verifyTurnstile(token, ip, expectedAction) {
   if (!TURNSTILE_SECRET) {
     // No secret configured: only bypass verification in non-production
-    // (local dev). In production, fail CLOSED so scans are blocked rather
+    // (local dev). In production, fail CLOSED so requests are blocked rather
     // than silently unprotected until the secret is set.
     return Promise.resolve(!IS_PRODUCTION);
   }
@@ -284,12 +302,11 @@ function verifyTurnstile(token, ip) {
         try {
           const result = JSON.parse(data);
           if (result.success !== true) return resolve(false);
-          // Reject tokens minted for a different action (defense in depth —
-          // there's currently only one action, but this stops a token from
-          // one surface being replayed against another if more are added).
-          if (result.action && result.action !== TURNSTILE_ACTION) return resolve(false);
+          // Reject tokens minted for a different action so one form's token
+          // can't be replayed against another.
+          if (result.action && result.action !== expectedAction) return resolve(false);
           // Only enforced once TURNSTILE_HOSTNAMES is configured, so this
-          // doesn't add a fourth way for scans to fail during domain setup.
+          // doesn't add a fourth way for requests to fail during domain setup.
           if (TURNSTILE_HOSTNAMES.length && !TURNSTILE_HOSTNAMES.includes(result.hostname)) return resolve(false);
           resolve(true);
         } catch (_) { resolve(false); }
@@ -2269,7 +2286,7 @@ const server = http.createServer((req, res) => {
     }
 
     // Turnstile verification then scan
-    verifyTurnstile(cfToken, ip).then(tsOk => {
+    verifyTurnstile(cfToken, ip, TURNSTILE_ACTIONS.scan).then(tsOk => {
       if (cancelled) return;
       if (!tsOk) {
         send({ type: 'error', error: 'Security check failed. Please refresh and try again.', code: 403 });
@@ -2965,7 +2982,7 @@ const server = http.createServer((req, res) => {
   /* ── Public runtime config for the client ────────────────────────────── */
   if (pathname === '/api/config') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ turnstileSiteKey: TURNSTILE_SITEKEY, turnstileAction: TURNSTILE_ACTION }));
+    return res.end(JSON.stringify({ turnstileSiteKey: TURNSTILE_SITEKEY, turnstileActions: TURNSTILE_ACTIONS }));
   }
 
   /* ── Serve sites.json for client ────────────────────────────────────── */

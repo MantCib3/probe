@@ -466,10 +466,13 @@ a.nav-logo {
   font-weight: 500;
 }
 
-/* Cloudflare Turnstile widget container — mounted lazily on Scan click.
+/* Cloudflare Turnstile widget containers — each mounted lazily the first
+   time its form is used (Scan click / contact submit / report submit).
    theme:'light' (set in script.js) keeps the widget itself on a white
-   card; this wrapper just centers it and matches the page background. */
-#turnstileContainer {
+   card; these wrappers just center it and match the page background. */
+#turnstileContainer,
+#turnstileContainerContact,
+#turnstileContainerReport {
   display: flex;
   justify-content: center;
   min-height: 0;

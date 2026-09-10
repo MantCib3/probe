@@ -292,6 +292,8 @@
           <label for="cfMessage">Message</label>
           <textarea id="cfMessage" name="message" rows="4" placeholder="Your message…" maxlength="2000" required></textarea>
         </div>
+        <!-- Turnstile security widget for this form (invisible mode — only shows UI if a challenge is needed) -->
+        <div id="turnstileContainerContact" style="margin-top:0.25rem;"></div>
         <div class="cf-actions">
           <button type="submit" class="btn btn-primary" id="cfSubmitBtn">Send Message</button>
           <span class="cf-status" id="cfStatus"></span>
