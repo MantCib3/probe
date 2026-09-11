@@ -172,16 +172,21 @@ async function acquireTurnstileToken(surface, containerId) {
   for (let i = 0; i < 20 && !window.turnstile; i++) {
     await new Promise(r => setTimeout(r, 100));
   }
-  mountTurnstile(surface, containerId);
   const state = _ts[surface];
+  const container = document.getElementById(containerId);
+  container?.classList.add('turnstile-active');
+  if (state.rendered && window.turnstile && state.widgetId !== null) {
+    state.token = null;
+    try { window.turnstile.reset(state.widgetId); } catch (_) {}
+  } else {
+    mountTurnstile(surface, containerId);
+  }
   for (let i = 0; i < 150 && !state.token; i++) {
     await new Promise(r => setTimeout(r, 100));
   }
   const token = state.token || '';
   state.token = null;
-  if (window.turnstile && state.widgetId !== null) {
-    try { window.turnstile.reset(state.widgetId); } catch (_) {}
-  }
+  container?.classList.remove('turnstile-active');
   return token;
 }
 /* ── DOM refs ────────────────────────────────────────────────────────── */
@@ -2034,6 +2039,7 @@ function closeReportPopover() {
   if (!_reportPopover) return;
   _reportPopover.classList.remove('open');
   _reportPopover.querySelector('.rp-submit').disabled = false;
+  document.getElementById('turnstileContainerReport')?.classList.remove('turnstile-active');
   _ts.report.token = null;
   if (window.turnstile && _ts.report.widgetId !== null) {
     try { window.turnstile.reset(_ts.report.widgetId); } catch (_) {}

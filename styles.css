@@ -466,23 +466,22 @@ a.nav-logo {
   font-weight: 500;
 }
 
-/* Cloudflare Turnstile widget containers — each mounted lazily the first
-   time its form is used (Scan click / contact submit / report submit).
-   theme:'light' (set in script.js) keeps the widget itself on a white
-   card; these wrappers just center it and match the page background.
-   min-height MUST reserve real space (65px = Turnstile's standard widget
-   height) — at 0 the container collapses before the widget's iframe has
-   loaded, and Turnstile's own visibility/sizing checks then abort and
-   endlessly retry loading the challenge iframe (seen as repeated
-   net::ERR_ABORTED requests + postMessage origin-mismatch warnings,
-   with no iframe ever actually landing in the DOM). */
+/* Turnstile wrappers stay collapsed while idle. The active class reserves
+   the widget's standard height before render so Cloudflare's sizing checks
+   have real space without leaving an empty block on every form. */
 #turnstileContainer,
 #turnstileContainerContact,
 #turnstileContainerReport {
   display: flex;
   justify-content: center;
-  min-height: 65px;
+  min-height: 0;
   background: transparent;
+}
+
+#turnstileContainer.turnstile-active,
+#turnstileContainerContact.turnstile-active,
+#turnstileContainerReport.turnstile-active {
+  min-height: 65px;
 }
 
 /* Hero checklist card (about section) */
