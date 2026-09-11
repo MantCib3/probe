@@ -1169,6 +1169,11 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   }
   .pivot-box { padding: 0.5rem 0; }
   .pivot-box:not(:last-child) { border-right: none; border-bottom: 1px solid #ebebeb; }
+
+  /* Dork/search-engine results used to grow to fit all content, which
+     stretched the whole page on mobile once the columns stack — cap the
+     height and scroll internally instead. */
+  .dork-results { max-height: 60vh; overflow-y: auto; }
 }
 
 /* ── Manual Check Panel ──────────────────────────────────────────────── */
@@ -1694,7 +1699,11 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   .investigation-panels {
     grid-template-columns: 1fr;
   }
-  .results-grid { grid-template-columns: repeat(2, 1fr); }
+  /* Single column on mobile — at 2-up, .card-top-right (badges + pin +
+     report buttons) didn't have room to fit and was being clipped by
+     .result-card's overflow:hidden. Full-width cards give it room. */
+  .results-grid { grid-template-columns: 1fr; }
+  .card-top-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 0.3rem; }
   .name-filters { grid-template-columns: 1fr 1fr; }
   .platforms-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
   .scan-stats { gap: 0.8rem; }
