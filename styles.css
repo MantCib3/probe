@@ -837,14 +837,19 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 0.6rem;
 }
 
 .card-top-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.35rem;
-  flex-shrink: 0;
+  max-width: 100%;
+  margin-left: auto;
 }
 
 .sc-badge {
@@ -1511,7 +1516,7 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 .report-popover {
   display: none;
-  position: fixed;
+  position: absolute;
   z-index: 11000;
   width: 260px;
   background: var(--white);

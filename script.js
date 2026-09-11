@@ -1947,6 +1947,9 @@ function initEvents() {
 /* ── Report popover ────────────────────────────────────────────────── */
 let _reportPopover   = null;
 let _reportSiteName  = '';
+let _reportCard      = null;
+let _reportCloseTimer = null;
+let _reportAttempt   = 0;
 
 function initReportPopover() {
   _reportPopover = document.createElement('div');
@@ -1980,25 +1983,51 @@ function initReportPopover() {
 
 function openReportPopover(siteName, card) {
   if (!_reportPopover) initReportPopover();
+  clearTimeout(_reportCloseTimer);
+  _reportAttempt++;
   _reportSiteName = siteName;
+  _reportCard = card;
   _reportPopover.querySelectorAll('input[name="rp-status"]').forEach(r => { r.checked = false; });
   _reportPopover.querySelector('.rp-notes').value = '';
+  _reportPopover.querySelector('.rp-submit').disabled = false;
   const statusEl = _reportPopover.querySelector('.rp-status');
   statusEl.textContent = ''; statusEl.className = 'rp-status';
   _reportPopover.classList.add('open');
-  // Position near the card (prefer right side; flip left if too close to edge)
-  const rect = card.getBoundingClientRect();
-  const popW = 264;
-  let left = Math.round(rect.right + 8);
-  if (left + popW > window.innerWidth - 12) left = Math.round(rect.left - popW - 8);
-  left = Math.max(8, left);
-  const top  = Math.round(window.scrollY + Math.max(12, Math.min(rect.top, window.innerHeight - 300)));
-  _reportPopover.style.left = left + 'px';
-  _reportPopover.style.top  = top  + 'px';
+  positionReportPopover();
+}
+
+function positionReportPopover() {
+  if (!_reportPopover?.classList.contains('open') || !_reportCard?.isConnected) return;
+  const rect = _reportCard.getBoundingClientRect();
+  const popW = _reportPopover.offsetWidth;
+  const pageLeft = window.scrollX;
+  const pageTop = window.scrollY;
+  let left = pageLeft + rect.right + 8;
+  let top = pageTop + rect.top;
+
+  if (left + popW > pageLeft + window.innerWidth - 8) {
+    left = pageLeft + rect.left - popW - 8;
+  }
+  if (left < pageLeft + 8) {
+    left = Math.max(pageLeft + 8, pageLeft + (window.innerWidth - popW) / 2);
+    top = pageTop + rect.bottom + 8;
+  }
+
+  _reportPopover.style.left = Math.round(left) + 'px';
+  _reportPopover.style.top = Math.round(top) + 'px';
 }
 
 function closeReportPopover() {
-  if (_reportPopover) _reportPopover.classList.remove('open');
+  clearTimeout(_reportCloseTimer);
+  _reportAttempt++;
+  _reportCard = null;
+  if (!_reportPopover) return;
+  _reportPopover.classList.remove('open');
+  _reportPopover.querySelector('.rp-submit').disabled = false;
+  _ts.report.token = null;
+  if (window.turnstile && _ts.report.widgetId !== null) {
+    try { window.turnstile.reset(_ts.report.widgetId); } catch (_) {}
+  }
 }
 
 async function submitReport() {
@@ -2011,9 +2040,11 @@ async function submitReport() {
   }
   const notes = (_reportPopover.querySelector('.rp-notes').value || '').trim();
   const btn   = _reportPopover.querySelector('.rp-submit');
+  const attempt = ++_reportAttempt;
   btn.disabled = true;
   statusEl.textContent = ''; statusEl.className = 'rp-status';
   const cfToken = await acquireTurnstileToken('report', 'turnstileContainerReport');
+  if (attempt !== _reportAttempt || !_reportPopover.classList.contains('open')) return;
   if (!cfToken) {
     statusEl.textContent = 'Security check failed. Please try again.';
     statusEl.className   = 'rp-status error';
@@ -2027,10 +2058,13 @@ async function submitReport() {
       body   : JSON.stringify({ site: _reportSiteName, username: lastScannedTarget || '', correctStatus: selected.value, notes, cfToken }),
     });
     const data = await r.json();
+    if (attempt !== _reportAttempt || !_reportPopover.classList.contains('open')) return;
     if (data.ok) {
       statusEl.textContent = '✓ Report sent. Thank you!';
       statusEl.className   = 'rp-status success';
-      setTimeout(closeReportPopover, 1800);
+      _reportCloseTimer = setTimeout(() => {
+        if (attempt === _reportAttempt) closeReportPopover();
+      }, 1800);
     } else {
       statusEl.textContent = data.error || 'Error. Please try again.';
       statusEl.className   = 'rp-status error';
