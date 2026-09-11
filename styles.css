@@ -482,7 +482,7 @@ a.nav-logo {
   display: flex;
   justify-content: center;
   min-height: 65px;
-  background: var(--white);
+  background: transparent;
 }
 
 /* Hero checklist card (about section) */
