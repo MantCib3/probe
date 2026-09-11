@@ -2000,17 +2000,27 @@ function positionReportPopover() {
   if (!_reportPopover?.classList.contains('open') || !_reportCard?.isConnected) return;
   const rect = _reportCard.getBoundingClientRect();
   const popW = _reportPopover.offsetWidth;
+  const popH = _reportPopover.offsetHeight;
   const pageLeft = window.scrollX;
   const pageTop = window.scrollY;
   let left = pageLeft + rect.right + 8;
   let top = pageTop + rect.top;
 
+  if (window.innerWidth <= 600) {
+    left = Math.max(pageLeft + 8, pageLeft + (window.innerWidth - popW) / 2);
+    const below = pageTop + rect.bottom + 8;
+    const above = pageTop + rect.top - popH - 8;
+    if (below + popH <= pageTop + window.innerHeight - 8) top = below;
+    else if (above >= pageTop + 8) top = above;
+    else top = pageTop + 8;
+  } else {
   if (left + popW > pageLeft + window.innerWidth - 8) {
     left = pageLeft + rect.left - popW - 8;
   }
   if (left < pageLeft + 8) {
     left = Math.max(pageLeft + 8, pageLeft + (window.innerWidth - popW) / 2);
     top = pageTop + rect.bottom + 8;
+  }
   }
 
   _reportPopover.style.left = Math.round(left) + 'px';

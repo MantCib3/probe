@@ -1519,6 +1519,9 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   position: absolute;
   z-index: 11000;
   width: 260px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: 14px;
