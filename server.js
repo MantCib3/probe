@@ -480,7 +480,7 @@ const NOT_FOUND_TITLE_PATTERNS = [
 const BLOCKED_TITLE_PATTERNS = [
   'client challenge', 'just a moment', 'attention required',
   'ddos-guard', 'enable javascript and cookies', 'checking your browser',
-  'one more step', 'please wait', 'security check',
+  'one more step', 'please wait', 'security check', 'sina visitor system',
 ];
 
 // Body patterns that indicate JS-challenge / bot-protection pages (no title available)
@@ -1614,9 +1614,45 @@ function isSafeUrl(u) {
 
 /* ── Single-site probe (follows redirects up to MAX_REDIRECT_HOPS) ─────── */
 const MAX_REDIRECT_HOPS = 3;
+const MAX_TRANSIENT_RETRIES = 1;
+const HOST_REQUEST_INTERVAL_MS = 250;
+const hostNextRequestAt = new Map();
 
-function makeReqOptions(parsed, overrideUA) {
+function scheduleHostRequest(hostname, task) {
+  const now = Date.now();
+  const runAt = Math.max(now, hostNextRequestAt.get(hostname) || 0);
+  hostNextRequestAt.set(hostname, runAt + HOST_REQUEST_INTERVAL_MS);
+  if (runAt === now) task();
+  else setTimeout(task, runAt - now);
+}
+
+function retryDelayMs(headers, attempt) {
+  const retryAfter = headers['retry-after'];
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    const retryAt = Date.parse(retryAfter);
+    const delay = Number.isFinite(seconds) ? seconds * 1000 : retryAt - Date.now();
+    if (Number.isFinite(delay) && delay >= 0) return Math.min(delay, 5000);
+  }
+  return 750 * (attempt + 1);
+}
+
+function updateCookieJar(cookieJar, setCookieHeaders) {
+  for (const header of setCookieHeaders || []) {
+    const pair = String(header).split(';', 1)[0];
+    const separator = pair.indexOf('=');
+    if (separator > 0) cookieJar.set(pair.slice(0, separator).trim(), pair.slice(separator + 1).trim());
+  }
+}
+
+function cookieJarFor(cookieJars, hostname) {
+  if (!cookieJars.has(hostname)) cookieJars.set(hostname, new Map());
+  return cookieJars.get(hostname);
+}
+
+function makeReqOptions(parsed, overrideUA, cookieJars) {
   const ua = overrideUA || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+  const cookies = [...cookieJarFor(cookieJars, parsed.hostname)].map(([name, value]) => `${name}=${value}`).join('; ');
   return {
     hostname: parsed.hostname,
     port    : parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
@@ -1626,22 +1662,24 @@ function makeReqOptions(parsed, overrideUA) {
       'User-Agent'               : ua,
       'Accept'                   : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
       'Accept-Language'          : 'en-US,en;q=0.9',
+      'Referer'                  : `${parsed.protocol}//${parsed.host}/`,
       'Cache-Control'            : 'max-age=0',
       'Connection'               : 'keep-alive',
       'Upgrade-Insecure-Requests': '1',
       'Sec-Fetch-Dest'           : 'document',
       'Sec-Fetch-Mode'           : 'navigate',
-      'Sec-Fetch-Site'           : 'none',
+      'Sec-Fetch-Site'           : 'same-origin',
       'Sec-Fetch-User'           : '?1',
       'sec-ch-ua'                : '"Chromium";v="126", "Google Chrome";v="126", "Not-A.Brand";v="8"',
       'sec-ch-ua-mobile'         : '?0',
       'sec-ch-ua-platform'       : '"Windows"',
+      ...(cookies ? { 'Cookie': cookies } : {}),
     },
     timeout: TIMEOUT_MS,
   };
 }
 
-function doRequest(site, username, origUrl, url, hops, finish) {
+function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cookieJars = new Map()) {
   let parsed;
   try { parsed = new URL(url); }
   catch (_) { return finish({ name: site.name, category: site.category, url: origUrl, status: 'error', statusCode: 0 }); }
@@ -1656,9 +1694,19 @@ function doRequest(site, username, origUrl, url, hops, finish) {
     ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
     : null;
 
-  const req = mod.request(makeReqOptions(parsed, crawlerUA), (res) => {
+  const startRequest = () => {
+  const req = mod.request(makeReqOptions(parsed, crawlerUA, cookieJars), (res) => {
     const sc      = res.statusCode;
     const headers = res.headers;
+    updateCookieJar(cookieJarFor(cookieJars, parsed.hostname), headers['set-cookie']);
+
+    if ((sc === 429 || sc === 503) && attempt < MAX_TRANSIENT_RETRIES) {
+      res.resume();
+      return setTimeout(
+        () => doRequest(site, username, origUrl, url, hops, finish, attempt + 1, cookieJars),
+        retryDelayMs(headers, attempt)
+      );
+    }
 
     // ── Handle redirects ───────────────────────────────────────────────
     if (sc >= 301 && sc <= 308) {
@@ -1707,7 +1755,7 @@ function doRequest(site, username, origUrl, url, hops, finish) {
 
       // Follow redirect if within hop limit
       if (hops < MAX_REDIRECT_HOPS) {
-        return doRequest(site, username, origUrl, absLoc, hops + 1, finish);
+        return doRequest(site, username, origUrl, absLoc, hops + 1, finish, attempt, cookieJars);
       }
       // Gave up following — treat as found
       return finish({ ...base, status: 'found', statusCode: sc });
@@ -1736,6 +1784,9 @@ function doRequest(site, username, origUrl, url, hops, finish) {
   });
 
   req.end();
+  };
+
+  scheduleHostRequest(parsed.hostname, startRequest);
 }
 
 /* ── Stealth browser pool ─────────────────────────────────────────────── */
