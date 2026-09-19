@@ -670,6 +670,7 @@
     "name": "Vimeo",
     "url": "https://vimeo.com/{}",
     "urlMain": "https://vimeo.com",
+    "category": "content",
     "checkMethod": "status_code",
     "apiUrl": "https://vimeo.com/api/oembed.json?url=https://vimeo.com/{}",
     "notFoundStatus": 404,
@@ -680,6 +681,7 @@
     "name": "Dailymotion",
     "url": "https://www.dailymotion.com/{}",
     "urlMain": "https://www.dailymotion.com",
+    "category": "content",
     "checkMethod": "status_code",
     "apiUrl": "https://api.dailymotion.com/user/{}"
   },
@@ -1200,14 +1202,12 @@
   },
   {
     "name": "AniList",
-    "url": "https://graphql.anilist.co",
-    "urlMain": "https://graphql.anilist.co",
+    "url": "https://anilist.co/user/{}",
+    "urlMain": "https://anilist.co",
     "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "Not Found",
-    "cors": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "caveat": "Manual check only: AniList lookup requires a GraphQL POST request, which the current scanner does not issue"
   },
   {
     "name": "MyAnimeList",
@@ -2012,12 +2012,12 @@
   },
   {
     "name": "HackerOne",
-    "url": "https://hackerone.com/graphql",
+    "url": "https://hackerone.com/{}",
     "urlMain": "https://hackerone.com",
     "category": "developer",
-    "checkMethod": "message",
-    "errorMsg": "\"type\":\"NOT_FOUND\"",
-    "expectedStatus": 200
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "caveat": "Manual check only: the previous static GraphQL URL never included the username"
   },
   {
     "name": "Hackernoon",
