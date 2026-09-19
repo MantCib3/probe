@@ -26,10 +26,8 @@
     "urlMain": "https://www.facebook.com",
     "category": "social",
     "checkMethod": "message",
-    "positiveMsg": "__isProfile",
-    "errorMsg": "<title>Facebook</title>",
-    "cfProxy": true,
-    "expectedStatus": 200
+    "undetectable": true,
+    "caveat": "Public profile responses are indistinguishable from login/error shells without an authenticated browser session."
   },
   {
     "name": "TikTok",
@@ -259,8 +257,8 @@
     "urlMain": "https://replit.com",
     "category": "developer",
     "checkMethod": "status_code",
-    "cfProxy": true,
-    "expectedStatus": 200,
+    "authRedirectMeansFound": true,
+    "expectedStatus": 302,
     "notFoundStatus": 404
   },
   {
@@ -311,7 +309,6 @@
     "urlMain": "https://hashnode.com",
     "category": "developer",
     "checkMethod": "message",
-    "positiveMsg": "\"id\":",
     "errorMsg": "\"user\":null",
     "cfProxy": true,
     "expectedStatus": 200
@@ -591,7 +588,6 @@
     "urlMain": "https://www.deviantart.com",
     "category": "content",
     "checkMethod": "status_code",
-    "apiUrl": "https://backend.deviantart.com/oembed?url=https://www.deviantart.com/{}",
     "notFoundStatus": 404,
     "skipBodyCheck": true,
     "cors": true
@@ -672,7 +668,6 @@
     "urlMain": "https://vimeo.com",
     "category": "content",
     "checkMethod": "status_code",
-    "apiUrl": "https://vimeo.com/api/oembed.json?url=https://vimeo.com/{}",
     "notFoundStatus": 404,
     "skipBodyCheck": true,
     "cors": true
@@ -704,10 +699,8 @@
     "urlMain": "https://open.spotify.com",
     "category": "content",
     "checkMethod": "message",
-    "positiveMsg": "content=\"profile\"",
-    "errorMsg": "Page not found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "undetectable": true,
+    "caveat": "Existing and absent user URLs return the same client-rendered web-player shell to server-side requests."
   },
   {
     "name": "Odysee",
@@ -1029,7 +1022,7 @@
     "urlMain": "https://t.me",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "subscribers",
+    "positiveMsg": "tgme_page_title",
     "expectedStatus": 200
   },
   {
@@ -1507,14 +1500,12 @@
   },
   {
     "name": "FACEIT",
-    "url": "https://www.faceit.com/api/users/v1/nicknames/{}",
+    "url": "https://www.faceit.com/en/players/{}",
     "urlMain": "https://www.faceit.com",
     "category": "gaming",
-    "checkMethod": "message",
-    "errorMsg": "\"message\":\"user not found\"",
-    "cors": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "caveat": "The former nickname endpoint returns 404 for existing users and public profiles are challenge-protected."
   },
   {
     "name": "Fandom",
@@ -1547,7 +1538,7 @@
     "urlMain": "https://gamejolt.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "null,",
+    "positiveMsg": "{\"payload\":{\"user\":{\"id\":",
     "cors": true,
     "expectedStatus": 200,
     "notFoundStatus": 404
@@ -1875,7 +1866,6 @@
     "urlMain": "https://www.codechef.com",
     "category": "developer",
     "checkMethod": "message",
-    "positiveMsg": "class=\"user-profile-container\"",
     "expectedStatus": 200,
     "notFoundStatus": 302
   },
@@ -2791,7 +2781,6 @@
     "urlMain": "https://castingcall.club",
     "category": "professional",
     "checkMethod": "message",
-    "positiveMsg": "class=\"text-sm text-gray-500\">Joined",
     "expectedStatus": 200,
     "notFoundStatus": 302
   },
@@ -5537,7 +5526,7 @@
     "urlMain": "https://patientslikeme.com",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "s profile | PatientsLikeMe</title>",
+    "skipBodyCheck": true,
     "expectedStatus": 200,
     "notFoundStatus": 302
   },
@@ -5710,13 +5699,12 @@
   },
   {
     "name": "Polarsteps",
-    "url": "https://api.polarsteps.com/users/byusername/{}",
-    "urlMain": "https://api.polarsteps.com",
+    "url": "https://www.polarsteps.com/{}",
+    "urlMain": "https://www.polarsteps.com",
     "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "<title>404 Not Found</title>",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "checkMethod": "status_code",
+    "undetectable": true,
+    "caveat": "The former username API returns 404 for existing users and public pages use an indistinguishable application shell."
   },
   {
     "name": "Polchat.pl",
@@ -5824,13 +5812,12 @@
   },
   {
     "name": "Pronouns.Page",
-    "url": "https://pronouns.page/api/profile/get/{}?version=2",
+    "url": "https://pronouns.page/@{}",
     "urlMain": "https://pronouns.page",
     "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "\"profiles\": {}",
+    "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 304
+    "notFoundStatus": 404
   },
   {
     "name": "Pronouny",

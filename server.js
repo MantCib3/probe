@@ -481,6 +481,7 @@ const BLOCKED_TITLE_PATTERNS = [
   'client challenge', 'just a moment', 'attention required',
   'ddos-guard', 'enable javascript and cookies', 'checking your browser',
   'one more step', 'please wait', 'security check', 'sina visitor system',
+  "making sure you're not a bot", 'making sure you&#39;re not a bot',
 ];
 
 // Body patterns that indicate JS-challenge / bot-protection pages (no title available)
@@ -652,6 +653,12 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
 
   if (sc === 200) {
     const lbody = body.toLowerCase();
+    const tm = body.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    const title = tm ? tm[1].replace(/&#039;/g, "'").replace(/&amp;/g, '&').toLowerCase().trim() : '';
+
+    if (BLOCKED_TITLE_PATTERNS.some(p => title.includes(p))) {
+      return makeClassifiedResult(base, 'blocked', ['title_blocked_pattern'], 0.9);
+    }
 
     if (site.positiveMsg) {
       const found = body.includes(site.positiveMsg);
@@ -660,13 +667,6 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
 
     if (site.errorMsg && body.includes(site.errorMsg)) {
       return makeClassifiedResult(base, 'not_found', ['site_error_message'], 0.92);
-    }
-
-    const tm = body.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-    const title = tm ? tm[1].replace(/&#039;/g, "'").replace(/&amp;/g, '&').toLowerCase().trim() : '';
-
-    if (BLOCKED_TITLE_PATTERNS.some(p => title.includes(p))) {
-      return makeClassifiedResult(base, 'blocked', ['title_blocked_pattern'], 0.9);
     }
 
     if (NOT_FOUND_TITLE_PATTERNS.some(p => title.includes(p))) {
@@ -1732,7 +1732,12 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
 
       // Auth/login redirect → not_found
       if (AUTH_REDIRECT_PATTERNS.some(p => loc.includes(p))) {
-        return finish({ ...base, status: 'not_found', statusCode: sc });
+        return finish({
+          ...base,
+          status: site.authRedirectMeansFound ? 'found' : 'not_found',
+          statusCode: sc,
+          reasonCodes: [site.authRedirectMeansFound ? 'site_auth_redirect_found' : 'redirect_auth_login'],
+        });
       }
       // Bot-protection redirect → unknown (can't determine)
       if (loc.includes('.within.website') || loc.includes('/_/') ||
