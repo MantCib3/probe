@@ -1875,7 +1875,7 @@ function probe(site, username) {
 
   return new Promise((resolve) => {
     // Sites with a calibrated internal API endpoint — hit that directly
-    const targetTemplate = site.apiUrl || site.url;
+    const targetTemplate = site.apiUrl || site.checkUrl || site.url;
     let url;
     try {
       url = targetTemplate.replace(/\{\}/g, encodeURIComponent(username));
@@ -2276,6 +2276,37 @@ const server = http.createServer((req, res) => {
     return res.end('Method Not Allowed');
   }
 
+  /* ── Local accuracy-lab probe ───────────────────────────────────────
+   * Executes one source through the exact production probe function.
+   * It is deliberately unavailable on Render/production and the server
+   * binds to loopback in development, so this cannot become a public
+   * arbitrary-probe or SSRF surface. */
+  if (pathname === '/api/lab-probe') {
+    const remote = req.socket.remoteAddress || '';
+    const isLoopback = remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1';
+    if (IS_PRODUCTION || !isLoopback) {
+      res.writeHead(404);
+      return res.end('Not found');
+    }
+    const siteName = (urlObj.searchParams.get('site') || '').trim();
+    const username = (urlObj.searchParams.get('username') || '').trim();
+    const site = SITES.find(candidate => candidate.name === siteName);
+    if (!site || !isValidUsername(username)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid site or username.' }));
+    }
+    probe(site, username)
+      .then(result => {
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: true, result }));
+      })
+      .catch(error => {
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: false, error: error.message }));
+      });
+    return;
+  }
+
   /* ── SSE endpoint ───────────────────────────────────────────────────── */
   if (pathname === '/api/check') {
     const username = (urlObj.searchParams.get('username') || '').trim();
@@ -2350,7 +2381,7 @@ const server = http.createServer((req, res) => {
             if (site.checkMethod)  extra.checkMethod = site.checkMethod;
             if (site.errorMsg)     extra.errorMsg    = site.errorMsg;
             if (site.positiveMsg)  extra.positiveMsg = site.positiveMsg;
-            const checkUrl = (site.apiUrl || site.url).replace(/\{\}/g, encodeURIComponent(username));
+            const checkUrl = (site.apiUrl || site.checkUrl || site.url).replace(/\{\}/g, encodeURIComponent(username));
             extra.checkUrl = checkUrl;
             if (!cancelled) send({ type: 'result', ...normalized, done, total, ...extra });
             tick();

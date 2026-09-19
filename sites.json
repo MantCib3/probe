@@ -1984,6 +1984,7 @@
     "urlMain": "https://api.scratch.mit.edu",
     "category": "developer",
     "checkMethod": "message",
+    "positiveMsg": "\"msg\":\"username exists\"",
     "errorMsg": "\"msg\":\"valid username\"",
     "cors": true,
     "expectedStatus": 200
@@ -2718,7 +2719,7 @@
     "urlMain": "https://brickset.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "{name}</h1>",
+    "errorMsg": "<title>{name} | Brickset</title>",
     "expectedStatus": 200
   },
   {
@@ -3930,6 +3931,7 @@
     "urlMain": "https://greasyfork.org",
     "category": "developer",
     "checkMethod": "message",
+    "positiveMsg": "class=\"user-list\"",
     "errorMsg": "<p>No users!</p>",
     "expectedStatus": 200
   },
