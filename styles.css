@@ -215,6 +215,7 @@ a.nav-logo {
 .hero .search-box {
   width: 100%;
   max-width: 520px;
+  margin-inline: auto;
 }
 
 .hero .search-hint,
@@ -222,6 +223,7 @@ a.nav-logo {
 .hero .search-error {
   width: 100%;
   max-width: 520px;
+  margin-inline: auto;
   text-align: left;
 }
 
