@@ -402,10 +402,7 @@ function fetchText(url, timeoutMs = 20000, maxRedirects = 5, headers = null) {
     // it challenges a plain/no UA request.
     const reqHeaders = headers || { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' };
 
-    const req = transport.get(parsed, {
-      headers: reqHeaders,
-      lookup: publicLookup,
-    }, (res) => {
+    const req = transport.get(parsed, { headers: reqHeaders }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         if (maxRedirects <= 0) {
           finish(reject, new Error('too many redirects'));
