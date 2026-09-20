@@ -2,30 +2,37 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://usernameprobe.com/</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://usernameprobe.com/privacy.html</loc>
+    <loc>https://usernameprobe.com/privacy</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://usernameprobe.com/roadmap.html</loc>
+    <loc>https://usernameprobe.com/roadmap</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://usernameprobe.com/blog/</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://usernameprobe.com/blog/measuring-username-search-accuracy.html</loc>
+    <loc>https://usernameprobe.com/blog/measuring-username-search-accuracy</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://usernameprobe.com/blog/why-probe-abstains.html</loc>
+    <loc>https://usernameprobe.com/blog/why-probe-abstains</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://usernameprobe.com/blog/maintaining-a-source-catalog.html</loc>
+    <loc>https://usernameprobe.com/blog/maintaining-a-source-catalog</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
   </url>
 </urlset>

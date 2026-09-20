@@ -24,9 +24,71 @@
     Cache-Control = "public, max-age=86400"
 
 [[headers]]
-  for = "/privacy.html"
+  for = "/privacy"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Preserve legacy links while presenting one extensionless canonical URL.
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/roadmap.html"
+  to = "/roadmap"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/privacy.html"
+  to = "/privacy"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/measuring-username-search-accuracy.html"
+  to = "/blog/measuring-username-search-accuracy"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/why-probe-abstains.html"
+  to = "/blog/why-probe-abstains"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/maintaining-a-source-catalog.html"
+  to = "/blog/maintaining-a-source-catalog"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/roadmap"
+  to = "/roadmap.html"
+  status = 200
+
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/measuring-username-search-accuracy"
+  to = "/blog/measuring-username-search-accuracy.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/why-probe-abstains"
+  to = "/blog/why-probe-abstains.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/maintaining-a-source-catalog"
+  to = "/blog/maintaining-a-source-catalog.html"
+  status = 200
 
 # Security headers for all routes
 [[headers]]

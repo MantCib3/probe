@@ -2328,12 +2328,25 @@ function setSecurityHeaders(res) {
 }
 
 /* ── Static file helper ───────────────────────────────────────────────── */
-// Small in-memory cache for immutable-ish static assets (html/css/js) to
+// Small in-memory cache for versioned static assets (css/js) to
 // avoid a synchronous disk read on every single request. Data files that
 // may be regenerated at runtime (sites.json, name-sites.json) are
 // intentionally excluded so edits are picked up without a restart.
 const _staticCache = new Map(); // filePath → Buffer
-const CACHEABLE_EXT = new Set(['.html', '.css', '.js']);
+const CACHEABLE_EXT = new Set(['.css', '.js']);
+
+const CLEAN_PAGE_ROUTES = new Map([
+  ['/roadmap', 'roadmap.html'],
+  ['/privacy', 'privacy.html'],
+  ['/blog/measuring-username-search-accuracy', 'blog/measuring-username-search-accuracy.html'],
+  ['/blog/why-probe-abstains', 'blog/why-probe-abstains.html'],
+  ['/blog/maintaining-a-source-catalog', 'blog/maintaining-a-source-catalog.html'],
+]);
+
+const LEGACY_PAGE_REDIRECTS = new Map([
+  ['/index.html', '/'],
+  ...Array.from(CLEAN_PAGE_ROUTES, ([cleanPath, filePath]) => [`/${filePath}`, cleanPath]),
+]);
 
 function serveStatic(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -2344,8 +2357,7 @@ function serveStatic(res, filePath) {
       data = fs.readFileSync(filePath);
       if (CACHEABLE_EXT.has(ext)) _staticCache.set(filePath, data);
     }
-    const fileName = path.basename(filePath);
-    const cacheControl = fileName === 'index.html' || fileName === 'privacy.html'
+    const cacheControl = ext === '.html'
       ? 'no-cache, no-store, must-revalidate'
       : CACHEABLE_EXT.has(ext)
         ? 'public, max-age=86400'
@@ -2383,6 +2395,12 @@ const server = http.createServer((req, res) => {
 
   const pathname = urlObj.pathname;
 
+  const canonicalPath = LEGACY_PAGE_REDIRECTS.get(pathname);
+  if (canonicalPath) {
+    res.writeHead(301, { Location: `${canonicalPath}${urlObj.search}` });
+    return res.end();
+  }
+
   // Route POST requests to dedicated handlers
   if (req.method === 'POST') {
     if (pathname === '/api/contact' || pathname === '/api/report') {
@@ -2403,7 +2421,9 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'HEAD') {
-    const headPath = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '');
+    const headPath = pathname === '/'
+      ? 'index.html'
+      : CLEAN_PAGE_ROUTES.get(pathname) || pathname.replace(/^\//, '');
     const safeHeadPath = path.normalize(headPath).replace(/^(\.\.[\\/])+/, '');
     const fullHeadPath = path.join(__dirname, safeHeadPath);
     if (!fullHeadPath.startsWith(__dirname + path.sep) || !fs.existsSync(fullHeadPath)) {
@@ -2411,7 +2431,15 @@ const server = http.createServer((req, res) => {
       return res.end();
     }
     const ext = path.extname(fullHeadPath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    const cacheControl = ext === '.html'
+      ? 'no-cache, no-store, must-revalidate'
+      : CACHEABLE_EXT.has(ext)
+        ? 'public, max-age=86400'
+        : 'public, max-age=3600';
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Cache-Control': cacheControl,
+    });
     return res.end();
   }
 
@@ -3322,8 +3350,10 @@ const server = http.createServer((req, res) => {
 
   /* ── Static files ───────────────────────────────────────────────────── */
   let filePath;
-  if (pathname === '/' || pathname === '/index.html') {
+  if (pathname === '/') {
     filePath = path.join(__dirname, 'index.html');
+  } else if (CLEAN_PAGE_ROUTES.has(pathname)) {
+    filePath = path.join(__dirname, CLEAN_PAGE_ROUTES.get(pathname));
   } else {
     // Sanitize – prevent path traversal
     let decodedPath;
