@@ -1967,6 +1967,12 @@ function initEvents() {
     navMenu.classList.toggle('open');
     hamburger.setAttribute('aria-expanded', String(navMenu.classList.contains('open')));
   });
+  navMenu.addEventListener('click', (event) => {
+    if (!event.target.closest('a')) return;
+    hamburger.classList.remove('open');
+    navMenu.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+  });
   hamburger.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') hamburger.click();
   });
