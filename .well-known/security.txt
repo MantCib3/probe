@@ -1,0 +1,4 @@
+Contact: https://usernameprobe.com/#contact
+Expires: 2027-09-19T00:00:00.000Z
+Canonical: https://usernameprobe.com/.well-known/security.txt
+Preferred-Languages: en

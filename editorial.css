@@ -1,0 +1,191 @@
+/* Shared editorial pages: blog, articles, and roadmap. */
+.editorial-body {
+  background:
+    linear-gradient(rgba(0,0,0,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.035) 1px, transparent 1px),
+    #f7f7f4;
+  background-size: 32px 32px;
+}
+
+.editorial-body::before { display: none; }
+.editorial-body section { opacity: 1; }
+
+.editorial-nav {
+  border-bottom: 1px solid var(--border);
+  background: rgba(247,247,244,0.94);
+}
+
+.editorial-nav .nav-container { min-height: 68px; }
+.editorial-nav-back {
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.editorial-main {
+  width: min(1120px, calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 5.5rem 0 7rem;
+}
+
+.editorial-kicker {
+  color: #737373;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.editorial-title {
+  max-width: 780px;
+  margin: 0.65rem 0 1rem;
+  color: #0a0a0a;
+  font-family: 'Bebas Neue', 'Outfit', sans-serif;
+  font-size: clamp(3.2rem, 8vw, 6.8rem);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 0.92;
+}
+
+.editorial-deck {
+  max-width: 680px;
+  color: #525252;
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+
+.blog-lead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 4rem;
+  align-items: end;
+  margin-bottom: 5rem;
+}
+
+.blog-signal {
+  border-top: 2px solid #111;
+  padding-top: 1rem;
+}
+
+.blog-signal strong {
+  display: block;
+  color: #111;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 4.2rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.blog-signal span { color: #666; font-size: 0.78rem; }
+
+.post-list { border-top: 1px solid #cfcfca; }
+.post-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 28px;
+  gap: 2rem;
+  align-items: start;
+  padding: 2rem 0;
+  border-bottom: 1px solid #cfcfca;
+  color: inherit;
+  text-decoration: none;
+  transition: padding 180ms ease, color 180ms ease;
+}
+.post-row:hover, .post-row:focus-visible { padding-left: 0.75rem; color: #000; }
+.post-date { color: #777; font-size: 0.78rem; }
+.post-row h2 { margin-bottom: 0.4rem; font-size: 1.55rem; letter-spacing: 0; }
+.post-row p { max-width: 650px; color: #666; }
+.post-arrow { font-size: 1.25rem; }
+
+.article-main { width: min(760px, calc(100% - 3rem)); }
+.article-header { margin-bottom: 3.5rem; }
+.article-title { font-size: clamp(3rem, 7vw, 5.6rem); }
+.article-meta {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 1.3rem;
+  color: #777;
+  font-size: 0.78rem;
+}
+.article-copy { color: #282828; font-size: 1.03rem; line-height: 1.85; }
+.article-copy h2 { margin: 3rem 0 0.8rem; font-size: 1.65rem; letter-spacing: 0; }
+.article-copy p, .article-copy ul { margin-bottom: 1.25rem; }
+.article-copy ul { padding-left: 1.25rem; }
+.article-copy li { margin-bottom: 0.55rem; }
+.article-copy a { color: #111; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.article-metric {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 2.5rem 0;
+  border-top: 2px solid #111;
+  border-bottom: 1px solid #bbb;
+}
+.article-metric div { padding: 1.2rem 1rem 1.2rem 0; }
+.article-metric strong { display: block; font-size: 1.75rem; }
+.article-metric span { color: #707070; font-size: 0.72rem; }
+
+.roadmap-main { width: min(1080px, calc(100% - 3rem)); }
+.roadmap-header { margin-bottom: 4rem; }
+.roadmap-legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 1.5rem; }
+.legend-item { display: inline-flex; align-items: center; gap: 0.45rem; color: #666; font-size: 0.75rem; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; }
+.legend-dot.shipped { background: #16834b; }
+.legend-dot.progress { background: #d68b00; }
+.legend-dot.next { background: #111; }
+
+.roadmap-track { position: relative; padding: 1rem 0 2rem; }
+.roadmap-line {
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 150px;
+  height: 100%;
+  overflow: visible;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.roadmap-line path { fill: none; stroke: #b7b7b0; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 5 10; }
+.roadmap-list { display: grid; gap: 1.5rem; position: relative; }
+.roadmap-stop { width: calc(50% - 65px); }
+.roadmap-stop:nth-child(even) { margin-left: calc(50% + 65px); }
+.roadmap-stop:nth-child(odd) { text-align: right; }
+.milestone {
+  width: 100%;
+  border: 0;
+  border-top: 2px solid #111;
+  background: rgba(247,247,244,0.9);
+  color: #111;
+  cursor: pointer;
+  font: inherit;
+  padding: 1.15rem 0;
+  text-align: inherit;
+}
+.milestone-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.roadmap-stop:nth-child(odd) .milestone-top { flex-direction: row-reverse; }
+.milestone-state { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.milestone-state.shipped { color: #16834b; }
+.milestone-state.progress { color: #9a6500; }
+.milestone-title { display: block; margin-top: 0.35rem; font-size: 1.25rem; font-weight: 700; }
+.milestone-toggle { color: #777; font-size: 1.2rem; transition: transform 180ms ease; }
+.milestone[aria-expanded="true"] .milestone-toggle { transform: rotate(45deg); }
+.milestone-detail { max-height: 0; overflow: hidden; color: #5f5f5f; font-size: 0.86rem; line-height: 1.65; transition: max-height 260ms ease, padding 260ms ease; }
+.milestone-detail.open { max-height: 260px; padding: 0 0 1.1rem; }
+.roadmap-stop:nth-child(odd) .milestone-detail { margin-left: auto; }
+
+@media (max-width: 720px) {
+  .editorial-main { width: min(100% - 2rem, 680px); padding-top: 3.5rem; }
+  .blog-lead { grid-template-columns: 1fr; gap: 2rem; margin-bottom: 3rem; }
+  .post-row { grid-template-columns: 1fr 24px; gap: 0.65rem; }
+  .post-date { grid-column: 1 / -1; }
+  .article-metric { grid-template-columns: 1fr; }
+  .article-metric div + div { border-top: 1px solid #ddd; }
+  .roadmap-line { left: 14px; transform: none; width: 70px; }
+  .roadmap-stop,
+  .roadmap-stop:nth-child(even) { width: calc(100% - 55px); margin-left: 55px; text-align: left; }
+  .roadmap-stop:nth-child(odd) .milestone-top { flex-direction: row; }
+  .footer-links { width: 100%; margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-row, .milestone-toggle, .milestone-detail { transition: none; }
+}

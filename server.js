@@ -3,6 +3,7 @@
 const http  = require('http');
 const https = require('https');
 const dns = require('dns').promises;
+const net = require('net');
 const fs    = require('fs');
 const path  = require('path');
 const crypto = require('crypto');
@@ -50,6 +51,13 @@ const CF_FRONTED     = process.env.CF_FRONTED === '1';
 /* ── Rate limiting & Turnstile ───────────────────────────────────────── */
 const RATE_LIMIT_MAX    = 10;                  // free scans per window per IP
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000;     // 1 hour in ms
+const AUX_RATE_LIMIT_MAX = 200;
+const AUX_RATE_LIMIT_WINDOW = 60 * 60 * 1000;
+const AUX_RATE_LIMITED_PATHS = new Set([
+  '/api/quick-check', '/api/email-check', '/api/phone-check',
+  '/api/domain-check', '/api/dork-search', '/api/link-preview',
+  '/api/name-check',
+]);
 // .trim() matters: a stray trailing newline/space from copy-pasting into
 // Render's Environment tab produces a secret that LOOKS right but makes
 // every siteverify call fail with 'invalid-input-secret' silently.
@@ -90,6 +98,7 @@ function boundedSet(map, key, value) {
 }
 
 const _scanRates = new Map(); // ip → { count: number, resetAt: timestamp }
+const _auxRates = new Map(); // ip → { count: number, resetAt: timestamp }
 
 function checkRateLimit(ip) {
   const now = Date.now();
@@ -104,6 +113,17 @@ function checkRateLimit(ip) {
 function consumeRateLimit(ip) {
   const entry = _scanRates.get(ip);
   if (entry) entry.count++;
+}
+
+function consumeAuxRateLimit(ip) {
+  const now = Date.now();
+  let entry = _auxRates.get(ip);
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + AUX_RATE_LIMIT_WINDOW };
+    boundedSet(_auxRates, ip, entry);
+  }
+  entry.count++;
+  return entry.count <= AUX_RATE_LIMIT_MAX;
 }
 
 const _submitRates = new Map(); // ip → { count, resetAt }
@@ -129,6 +149,7 @@ function consumeSubmitRateLimit(ip) {
 setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of _scanRates)   if (now > entry.resetAt) _scanRates.delete(ip);
+  for (const [ip, entry] of _auxRates)    if (now > entry.resetAt) _auxRates.delete(ip);
   for (const [ip, entry] of _submitRates) if (now > entry.resetAt) _submitRates.delete(ip);
 }, 10 * 60 * 1000).unref();
 
@@ -383,6 +404,7 @@ function fetchText(url, timeoutMs = 20000, maxRedirects = 5, headers = null) {
 
     const req = transport.get(parsed, {
       headers: reqHeaders,
+      lookup: publicLookup,
     }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         if (maxRedirects <= 0) {
@@ -431,6 +453,7 @@ function fetchStatusV(url, timeoutMs = 10000, maxRedirects = 4) {
 
     const req = transport.get(parsed, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+      lookup: publicLookup,
     }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && maxRedirects > 0) {
         res.resume(); // discard body, follow redirect
@@ -450,14 +473,49 @@ function fetchStatusV(url, timeoutMs = 10000, maxRedirects = 4) {
   });
 }
 
+const BLOCKED_ADDRESSES = new net.BlockList();
+[
+  ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10],
+  ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12],
+  ['192.0.0.0', 24], ['192.0.2.0', 24], ['192.168.0.0', 16],
+  ['198.18.0.0', 15], ['198.51.100.0', 24], ['203.0.113.0', 24],
+  ['224.0.0.0', 4], ['240.0.0.0', 4],
+].forEach(([address, prefix]) => BLOCKED_ADDRESSES.addSubnet(address, prefix, 'ipv4'));
+[
+  ['::', 96], ['::ffff:0:0', 96], ['100::', 64], ['2001:db8::', 32],
+  ['fc00::', 7], ['fe80::', 10], ['ff00::', 8],
+].forEach(([address, prefix]) => BLOCKED_ADDRESSES.addSubnet(address, prefix, 'ipv6'));
+
+function isPrivateAddress(address) {
+  const family = net.isIP(address);
+  if (!family) return true;
+  return BLOCKED_ADDRESSES.check(address, family === 4 ? 'ipv4' : 'ipv6');
+}
+
+function publicLookup(hostname, options, callback) {
+  const opts = typeof options === 'number' ? { family: options } : (options || {});
+  dns.lookup(hostname, { all: true, verbatim: true })
+    .then(addresses => {
+      if (!addresses.length || addresses.some(item => isPrivateAddress(item.address))) {
+        throw new Error('Private or non-routable address blocked');
+      }
+      const requestedFamily = Number(opts.family) || 0;
+      const eligible = requestedFamily ? addresses.filter(item => item.family === requestedFamily) : addresses;
+      if (!eligible.length) throw new Error('No address for requested family');
+      if (opts.all) return callback(null, eligible);
+      callback(null, eligible[0].address, eligible[0].family);
+    })
+    .catch(error => callback(error));
+}
+
 // SSRF guard shared by proxy endpoints that accept an arbitrary target URL.
 function isPrivateHost(hostname) {
   const h = String(hostname || '').toLowerCase();
+  const family = net.isIP(h);
   return (
-    h === 'localhost' || h === '127.0.0.1' || h === '::1' ||
-    /^10\./.test(h) || /^192\.168\./.test(h) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-    /^169\.254\./.test(h) || h.endsWith('.local')
+    (family > 0 && isPrivateAddress(h)) ||
+    h === 'localhost' || h.endsWith('.localhost') ||
+    h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.home.arpa')
   );
 }
 
@@ -721,6 +779,8 @@ const MIME = {
   '.css' : 'text/css; charset=utf-8',
   '.js'  : 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.xml' : 'application/xml; charset=utf-8',
+  '.txt' : 'text/plain; charset=utf-8',
   '.ico' : 'image/x-icon',
   '.svg' : 'image/svg+xml',
 };
@@ -2051,6 +2111,7 @@ function httpSnapshotFallback(rawUrl, res) {
       'Accept': 'text/html,application/xhtml+xml',
       'Accept-Language': 'en-US,en;q=0.9',
     },
+    lookup: publicLookup,
     timeout: 8000,
   }, (r) => {
     let body = '';
@@ -2151,6 +2212,7 @@ async function fetchPageCheerio(rawUrl, res) {
           'Accept': 'text/html,application/xhtml+xml',
           'Accept-Language': 'en-US,en;q=0.9',
         },
+        lookup: publicLookup,
         timeout: 12000,
       }, (r) => {
         let body = '';
@@ -2199,6 +2261,7 @@ function proxyImage(rawUrl, res) {
   const req = mod.get(rawUrl, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' },
     timeout: 8000,
+    lookup: publicLookup,
   }, (r) => {
     const ct = (r.headers['content-type'] || 'image/jpeg').split(';')[0].trim();
     if (!ct.startsWith('image/')) {
@@ -2245,6 +2308,7 @@ const CSP = [
   "img-src 'self' data: https:",
   "connect-src 'self' https://challenges.cloudflare.com",
   "frame-src https://challenges.cloudflare.com",
+  "frame-ancestors 'none'",
   "base-uri 'none'",
   "form-action 'self'",
   "object-src 'none'",
@@ -2280,7 +2344,13 @@ function serveStatic(res, filePath) {
       data = fs.readFileSync(filePath);
       if (CACHEABLE_EXT.has(ext)) _staticCache.set(filePath, data);
     }
-    res.writeHead(200, { 'Content-Type': ct });
+    const fileName = path.basename(filePath);
+    const cacheControl = fileName === 'index.html' || fileName === 'privacy.html'
+      ? 'no-cache, no-store, must-revalidate'
+      : CACHEABLE_EXT.has(ext)
+        ? 'public, max-age=86400'
+        : 'public, max-age=3600';
+    res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': cacheControl });
     res.end(data);
   } catch (_) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -2327,9 +2397,32 @@ const server = http.createServer((req, res) => {
   }
 
   // Only allow GET past this point
-  if (req.method !== 'GET') {
-    res.writeHead(405, { Allow: 'GET, POST' });
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { Allow: 'GET, HEAD, POST' });
     return res.end('Method Not Allowed');
+  }
+
+  if (req.method === 'HEAD') {
+    const headPath = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '');
+    const safeHeadPath = path.normalize(headPath).replace(/^(\.\.[\\/])+/, '');
+    const fullHeadPath = path.join(__dirname, safeHeadPath);
+    if (!fullHeadPath.startsWith(__dirname + path.sep) || !fs.existsSync(fullHeadPath)) {
+      res.writeHead(404);
+      return res.end();
+    }
+    const ext = path.extname(fullHeadPath).toLowerCase();
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    return res.end();
+  }
+
+  if (AUX_RATE_LIMITED_PATHS.has(pathname) && !consumeAuxRateLimit(getClientIp(req))) {
+    res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '3600' });
+    return res.end(JSON.stringify({ ok: false, error: 'Request limit reached. Try again later.' }));
+  }
+
+  if (IS_PRODUCTION && ['/api/verify', '/api/og-image', '/api/fetch-page', '/api/snapshot'].includes(pathname)) {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: false, error: 'Not found.' }));
   }
 
   /* ── Local accuracy-lab probe ───────────────────────────────────────
@@ -2827,16 +2920,19 @@ const server = http.createServer((req, res) => {
         'Accept': 'text/html,application/xhtml+xml',
       },
       timeout: 6000,
+      lookup: publicLookup,
     }, (r) => {
       // Follow a single redirect hop (common for tracking/share links)
       if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) {
         r.resume();
         try {
           const next = new URL(r.headers.location, parsed);
+          if (!/^https?:$/.test(next.protocol) || isPrivateHost(next.hostname)) return sendNoImage(res);
           const nextMod = next.protocol === 'https:' ? https : http;
           const req2 = nextMod.get(next, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
             timeout: 6000,
+            lookup: publicLookup,
           }, (r2) => readAndExtractImage(r2, next, res));
           req2.on('error', () => sendNoImage(res));
           req2.setTimeout(6000, () => req2.destroy());
@@ -2935,7 +3031,7 @@ const server = http.createServer((req, res) => {
       .catch(err => {
         if (res.writableEnded) return;
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: true, verdict: 'unknown', error: err && err.message }));
+        res.end(JSON.stringify({ ok: true, verdict: 'unknown', error: 'Verification unavailable.' }));
       });
     return;
   }
@@ -3079,7 +3175,7 @@ const server = http.createServer((req, res) => {
         console.error('[snapshot]', err.message);
         if (!res.headersSent) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: false, error: err.message.slice(0, 200) }));
+          res.end(JSON.stringify({ ok: false, error: 'Snapshot unavailable.' }));
         }
       } finally {
         if (context) await context.close().catch(() => {});
@@ -3230,12 +3326,18 @@ const server = http.createServer((req, res) => {
     filePath = path.join(__dirname, 'index.html');
   } else {
     // Sanitize – prevent path traversal
-    const normalized = path.normalize(decodeURIComponent(pathname)).replace(/^(\.\.[\\/])+/, '');
+    let decodedPath;
+    try { decodedPath = decodeURIComponent(pathname); }
+    catch (_) { res.writeHead(400); return res.end('Bad Request'); }
+    const normalized = path.normalize(decodedPath).replace(/^(\.\.[\\/])+/, '');
     filePath = path.join(__dirname, normalized);
     if (!filePath.startsWith(__dirname + path.sep) && filePath !== __dirname) {
       res.writeHead(403);
       return res.end('Forbidden');
     }
+    try {
+      if (fs.statSync(filePath).isDirectory()) filePath = path.join(filePath, 'index.html');
+    } catch (_) { /* serveStatic returns the 404 */ }
   }
 
   serveStatic(res, filePath);

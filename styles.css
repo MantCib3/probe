@@ -123,7 +123,15 @@ a.nav-logo {
 }
 .nav-menu a:hover::after { width: 100%; }
 
-.hamburger { display: none; flex-direction: column; cursor: pointer; gap: 5px; }
+.hamburger {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  gap: 5px;
+}
 .hamburger span {
   display: block; width: 25px; height: 3px;
   background: var(--primary); border-radius: 2px;
@@ -1364,6 +1372,14 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 }
 .platforms-track:hover { animation-play-state: paused; }
 
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  section { opacity: 1; }
+  section.fade-in,
+  .platforms-track,
+  .scanning .progress-bar-fill { animation: none; }
+}
+
 @keyframes platformsTicker {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
@@ -1639,6 +1655,31 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   font-size: 0.79rem;
   line-height: 1.6;
 }
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.footer-links a,
+.footer-policy {
+  color: inherit;
+  font-size: 0.79rem;
+}
+
+.policy-page {
+  min-height: calc(100vh - 76px);
+  max-width: 760px;
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+}
+
+.policy-page h1 { font-size: 2.6rem; margin-bottom: 1.5rem; }
+.policy-page h2 { font-size: 1.25rem; margin: 2rem 0 0.5rem; }
+.policy-page p { color: var(--muted); margin-bottom: 1rem; }
+.policy-page a { color: var(--text); }
 
 /* ── Animations ──────────────────────────────────────────────────────── */
 @keyframes fadeInUp {

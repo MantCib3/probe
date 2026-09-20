@@ -244,6 +244,20 @@ function safeUrl(url) {
   } catch (_) { return '#'; }
 }
 
+function sanitizeRichHtml(html) {
+  const template = document.createElement('template');
+  template.innerHTML = String(html || '');
+  const allowed = new Set(['B', 'STRONG', 'U', 'UL', 'OL', 'LI', 'BR', 'DIV', 'P']);
+  [...template.content.querySelectorAll('*')].forEach(element => {
+    if (!allowed.has(element.tagName)) {
+      element.replaceWith(...element.childNodes);
+      return;
+    }
+    [...element.attributes].forEach(attribute => element.removeAttribute(attribute.name));
+  });
+  return template.innerHTML;
+}
+
 /* ── Validation ──────────────────────────────────────────────────────── */
 function validateUsername(val) {
   if (!val)                   return 'Please enter a username.';
@@ -862,8 +876,16 @@ function initSidePanel() {
   let dragging    = false;
   let startX, startY, currentEdge = savedEdge, currentPos = savedPos;
 
-  function openPanel()  { panelOpen = true;  panel.classList.add('sp-open');    }
-  function closePanel() { panelOpen = false; panel.classList.remove('sp-open'); }
+  function openPanel() {
+    panelOpen = true;
+    panel.classList.add('sp-open');
+    tabBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel() {
+    panelOpen = false;
+    panel.classList.remove('sp-open');
+    tabBtn.setAttribute('aria-expanded', 'false');
+  }
 
   // ── Detach / Reattach ────────────────────────────────────────────────
   let isDetached = localStorage.getItem('np_detached') === '1';
@@ -975,8 +997,8 @@ function initSidePanel() {
   }
   if (npEditor) {
     const sv = localStorage.getItem('probe_case_content');
-    if (sv) npEditor.innerHTML = sv;
-    npEditor.addEventListener('input', () => localStorage.setItem('probe_case_content', npEditor.innerHTML));
+    if (sv) npEditor.innerHTML = sanitizeRichHtml(sv);
+    npEditor.addEventListener('input', () => localStorage.setItem('probe_case_content', sanitizeRichHtml(npEditor.innerHTML)));
   }
 
   // ── Format bar ──────────────────────────────────────────────────────
@@ -1052,12 +1074,13 @@ function initPlatformsGrid(sites) {
     featured.length = Math.min(featured.length, 25);
   }
 
-  function makeChip(site) {
+  function makeChip(site, hiddenFromAssistiveTech = false) {
     let domain = '';
     try { domain = new URL(site.urlMain || site.url.replace('{}', 'x')).hostname.replace(/^www\./, ''); } catch(_) {}
     const chip = document.createElement('div');
     chip.className = 'platform-chip';
     chip.title = site.name;
+    if (hiddenFromAssistiveTech) chip.setAttribute('aria-hidden', 'true');
     chip.innerHTML = domain
       ? `<img class="chip-logo" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32" alt="" loading="lazy"><span class="chip-name">${escHtml(site.name)}</span>`
       : `<span class="chip-name">${escHtml(site.name)}</span>`;
@@ -1069,7 +1092,8 @@ function initPlatformsGrid(sites) {
 
   // Build two copies for seamless infinite scroll
   const frag = document.createDocumentFragment();
-  [...featured, ...featured].forEach(site => frag.appendChild(makeChip(site)));
+  featured.forEach(site => frag.appendChild(makeChip(site)));
+  featured.forEach(site => frag.appendChild(makeChip(site, true)));
   track.appendChild(frag);
 
   // Update count placeholders
@@ -1941,6 +1965,7 @@ function initEvents() {
   hamburger.addEventListener('click', () => {
     hamburger.classList.toggle('open');
     navMenu.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', String(navMenu.classList.contains('open')));
   });
   hamburger.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') hamburger.click();

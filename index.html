@@ -4,7 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PROBE | Username Intelligence</title>
-  <meta name="description" content="Fast username search across 100+ platforms. Check social media, developer sites, gaming, forums, and more.">
+  <meta name="description" content="Search a username across hundreds of social, developer, gaming, forum, and creative platforms with evidence-aware results.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="https://usernameprobe.com/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PROBE">
+  <meta property="og:title" content="PROBE | Username Intelligence">
+  <meta property="og:description" content="Search a username across hundreds of platforms with evidence-aware results.">
+  <meta property="og:url" content="https://usernameprobe.com/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PROBE | Username Intelligence">
+  <meta name="twitter:description" content="Search a username across hundreds of platforms with evidence-aware results.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
@@ -12,7 +23,11 @@
   <!-- Cloudflare Turnstile — replace data-sitekey with your own key from dash.cloudflare.com -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </head>
-<body>
+<body itemscope itemtype="https://schema.org/WebApplication">
+  <meta itemprop="name" content="PROBE">
+  <meta itemprop="applicationCategory" content="SecurityApplication">
+  <meta itemprop="operatingSystem" content="Any">
+  <link itemprop="url" href="https://usernameprobe.com/">
 
   <!-- Navigation -->
   <nav class="navbar" id="navbar">
@@ -24,16 +39,16 @@
         <li><a href="#sites">Platforms</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
-      <div class="hamburger" id="hamburger" role="button" aria-label="Toggle menu" tabindex="0">
+      <button class="hamburger" id="hamburger" type="button" aria-label="Toggle menu" aria-controls="navMenu" aria-expanded="false">
         <span></span><span></span><span></span>
-      </div>
+      </button>
     </div>
   </nav>
 
   <!-- ── Hero / Search ───────────────────────────────────────────────── -->
   <section id="search" class="hero">
     <div class="hero-content">
-      <h1 class="probe-wordmark">PROBE</h1>
+      <h1 class="probe-wordmark" itemprop="name">PROBE</h1>
 
       <!-- Username search -->
       <div class="search-box" id="searchBox">
@@ -61,7 +76,7 @@
   <div class="scan-progress-section" id="scanProgressSection" style="display:none">
     <div class="container">
       <div class="progress-header">
-        <div class="progress-status" id="progressStatus">
+        <div class="progress-status" id="progressStatus" role="status" aria-live="polite">
           Scanning <strong id="currentUsername"></strong>…
         </div>
         <div class="progress-actions">
@@ -176,7 +191,7 @@
               <button class="dork-tab" data-engine="ddg">DDG</button>
               <button class="dork-tab" data-engine="yandex">Yandex</button>
             </div>
-            <div class="dork-status" id="dorkStatus">Awaiting scan…</div>
+            <div class="dork-status" id="dorkStatus" role="status" aria-live="polite">Awaiting scan…</div>
           </div>
           <div class="dork-results" id="dorkResultsList"></div>
         </div>
@@ -207,7 +222,7 @@
       <div class="about-text">
         <p class="hero-eyebrow">OPEN SOURCE INTELLIGENCE</p>
         <h2 class="about-heading">Username<br>Intelligence</h2>
-        <p class="hero-desc">Map a username across <strong id="heroCount">377</strong> platforms and uncover digital footprints across social media, developer communities, gaming platforms, forums, professional networks, shopping sites, and beyond.</p>
+        <p class="hero-desc" itemprop="description">Map a username across <strong id="heroCount">377</strong> platforms and uncover digital footprints across social media, developer communities, gaming platforms, forums, professional networks, shopping sites, and beyond.</p>
       </div>
       <div class="hero-checklist report-text">
         <h3>What PROBE Checks</h3>
@@ -255,7 +270,7 @@
       </div>
 
       <div class="accuracy-note">
-        <strong>Accuracy note:</strong> "Found" means the platform URL returned a successful response — verify manually before drawing conclusions.
+        <strong>Accuracy note:</strong> Results combine response codes, page markers, redirects, and challenge detection. Verify matches manually before drawing conclusions.
       </div>
     </div>
   </section>
@@ -307,20 +322,25 @@
     <div class="container footer-inner">
       <span class="footer-logo">PROBE</span>
       <span class="footer-note">Username intelligence tool · For educational and investigative purposes only · Always comply with platform terms of service and applicable law.</span>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="/blog/">Blog</a>
+        <a href="/roadmap.html">Roadmap</a>
+        <a href="/privacy.html">Privacy &amp; acceptable use</a>
+      </nav>
     </div>
   </footer>
 
   <!-- ── Side Notes Panel ─────────────────────────────────────────── -->
   <div class="side-panel" id="caseNotepad" data-edge="right">
-    <button class="sp-tab" id="sideNotepadTab" title="Toggle notes panel">
-      <span class="sp-tab-icon">📋</span>
+    <button class="sp-tab" id="sideNotepadTab" title="Toggle notes panel" aria-label="Toggle notes panel" aria-controls="notepadBody" aria-expanded="false">
+      <span class="sp-tab-icon" aria-hidden="true">📋</span>
     </button>
     <div class="sp-inner" id="notepadBody">
       <!-- Drag bar: hidden in side-tab mode, visible when detached -->
       <div class="sp-detach-bar" id="spDetachBar">
         <span class="np-drag-icon">⋯</span>
       </div>
-      <input class="np-title-input" id="npTitle" type="text" placeholder="Title…" spellcheck="false" autocomplete="off">
+      <input class="np-title-input" id="npTitle" type="text" placeholder="Title…" spellcheck="false" autocomplete="off" aria-label="Case note title">
       <div class="np-format-bar">
         <button class="np-fmt-btn" id="npFmtBold" title="Bold"><b>B</b></button>
         <button class="np-fmt-btn" id="npFmtUnder" title="Underline"><u>U</u></button>
@@ -330,13 +350,13 @@
         <button class="np-icon-btn" id="notepadDetachBtn" title="Detach from edge">⊞</button>
         <button class="np-icon-btn" id="notepadCloseBtn" title="Close">✕</button>
       </div>
-      <div class="np-editor" id="npEditor" contenteditable="true" spellcheck="false"></div>
+      <div class="np-editor" id="npEditor" contenteditable="true" spellcheck="false" role="textbox" aria-label="Case notes" aria-multiline="true"></div>
       <div class="np-pins-section">
         <span class="np-pins-label">pinned <span id="npPinCount">0</span></span>
         <div class="np-pins" id="npPins"><span class="np-empty">No pins yet</span></div>
         <div class="np-url-row">
-          <input class="np-url-input" id="npUrlInput" type="url" placeholder="+ paste URL to pin" autocomplete="off">
-          <button class="np-url-btn" id="npAddUrl" title="Add">↵</button>
+          <input class="np-url-input" id="npUrlInput" type="url" placeholder="+ paste URL to pin" autocomplete="off" aria-label="URL to pin">
+          <button class="np-url-btn" id="npAddUrl" title="Add" aria-label="Add pinned URL">↵</button>
         </div>
       </div>
     </div>

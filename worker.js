@@ -137,8 +137,14 @@ function corsResp(request, env, body, status, extra = {}) {
 
 export default {
   async fetch(request, env) {
+    const origin = request.headers.get('Origin') || '';
+    const allowedOrigins = (env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+
     // CORS preflight
     if (request.method === 'OPTIONS') {
+      if (!origin || !allowedOrigins.includes(origin)) {
+        return corsResp(request, env, 'Origin not allowed', 403);
+      }
       return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     }
 
@@ -149,11 +155,12 @@ export default {
     // Require a shared secret so this can't be used as an open/anonymous
     // proxy by anyone who discovers the workers.dev URL. Configure via
     // `npx wrangler secret put PROBE_SHARED_SECRET`.
-    if (env.PROBE_SHARED_SECRET) {
-      const provided = request.headers.get('X-Probe-Key') || '';
-      if (provided !== env.PROBE_SHARED_SECRET) {
-        return corsResp(request, env, 'Unauthorized', 401);
-      }
+    if (!env.PROBE_SHARED_SECRET) {
+      return corsResp(request, env, 'Proxy is not configured', 503);
+    }
+    const provided = request.headers.get('X-Probe-Key') || '';
+    if (provided !== env.PROBE_SHARED_SECRET) {
+      return corsResp(request, env, 'Unauthorized', 401);
     }
 
     const { searchParams } = new URL(request.url);
@@ -164,7 +171,7 @@ export default {
     try {
       targetUrl = new URL(target);
     } catch {
-      return corsResp('Invalid URL', 400);
+      return corsResp(request, env, 'Invalid URL', 400);
     }
 
     // SSRF + allowlist guard
@@ -196,7 +203,7 @@ export default {
           'Cache-Control': 'no-cache',
           ...extraHeaders,
         },
-        redirect: 'follow',
+        redirect: 'manual',
         // 10 s timeout via AbortSignal
         signal: AbortSignal.timeout(10000),
       });

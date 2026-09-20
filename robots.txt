@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /sites.json
+Disallow: /name-sites.json
+
+Sitemap: https://usernameprobe.com/sitemap.xml
