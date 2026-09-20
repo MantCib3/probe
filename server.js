@@ -496,11 +496,12 @@ function publicLookup(hostname, options, callback) {
   const opts = typeof options === 'number' ? { family: options } : (options || {});
   dns.lookup(hostname, { all: true, verbatim: true })
     .then(addresses => {
-      if (!addresses.length || addresses.some(item => isPrivateAddress(item.address))) {
-        throw new Error('Private or non-routable address blocked');
-      }
+      const publicAddresses = addresses.filter(item => !isPrivateAddress(item.address));
+      if (!publicAddresses.length) throw new Error('Private or non-routable address blocked');
       const requestedFamily = Number(opts.family) || 0;
-      const eligible = requestedFamily ? addresses.filter(item => item.family === requestedFamily) : addresses;
+      const eligible = requestedFamily
+        ? publicAddresses.filter(item => item.family === requestedFamily)
+        : publicAddresses;
       if (!eligible.length) throw new Error('No address for requested family');
       if (opts.all) return callback(null, eligible);
       callback(null, eligible[0].address, eligible[0].family);
@@ -2902,17 +2903,39 @@ const server = http.createServer((req, res) => {
       return entries.filter(e => (seen.has(e.url) ? false : (seen.add(e.url), true)));
     }
 
-    fetchText(searchUrl, 12000, 4, {})
-      .then(text => {
-        let results = extractSerpEntries(text, engineKey).slice(0, 8);
-        // Defensive fallback: if the markdown structure didn't match (site
-        // layout changed upstream), fall back to a bare URL list rather
-        // than returning nothing.
-        if (!results.length) {
-          results = extractByEngine(text, engineKey).slice(0, 8).map(url => ({
-            title: url, url, snippet: '', engine: engineKey,
-          }));
+    function parseSearchResults(text, parserKey) {
+      let results = extractSerpEntries(text, parserKey).slice(0, 8);
+      if (!results.length) {
+        results = extractByEngine(text, parserKey).slice(0, 8).map(url => ({
+          title: url, url, snippet: '', engine: engineKey,
+        }));
+      }
+      return results.map(result => ({ ...result, engine: engineKey }));
+    }
+
+    (async () => {
+      const attempts = [{ url: searchUrl, parserKey: engineKey }];
+      if (engineKey === 'bing' || engineKey === 'yandex') {
+        attempts.push({
+          url: `https://r.jina.ai/https://duckduckgo.com/html/?q=${q}`,
+          parserKey: 'ddg',
+        });
+      }
+
+      let lastError = null;
+      for (const attempt of attempts) {
+        try {
+          const text = await fetchText(attempt.url, 6500, 4, {});
+          const results = parseSearchResults(text, attempt.parserKey);
+          if (results.length) return results;
+        } catch (error) {
+          lastError = error;
         }
+      }
+      if (lastError) throw lastError;
+      return [];
+    })()
+      .then(results => {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: true, target, engine: engineKey, results }));
       })

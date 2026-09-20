@@ -853,11 +853,11 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
 .result-card.hidden { display: none; }
 
 .card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
   gap: 0.5rem;
+  min-height: 22px;
   margin-bottom: 0.6rem;
 }
 
@@ -865,14 +865,16 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.35rem;
+  min-width: 0;
   max-width: 100%;
-  margin-left: auto;
 }
 
 .sc-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
   padding: 0.12rem 0.45rem;
   border-radius: 6px;
   font-size: 0.65rem;
@@ -884,7 +886,9 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
 }
 
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
   padding: 0.15rem 0.6rem;
   border-radius: 20px;
   font-size: 0.68rem;
@@ -892,6 +896,7 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
+  white-space: nowrap;
 }
 .status-badge.found    { background: #dcfce7; color: #15803d; }
 .status-badge.not_found{ background: #f3f4f6; color: #9ca3af; }
@@ -921,7 +926,11 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
 .np-pin-status.auth_required { background: #fff3cd; color: #856404; }
 
 .category-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  min-width: 0;
+  max-width: 8rem;
   padding: 0.15rem 0.55rem;
   border-radius: 20px;
   font-size: 0.68rem;
@@ -930,6 +939,9 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
   text-transform: uppercase;
   background: #f3f4f6;
   color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .site-name {
@@ -1528,12 +1540,17 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 /* ── Report button + popover ─────────────────────────────────────────── */
 .report-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
   opacity: 0.28;
-  padding: 2px 4px;
+  padding: 0;
   border-radius: 4px;
   line-height: 1;
   color: var(--text);
@@ -1787,11 +1804,8 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
   .investigation-panels {
     grid-template-columns: 1fr;
   }
-  /* Single column on mobile — at 2-up, .card-top-right (badges + pin +
-     report buttons) didn't have room to fit and was being clipped by
-     .result-card's overflow:hidden. Full-width cards give it room. */
+    /* Full-width result cards keep the evidence and controls readable. */
   .results-grid { grid-template-columns: 1fr; }
-  .card-top-right { flex-wrap: wrap; justify-content: flex-end; row-gap: 0.3rem; }
   .name-filters { grid-template-columns: 1fr 1fr; }
   .platforms-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
   .scan-stats { gap: 0.8rem; }
@@ -2025,17 +2039,22 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 /* ── Pin button ──────────────────────────────────────────────────────── */
 .pin-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 0.72rem;
-  padding: 1px 3px;
+  padding: 0;
   border-radius: 4px;
   opacity: 0.18;
   filter: grayscale(1);
   transition: opacity 0.15s, transform 0.15s, filter 0.15s;
   line-height: 1;
-  margin-left: 3px;
+  margin-left: 0;
 }
 .pin-btn:hover { opacity: 0.5; transform: scale(1.15); }
 .pin-btn.pinned { opacity: 0.85; filter: grayscale(0); }
@@ -2588,16 +2607,21 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 
 /* ── Pin button ──────────────────────────────────────────────────────── */
 .pin-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 0.78rem;
-  padding: 1px 3px;
+  padding: 0;
   border-radius: 4px;
   opacity: 0.22;
   transition: opacity 0.15s, transform 0.15s;
   line-height: 1;
-  margin-left: 3px;
+  margin-left: 0;
 }
 .pin-btn:hover { opacity: 0.65; transform: scale(1.15); }
 .pin-btn.pinned { opacity: 1; }

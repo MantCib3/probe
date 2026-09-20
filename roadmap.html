@@ -9,7 +9,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="website"><meta property="og:title" content="PROBE Roadmap"><meta property="og:description" content="What is shipped, in progress, next, and being explored for PROBE."><meta property="og:url" content="https://usernameprobe.com/roadmap"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="PROBE Roadmap"><meta name="twitter:description" content="What is shipped, in progress, next, and being explored for PROBE.">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="/styles.css?v=9"><link rel="stylesheet" href="/editorial.css?v=1">
+  <link rel="stylesheet" href="/styles.css?v=10"><link rel="stylesheet" href="/editorial.css?v=1">
   <script src="/roadmap.js?v=2" defer></script>
 </head>
 <body class="editorial-body">
@@ -18,7 +18,7 @@
     <header class="roadmap-header">
       <p class="editorial-kicker">Build in public</p>
       <h1 class="editorial-title">The Road Ahead</h1>
-      <p class="editorial-deck">A reliability-first path from a measured username scanner to a broader investigation workspace. Select any milestone for its scope and success condition.</p>
+      <p class="editorial-deck">What is already working, what we are improving now, and what we may build next. Select a milestone to read more.</p>
       <div class="roadmap-legend" aria-label="Roadmap status legend"><span class="legend-item"><span class="legend-dot shipped"></span>Shipped</span><span class="legend-item"><span class="legend-dot progress"></span>In progress</span><span class="legend-item"><span class="legend-dot next"></span>Next</span><span class="legend-item"><span class="legend-dot"></span>Exploring</span></div>
     </header>
 
@@ -30,44 +30,44 @@
           <div class="milestone-detail" id="roadmap-core" hidden><p>373 active sources: 324 automatic checks and 49 deliberate manual-only links. Results stream live with category and status filters, reason codes, and CSV/JSON export.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-reliability"><span class="milestone-top"><span class="milestone-state shipped">Shipped</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Conservative classification</span></button>
-          <div class="milestone-detail" id="roadmap-reliability" hidden><p>Source-specific status, marker, redirect, challenge, and browser-fallback logic. Unknown and blocked responses remain abstentions instead of being forced into unsafe decisions.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-reliability"><span class="milestone-top"><span class="milestone-state shipped">Shipped</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Careful result checking</span></button>
+          <div class="milestone-detail" id="roadmap-reliability" hidden><p>Each site has its own rules for response codes, page wording, redirects, and challenge pages. When the evidence is unclear or blocked, PROBE says so instead of guessing.</p></div>
         </article>
         <article class="roadmap-stop">
           <button class="milestone" aria-expanded="false" aria-controls="roadmap-workspace"><span class="milestone-top"><span class="milestone-state shipped">Shipped</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Investigation workspace</span></button>
           <div class="milestone-detail" id="roadmap-workspace" hidden><p>Case notes, pinned profiles, manual pivots, evidence inspection, downloadable results, and result-reporting are available in the current interface.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-baseline"><span class="milestone-top"><span class="milestone-state shipped">Shipped</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Measured quality baseline</span></button>
-          <div class="milestone-detail" id="roadmap-baseline" hidden><p>947 controls produced 95.34% decision accuracy at 72.44% coverage, 100% observed found precision, and zero observed false positives. The catalog audit retired 334 defunct definitions.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-baseline"><span class="milestone-top"><span class="milestone-state shipped">Shipped</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">A measured starting point</span></button>
+          <div class="milestone-detail" id="roadmap-baseline" hidden><p>Across 947 tests, PROBE was correct in 95.34% of the cases where it gave a clear answer. It reached a clear answer 72.44% of the time and produced no false matches in the test set. We also removed 334 dead or unreliable site definitions.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-hardening"><span class="milestone-top"><span class="milestone-state progress">In progress</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Source hardening and proxy experiments</span></button>
-          <div class="milestone-detail" id="roadmap-hardening" hidden><p>Continue adjudicating the 32 apparent positive misses and test opt-in routing for measured abstention cohorts: 53 sources returning HTTP 403, four returning HTTP 429, and six showing challenge titles. Cohorts may overlap.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-hardening"><span class="milestone-top"><span class="milestone-state progress">In progress</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Fixing unreliable site checks</span></button>
+          <div class="milestone-detail" id="roadmap-hardening" hidden><p>We are reviewing 32 apparent missed accounts and testing alternative routes for sites that block or limit requests. The current problem groups include 53 sources returning HTTP 403, four returning HTTP 429, and six showing challenge pages. Some sources appear in more than one group.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-health"><span class="milestone-top"><span class="milestone-state next">Next</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Automated source health</span></button>
-          <div class="milestone-detail" id="roadmap-health" hidden><p>Scheduled positive and negative controls, drift alerts, status-code trend monitoring, and a review queue for stale controls. Success means detecting upstream changes before they become user reports.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-health"><span class="milestone-top"><span class="milestone-state next">Next</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Automatic source checks</span></button>
+          <div class="milestone-detail" id="roadmap-health" hidden><p>Run known real and missing usernames on a schedule, watch for changes in site responses, and create a review list when tests go stale. The aim is to catch site changes before users have to report them.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-infra"><span class="milestone-top"><span class="milestone-state next">Next</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Shared jobs, limits, and cache</span></button>
-          <div class="milestone-detail" id="roadmap-infra" hidden><p>Move expensive work and rate-limit state out of one Node process. Add bounded jobs, cancellation, shared quotas, and short-lived result caching before enabling sustained batch traffic.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-infra"><span class="milestone-top"><span class="milestone-state next">Next</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">More reliable scan handling</span></button>
+          <div class="milestone-detail" id="roadmap-infra" hidden><p>Move long-running scans and usage limits out of a single server process. Add proper job queues, cancellation, shared limits, and short-term result caching before supporting heavier use.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-bulk"><span class="milestone-top"><span class="milestone-state next">Next</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Batch search and documented API</span></button>
-          <div class="milestone-detail" id="roadmap-bulk" hidden><p>Submit bounded username lists, track job progress, export combined evidence, and expose authenticated programmatic access with quotas and stable schemas.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-bulk"><span class="milestone-top"><span class="milestone-state next">Next</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Batch search and API access</span></button>
+          <div class="milestone-detail" id="roadmap-bulk" hidden><p>Search a limited list of usernames, follow each job’s progress, and export the combined results. A documented API would provide secure access with clear usage limits and a stable response format.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-collect"><span class="milestone-top"><span class="milestone-state">Exploring</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Collect and profile enrichment</span></button>
-          <div class="milestone-detail" id="roadmap-collect" hidden><p>On-demand screenshots and source-specific metadata such as avatars, bios, and public counts. Browser infrastructure is considered only where proxy tests cannot resolve challenge-bound sources.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-collect"><span class="milestone-top"><span class="milestone-state">Exploring</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Profile details and screenshots</span></button>
+          <div class="milestone-detail" id="roadmap-collect" hidden><p>Collect public details such as profile pictures, biographies, links, and follower counts, with optional screenshots. Browser-based collection would only be used when a normal request cannot reach the page reliably.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-community"><span class="milestone-top"><span class="milestone-state">Exploring</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Community coverage and access tiers</span></button>
-          <div class="milestone-detail" id="roadmap-community" hidden><p>Accept source suggestions through a validation pipeline. Consider free search, expanded search, and collect credits only after costs, abuse controls, and reliability are measurable.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-community"><span class="milestone-top"><span class="milestone-state">Exploring</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Community suggestions and access plans</span></button>
+          <div class="milestone-detail" id="roadmap-community" hidden><p>Let people suggest new sites, then test each suggestion before adding it. Free and expanded access plans will only be considered once running costs, abuse prevention, and reliability are understood.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-long"><span class="milestone-top"><span class="milestone-state">Long term</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Identity-resolution research</span></button>
-          <div class="milestone-detail" id="roadmap-long" hidden><p>Broader entity and identity aggregation is a separate product phase, not a small extension of username search. It requires dedicated consent, retention, legal, safety, and audit controls before implementation.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-long"><span class="milestone-top"><span class="milestone-state">Long term</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Account connection research</span></button>
+          <div class="milestone-detail" id="roadmap-long" hidden><p>Looking for signs that accounts may belong to the same person would be a separate phase, not a small addition to username search. It would need clear rules for consent, data retention, safety, legal review, and human verification before any release.</p></div>
         </article>
       </div>
     </div>

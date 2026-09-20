@@ -3,29 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Why PROBE Abstains Instead of Guessing | PROBE</title>
+  <title>Why PROBE Says Unknown | PROBE</title>
   <meta name="description" content="Why blocked and ambiguous username checks should be reported as unknown rather than forced into found or not found.">
   <link rel="canonical" href="https://usernameprobe.com/blog/why-probe-abstains">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <meta property="og:type" content="article"><meta property="og:title" content="Why PROBE Abstains Instead of Guessing"><meta property="og:description" content="A blocked page is not evidence that an account is missing."><meta property="og:url" content="https://usernameprobe.com/blog/why-probe-abstains"><meta property="article:published_time" content="2026-09-19"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Why PROBE Abstains Instead of Guessing"><meta name="twitter:description" content="A blocked page is not evidence that an account is missing.">
+  <meta property="og:type" content="article"><meta property="og:title" content="Why PROBE Says Unknown"><meta property="og:description" content="Why a blocked or unclear page should not be mistaken for a missing account."><meta property="og:url" content="https://usernameprobe.com/blog/why-probe-abstains"><meta property="article:published_time" content="2026-09-19"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Why PROBE Says Unknown"><meta name="twitter:description" content="Why a blocked or unclear page should not be mistaken for a missing account.">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="/styles.css?v=9"><link rel="stylesheet" href="/editorial.css?v=1">
+  <link rel="stylesheet" href="/styles.css?v=10"><link rel="stylesheet" href="/editorial.css?v=1">
 </head>
 <body class="editorial-body">
   <nav class="navbar editorial-nav"><div class="nav-container"><a href="/" class="nav-logo">PROBE</a><a class="editorial-nav-back" href="/blog/">All posts</a></div></nav>
   <main class="editorial-main article-main">
     <article itemscope itemtype="https://schema.org/BlogPosting">
-      <header class="article-header"><p class="editorial-kicker">Detection</p><h1 class="editorial-title article-title" itemprop="headline">Why PROBE Abstains Instead of Guessing</h1><p class="editorial-deck" itemprop="description">A challenge page, login wall, or generic shell is uncertainty, not evidence of absence.</p><div class="article-meta"><time itemprop="datePublished" datetime="2026-09-19">19 September 2026</time><span>4 min read</span></div></header>
+      <header class="article-header"><p class="editorial-kicker">Detection</p><h1 class="editorial-title article-title" itemprop="headline">Why PROBE Says “Unknown”</h1><p class="editorial-deck" itemprop="description">A challenge page, login screen, or mostly empty page does not tell us whether an account exists.</p><div class="article-meta"><time itemprop="datePublished" datetime="2026-09-19">19 September 2026</time><span>4 min read</span></div></header>
       <div class="article-copy" itemprop="articleBody">
-        <p>A username checker is under constant pressure to return a simple answer. The web rarely provides one. HTTP 403 can mean a blocked scanner, a private profile, regional policy, or a platform-wide outage. HTTP 200 can be a real profile, a generic application shell, or a polished “user not found” page.</p>
-        <h2>Unknown is a useful result</h2>
-        <p>PROBE separates conclusive decisions from abstentions. A source becomes <strong>found</strong> or <strong>not found</strong> only when its status, redirect behavior, title, or body markers provide enough source-specific evidence. Challenges, rate limits, and ambiguous responses remain blocked or unknown.</p>
-        <p>This lowers headline coverage, but it protects the more important property: a found result should be worth investigating. In the latest 648-control negative set, PROBE produced no observed false positives.</p>
+        <p>A username checker is expected to give a simple yes or no, but websites rarely make that easy. HTTP 403 might mean the site blocked our request, the profile is private, access varies by region, or the whole platform is having trouble. Even HTTP 200 can lead to a real profile, an empty site template, or a polished “user not found” page.</p>
+        <h2>“Unknown” is still useful</h2>
+        <p>PROBE only says <strong>found</strong> or <strong>not found</strong> when a site gives enough evidence through its response code, redirects, title, or page content. Challenges, rate limits, and unclear responses remain blocked or unknown.</p>
+        <p>This means fewer definite answers, but the answers you do get are more useful. In our latest test using 648 usernames expected not to exist, PROBE did not report any false matches.</p>
         <h2>Why generic rules fail</h2>
-        <p>One platform may use 404 for a missing account, another may return 200 with a “user not found” title, and another may redirect existing accounts through login. Applying a universal “200 means found” rule creates false matches. Applying “login redirect means missing” breaks platforms where existing accounts are deliberately gated.</p>
-        <h2>The next coverage gains</h2>
-        <p>The largest abstention cohort is HTTP 403: 149 controls across 53 sources. Four sources produced HTTP 429 controls, while six sources showed challenge titles. These groups can overlap, so they should be treated as measured cohorts rather than added into one source count.</p>
-        <p>Proxy and browser work will be introduced only where a controlled experiment improves coverage without increasing false positives. The direct request remains the baseline, and every fallback should be recorded as evidence.</p>
+        <p>One site may use 404 for a missing account, another may return 200 with a “user not found” title, and another may send existing accounts through a login page. A universal “200 means found” rule creates false matches. A universal “login means missing” rule also fails on sites that hide real profiles behind authentication.</p>
+        <h2>Where we can improve</h2>
+        <p>The most common unclear response in our test was HTTP 403: 149 cases across 53 sources. Four sources returned HTTP 429, and six showed challenge-page titles. Some sources appear in more than one group, so those figures cannot simply be added together.</p>
+        <p>We will only add proxy or browser-based checks when testing shows that they answer more cases without creating extra false matches. The normal request remains the starting point, and every fallback should be visible in the result.</p>
       </div>
     </article>
   </main>

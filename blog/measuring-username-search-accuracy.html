@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="/styles.css?v=9">
+  <link rel="stylesheet" href="/styles.css?v=10">
   <link rel="stylesheet" href="/editorial.css?v=1">
 </head>
 <body class="editorial-body">
@@ -28,25 +28,25 @@
       <header class="article-header">
         <p class="editorial-kicker">Methodology</p>
         <h1 class="editorial-title article-title" itemprop="headline">Measuring Username Search Accuracy Honestly</h1>
-        <p class="editorial-deck" itemprop="description">A single accuracy percentage cannot describe a system that sometimes refuses to guess.</p>
+        <p class="editorial-deck" itemprop="description">One accuracy percentage cannot tell the full story when some sites do not provide a clear answer.</p>
         <div class="article-meta"><time itemprop="datePublished" datetime="2026-09-19">19 September 2026</time><span>6 min read</span></div>
       </header>
       <div class="article-copy" itemprop="articleBody">
-        <p>Username search is not a conventional database lookup. Every platform presents different status codes, redirects, login walls, rate limits, and bot challenges. A useful evaluation therefore has to measure both whether a decision was correct and how often the system could make one.</p>
+        <p>Checking a username is not like looking it up in one database. Every site responds differently: some return clear errors, some redirect to login, and some block automated requests. We therefore measure both how often PROBE is right and how often it can give a clear answer at all.</p>
         <div class="article-metric" aria-label="Campaign headline metrics">
           <div><strong>95.34%</strong><span>decision accuracy</span></div>
           <div><strong>72.44%</strong><span>decision coverage</span></div>
           <div><strong>947</strong><span>controls reviewed</span></div>
         </div>
         <h2>The test</h2>
-        <p>We ran the production probe logic against all 324 automatic sources. The campaign included 299 known-positive controls and 648 deterministic, high-entropy negative controls. Another 49 active sources were intentionally manual-only and excluded from automatic scoring.</p>
-        <p>Responses classified as blocked or unknown counted as abstentions. They did not improve accuracy and they did not count as wrong decisions. That distinction matters: reporting 95.34% without the 72.44% coverage figure would make the system sound more complete than it is.</p>
+        <p>We tested the same checking logic used by the live site across all 324 automatic sources. The test used 299 usernames known to exist and 648 deliberately unusual usernames expected not to exist. Another 49 active sources require a manual check, so they were not included in the automatic score.</p>
+        <p>Blocked and unclear responses were counted separately rather than treated as right or wrong. That distinction matters: quoting 95.34% accuracy without also saying that PROBE reached a clear answer in 72.44% of tests would make it sound more complete than it is.</p>
         <h2>What changed</h2>
-        <p>The first campaign exposed eight false-positive controls across Kick, Scratch, Brickset, and Greasy Fork. Correcting endpoint selection and source-specific signatures removed all observed false positives. A manual review of twenty apparent false negatives found twelve genuine detection bugs, four stale or deleted controls, and four cases that could not be automated safely.</p>
-        <p>After focused fixes, positive recall among decided cases rose from 76.82% to 85.05%. The final campaign recorded 182 true positives, 472 true negatives, zero false positives, 32 false negatives, and 261 abstentions.</p>
-        <h2>The defensible claim</h2>
-        <p>When PROBE made a found-or-not-found decision in this campaign, it was correct 95.34% of the time. It made such a decision for 72.44% of controls. Zero observed false positives across 648 synthetic negatives is encouraging, but it is evidence from a finite sample, not proof that false positives are impossible.</p>
-        <p>This is why the product exposes uncertainty and asks investigators to verify matches before drawing conclusions. Accuracy work is continuous because upstream sites change continuously.</p>
+        <p>The first test produced eight false matches across Kick, Scratch, Brickset, and Greasy Fork. Fixing the URLs and site-specific checks removed all of the false matches we had observed. We also reviewed twenty accounts that PROBE appeared to miss: twelve were genuine detection problems, four test accounts had been deleted or renamed, and four could not be checked reliably without a person opening the site.</p>
+        <p>After those fixes, PROBE correctly found 85.05% of existing accounts when it reached a clear decision, up from 76.82%. The final test recorded 182 correct finds, 472 correct misses, no false matches, 32 missed accounts, and 261 cases where PROBE could not give a firm answer.</p>
+        <h2>What we can honestly say</h2>
+        <p>When PROBE gave a found-or-not-found answer in this test, it was correct 95.34% of the time. It gave a clear answer in 72.44% of cases. Seeing no false matches across 648 made-up usernames is encouraging, but it does not mean false matches are impossible.</p>
+        <p>That is why PROBE shows unclear results and asks you to verify matches yourself. Sites change all the time, so checking accuracy is ongoing work.</p>
       </div>
     </article>
   </main>

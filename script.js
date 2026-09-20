@@ -1147,7 +1147,7 @@ function makeCard(r, animDelay = 0) {
   card.innerHTML = `
     <div class="card-top">
       <span class="status-badge ${r.status}">${STATUS_LABEL[r.status] || r.status.toUpperCase()}</span>
-      <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge">${escHtml(r.category)}</span><button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button><button class="report-btn" data-report-site="${escHtml(r.name)}" title="Report incorrect result">⚑</button></div>
+      <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge" title="${escHtml(r.category)}">${escHtml(r.category)}</span><button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button><button class="report-btn" data-report-site="${escHtml(r.name)}" title="Report incorrect result">⚑</button></div>
     </div>
     <div class="site-name">${escHtml(r.name)}</div>
     ${displayNameHtml}

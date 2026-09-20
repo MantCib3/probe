@@ -3,29 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maintaining a Username Source Catalog | PROBE</title>
+  <title>Maintaining 707 Site Checks | PROBE</title>
   <meta name="description" content="How PROBE distinguishes automatic, manual-only, and defunct username sources while platforms continually change.">
   <link rel="canonical" href="https://usernameprobe.com/blog/maintaining-a-source-catalog">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <meta property="og:type" content="article"><meta property="og:title" content="Maintaining a 707-Definition Source Catalog"><meta property="og:description" content="How PROBE keeps changing platform checks useful and defensible."><meta property="og:url" content="https://usernameprobe.com/blog/maintaining-a-source-catalog"><meta property="article:published_time" content="2026-09-19"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Maintaining a 707-Definition Source Catalog"><meta name="twitter:description" content="How PROBE keeps changing platform checks useful and defensible.">
+  <meta property="og:type" content="article"><meta property="og:title" content="Maintaining 707 Site Checks"><meta property="og:description" content="How PROBE keeps a large list of changing platforms useful."><meta property="og:url" content="https://usernameprobe.com/blog/maintaining-a-source-catalog"><meta property="article:published_time" content="2026-09-19"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Maintaining 707 Site Checks"><meta name="twitter:description" content="How PROBE keeps a large list of changing platforms useful.">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="/styles.css?v=9"><link rel="stylesheet" href="/editorial.css?v=1">
+  <link rel="stylesheet" href="/styles.css?v=10"><link rel="stylesheet" href="/editorial.css?v=1">
 </head>
 <body class="editorial-body">
   <nav class="navbar editorial-nav"><div class="nav-container"><a href="/" class="nav-logo">PROBE</a><a class="editorial-nav-back" href="/blog/">All posts</a></div></nav>
   <main class="editorial-main article-main">
     <article itemscope itemtype="https://schema.org/BlogPosting">
-      <header class="article-header"><p class="editorial-kicker">Source operations</p><h1 class="editorial-title article-title" itemprop="headline">Maintaining a 707-Definition Source Catalog</h1><p class="editorial-deck" itemprop="description">Coverage is not the number of URLs in a file. It is the number of sources that still produce useful evidence.</p><div class="article-meta"><time itemprop="datePublished" datetime="2026-09-19">19 September 2026</time><span>5 min read</span></div></header>
+      <header class="article-header"><p class="editorial-kicker">Keeping sources current</p><h1 class="editorial-title article-title" itemprop="headline">Maintaining 707 Site Checks</h1><p class="editorial-deck" itemprop="description">A long list means little if half of its links no longer give useful answers.</p><div class="article-meta"><time itemprop="datePublished" datetime="2026-09-19">19 September 2026</time><span>5 min read</span></div></header>
       <div class="article-copy" itemprop="articleBody">
-        <p>Username catalogs age quickly. Platforms close, profile routes change, APIs disappear, and formerly public pages become login-only. Keeping every historical definition active makes a scanner look larger while making its results worse.</p>
+        <p>Lists of username sites go out of date quickly. Platforms close, profile addresses change, APIs disappear, and public pages move behind login screens. Keeping every old entry would make PROBE look bigger while making its results less useful.</p>
         <div class="article-metric" aria-label="Source catalog breakdown"><div><strong>707</strong><span>catalog definitions</span></div><div><strong>373</strong><span>active sources</span></div><div><strong>334</strong><span>defunct definitions</span></div></div>
-        <h2>Three source states</h2>
-        <p>PROBE currently uses 324 automatic sources and 49 manual-only sources. Automatic sources have enough observable evidence for classification. Manual-only sources remain useful links, but their unauthenticated responses do not safely distinguish existing and absent users. Defunct definitions stay in the historical catalog but are not loaded by production.</p>
-        <h2>Calibration over assumptions</h2>
-        <p>Each automatic source should have a known-positive control and deterministic negative controls. A source is fully verified only when it handles its available positive and both negatives without abstaining. The current campaign fully verified 177 of 324 automatic sources.</p>
-        <p>Known-positive data also ages. Manual review found controls for accounts that had been deleted or renamed. A failing control is therefore an investigation prompt, not automatic proof that production logic is broken.</p>
-        <h2>Maintenance is a product feature</h2>
-        <p>The next operational step is scheduled source-health monitoring: detect route changes, marker drift, unusual status-code shifts, and sustained abstention increases before users report them. Community suggestions can expand coverage, but new sources should pass the same positive-and-negative evidence standard before entering automatic scans.</p>
+        <h2>Three kinds of source</h2>
+        <p>PROBE currently has 324 automatic sources and 49 that must be opened manually. Automatic sources give us enough information to make a useful decision. Manual-only sources are still valuable links, but without logging in we cannot reliably tell whether a username exists. The remaining 334 old entries stay in the historical list but are not checked in live searches.</p>
+        <h2>Test, do not assume</h2>
+        <p>We test each automatic source with an account known to exist and unusual usernames expected not to exist. A source is fully verified only when it handles the available real account and both missing accounts without returning an unclear answer. The latest test fully verified 177 of 324 automatic sources.</p>
+        <p>The test accounts also need maintenance. During manual review, we found accounts that had been deleted or renamed. A failed test therefore tells us to investigate; it does not automatically mean PROBE is broken.</p>
+        <h2>Keeping the list useful</h2>
+        <p>The next step is to run these checks on a schedule and flag changes in profile addresses, page wording, response codes, or the number of unclear results. Suggestions from users can help expand coverage, but every new source should pass the same real-and-missing account tests before it is added to automatic scans.</p>
       </div>
     </article>
   </main>
