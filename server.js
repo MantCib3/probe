@@ -253,7 +253,7 @@ async function handlePostEndpoint(pathname, req, res) {
     } catch (error) {
       console.error(`[email] contact notification failed: ${error.message}`);
       res.writeHead(error.code === 'EMAIL_NOT_CONFIGURED' ? 503 : 502, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Message could not be delivered. Please try again later.' }));
+      return res.end(JSON.stringify(emailDeliveryError(error, 'Message could not be delivered. Please try again later.')));
     }
     consumeSubmitRateLimit(ip);
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -277,7 +277,7 @@ async function handlePostEndpoint(pathname, req, res) {
     } catch (error) {
       console.error(`[email] report notification failed: ${error.message}`);
       res.writeHead(error.code === 'EMAIL_NOT_CONFIGURED' ? 503 : 502, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Report could not be delivered. Please try again later.' }));
+      return res.end(JSON.stringify(emailDeliveryError(error, 'Report could not be delivered. Please try again later.')));
     }
     consumeSubmitRateLimit(ip);
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -301,6 +301,20 @@ function getEmailConfig() {
   };
   const missing = Object.entries(values).filter(([, value]) => !value).map(([name]) => name);
   return { ...values, configured: missing.length === 0, missing };
+}
+
+function emailDeliveryError(error, fallback) {
+  const status = Number(error && error.httpStatus);
+  if (status === 401 || status === 403 || status === 404) {
+    return { error: 'Email service account or credentials were rejected. Please contact the site administrator.', deliveryError: 'authentication' };
+  }
+  if (status === 400) {
+    return { error: 'Email sender configuration was rejected. Please contact the site administrator.', deliveryError: 'sender_configuration' };
+  }
+  if (status === 429) {
+    return { error: 'Email service is temporarily rate limited. Please try again shortly.', deliveryError: 'rate_limited' };
+  }
+  return { error: fallback, deliveryError: 'upstream' };
 }
 
 const EMAIL_CONFIG_AT_STARTUP = getEmailConfig();
@@ -354,6 +368,7 @@ function notifyByEmail(subject, text, replyTo = '') {
           : `HTTP ${resp.statusCode}`;
         const error = new Error(`Cloudflare Email Sending rejected the request: ${detail || 'unknown error'}`);
         error.code = 'EMAIL_SEND_FAILED';
+        error.httpStatus = resp.statusCode;
         finish(reject, error);
       });
     });

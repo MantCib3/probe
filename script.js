@@ -2104,7 +2104,7 @@ async function submitReport() {
       headers: { 'Content-Type': 'application/json' },
       body   : JSON.stringify({ site: _reportSiteName, username: lastScannedTarget || '', correctStatus: selected.value, notes, cfToken }),
     });
-    const data = await r.json();
+    const data = await readApiResponse(r);
     if (attempt !== _reportAttempt || !_reportPopover.classList.contains('open')) return;
     if (data.ok) {
       statusEl.textContent = '✓ Report sent. Thank you!';
@@ -2153,7 +2153,7 @@ function initContactForm() {
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({ name, email, message, cfToken }),
       });
-      const data = await r.json();
+      const data = await readApiResponse(r);
       if (data.ok) {
         status.textContent = '✓ Message sent! We\'ll get back to you.'; status.className = 'cf-status success';
         form.reset();
@@ -2165,6 +2165,19 @@ function initContactForm() {
     }
     btn.disabled = false; btn.textContent = 'Send Message';
   });
+}
+
+async function readApiResponse(response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    return {
+      error: response.ok
+        ? 'The server returned an invalid response. Please try again.'
+        : `The server could not process the request (HTTP ${response.status}). Please try again.`,
+    };
+  }
 }
 
 /* ── Bootstrap ───────────────────────────────────────────────────────── */
