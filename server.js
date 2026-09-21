@@ -287,17 +287,12 @@ async function handlePostEndpoint(pathname, req, res) {
   res.writeHead(404); res.end('Not found');
 }
 
-/**
- * Email notification via the Cloudflare Email Sending REST API. The form
- * response waits for Cloudflare to accept or queue the message, so the UI
- * never reports success for missing configuration or a rejected send.
- */
+/** Email notification via Resend's REST API. */
 function getEmailConfig() {
   const values = {
-    accountId: (process.env.CF_EMAIL_ACCOUNT_ID || '').trim(),
-    apiToken: (process.env.CF_EMAIL_API_TOKEN || '').trim(),
-    from: (process.env.CF_EMAIL_FROM || '').trim(),
-    to: (process.env.CF_EMAIL_TO || '').trim(),
+    apiKey: (process.env.RESEND_API_KEY || '').trim(),
+    from: (process.env.RESEND_FROM || '').trim(),
+    to: (process.env.RESEND_TO || '').trim(),
   };
   const missing = Object.entries(values).filter(([, value]) => !value).map(([name]) => name);
   return { ...values, configured: missing.length === 0, missing };
@@ -305,10 +300,13 @@ function getEmailConfig() {
 
 function emailDeliveryError(error, fallback) {
   const status = Number(error && error.httpStatus);
-  if (status === 401 || status === 403 || status === 404) {
-    return { error: 'Email service account or credentials were rejected. Please contact the site administrator.', deliveryError: 'authentication' };
+  if (error && error.code === 'EMAIL_NOT_CONFIGURED') {
+    return { error: 'Email notifications are not configured. Please contact the site administrator.', deliveryError: 'configuration' };
   }
-  if (status === 400) {
+  if (status === 401) {
+    return { error: 'Email service credentials were rejected. Please contact the site administrator.', deliveryError: 'authentication' };
+  }
+  if (status === 400 || status === 403 || status === 422) {
     return { error: 'Email sender configuration was rejected. Please contact the site administrator.', deliveryError: 'sender_configuration' };
   }
   if (status === 429) {
@@ -325,7 +323,7 @@ if (IS_PRODUCTION && !EMAIL_CONFIG_AT_STARTUP.configured) {
 function notifyByEmail(subject, text, replyTo = '') {
   const config = getEmailConfig();
   if (!config.configured) {
-    const error = new Error('Cloudflare Email Sending environment variables are incomplete');
+    const error = new Error('Resend environment variables are incomplete');
     error.code = 'EMAIL_NOT_CONFIGURED';
     return Promise.reject(error);
   }
@@ -345,11 +343,11 @@ function notifyByEmail(subject, text, replyTo = '') {
       fn(value);
     };
     const req = https.request({
-      hostname: 'api.cloudflare.com',
-      path: `/client/v4/accounts/${config.accountId}/email/sending/send`,
+      hostname: 'api.resend.com',
+      path: '/emails',
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.apiToken}`,
+        'Authorization': `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(payload),
       },
@@ -360,19 +358,17 @@ function notifyByEmail(subject, text, replyTo = '') {
       resp.on('end', () => {
         let result;
         try { result = JSON.parse(responseBody); } catch (_) { result = null; }
-        if (resp.statusCode >= 200 && resp.statusCode < 300 && result && result.success === true) {
-          return finish(resolve, result.result || {});
+        if (resp.statusCode >= 200 && resp.statusCode < 300 && result && result.id) {
+          return finish(resolve, result);
         }
-        const detail = result && Array.isArray(result.errors)
-          ? result.errors.map(item => item.message || item.code).filter(Boolean).join('; ')
-          : `HTTP ${resp.statusCode}`;
-        const error = new Error(`Cloudflare Email Sending rejected the request: ${detail || 'unknown error'}`);
+        const detail = result && (result.message || result.name) || `HTTP ${resp.statusCode}`;
+        const error = new Error(`Resend rejected the request: ${detail}`);
         error.code = 'EMAIL_SEND_FAILED';
         error.httpStatus = resp.statusCode;
         finish(reject, error);
       });
     });
-    req.setTimeout(8000, () => req.destroy(new Error('Cloudflare Email Sending timed out')));
+    req.setTimeout(8000, () => req.destroy(new Error('Resend timed out')));
     req.on('error', error => {
       error.code = error.code || 'EMAIL_SEND_FAILED';
       finish(reject, error);

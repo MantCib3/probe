@@ -24,14 +24,11 @@ services:
         value: "1"   # Render's own edge always proxies to this process
       - key: CF_FRONTED
         sync: false  # set to "1" only if this domain is orange-clouded through Cloudflare
-      # Optional: email notifications for /api/contact and /api/report
-      # (local JSONL storage in reports/ always happens regardless).
-      # Requires a domain onboarded via `npx wrangler email sending enable`.
-      - key: CF_EMAIL_ACCOUNT_ID
+      # Email notifications for /api/contact and /api/report via Resend.
+      # Verify the RESEND_FROM domain in Resend before enabling the forms.
+      - key: RESEND_API_KEY
         sync: false
-      - key: CF_EMAIL_API_TOKEN
+      - key: RESEND_FROM
         sync: false
-      - key: CF_EMAIL_FROM
-        sync: false
-      - key: CF_EMAIL_TO
+      - key: RESEND_TO
         sync: false
