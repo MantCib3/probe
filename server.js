@@ -62,12 +62,6 @@ const AUX_RATE_LIMITED_PATHS = new Set([
 // Render's Environment tab produces a secret that LOOKS right but makes
 // every siteverify call fail with 'invalid-input-secret' silently.
 const TURNSTILE_SECRET  = (process.env.TURNSTILE_SECRET || '').trim(); // set in Render env vars
-// Public widget sitekey — safe to expose to the client (site keys are not
-// secret, unlike TURNSTILE_SECRET). Defaults to the real production widget
-// created for this project; override via TURNSTILE_SITEKEY if it's ever
-// rotated. Still falls back to Cloudflare's official test key only if
-// someone explicitly sets TURNSTILE_SITEKEY to an empty string.
-const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || '0x4AAAAAADFTcr011fUWBkXS';
 // The `action` each surface's widget render() call uses (script.js) —
 // cross-checked against siteverify's response below so a token minted for
 // one form can't be replayed against another (e.g. a scan token reused to
@@ -3323,17 +3317,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  /* ── Public runtime config for the client ────────────────────────────── */
-  if (pathname === '/api/config') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({
-      turnstileSiteKey: TURNSTILE_SITEKEY,
-      turnstileActions: TURNSTILE_ACTIONS,
-      emailProvider: 'resend',
-      emailNotificationsConfigured: getEmailConfig().configured,
-    }));
-  }
-
   /* ── Serve sites.json for client ────────────────────────────────────── */
   if (pathname === '/sites.json') {
     return serveStatic(res, path.join(__dirname, 'sites.json'));
@@ -3461,6 +3444,11 @@ const server = http.createServer((req, res) => {
 
     tick();
     return;
+  }
+
+  if (pathname === '/api' || pathname.startsWith('/api/')) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end('Not Found');
   }
 
   /* ── Static files ───────────────────────────────────────────────────── */

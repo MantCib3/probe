@@ -1,7 +1,7 @@
 {
   "name": "probe-username-osint",
   "version": "1.0.0",
-  "description": "OSINT username search across 100+ platforms",
+  "description": "OSINT username search across 373 functional sources",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

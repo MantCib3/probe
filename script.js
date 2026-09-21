@@ -104,13 +104,8 @@ let dorkResults = [];
 let activeStatusFilter = null; // null = no filter, else a status string
 
 /* ── Turnstile state ─────────────────────────────────────────────────── */
-// Real production sitekey/actions are fetched from /api/config at load time
-// (see loadTurnstileConfig below); these are only fallbacks for local dev
-// when that endpoint hasn't responded yet. Each surface (scan/contact/
-// report) uses its own action + widget so a token minted for one form
-// can't be replayed against another — the server cross-checks this.
-let TURNSTILE_SITEKEY  = '0x4AAAAAADFTcr011fUWBkXS';
-let TURNSTILE_ACTIONS  = { scan: 'scan', contact: 'contact', report: 'report' };
+const TURNSTILE_SITEKEY = '0x4AAAAAADFTcr011fUWBkXS';
+const TURNSTILE_ACTIONS = { scan: 'scan', contact: 'contact', report: 'report' };
 
 // Per-surface widget state: token from the callback, widget handle (for
 // reset()), and whether it's been mounted yet.
@@ -119,21 +114,6 @@ const _ts = {
   contact: { token: null, widgetId: null, rendered: false },
   report : { token: null, widgetId: null, rendered: false },
 };
-
-async function loadTurnstileConfig() {
-  try {
-    const res = await fetch('/api/config');
-    if (res.ok) {
-      const cfg = await res.json();
-      if (cfg && typeof cfg.turnstileSiteKey === 'string' && cfg.turnstileSiteKey) {
-        TURNSTILE_SITEKEY = cfg.turnstileSiteKey;
-      }
-      if (cfg && cfg.turnstileActions && typeof cfg.turnstileActions === 'object') {
-        TURNSTILE_ACTIONS = Object.assign({}, TURNSTILE_ACTIONS, cfg.turnstileActions);
-      }
-    }
-  } catch (_) { /* keep fallback test key */ }
-}
 
 // Mounts the widget for `surface` ('scan' | 'contact' | 'report') into
 // `containerId` the first time it's needed, rather than at page load, so
@@ -2201,5 +2181,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch the sitekey ahead of time so it's ready the moment the widget
   // needs to be rendered (on Scan click) — the widget itself is mounted
   // lazily, not here, so it isn't shown before the user does anything.
-  loadTurnstileConfig();
 });
