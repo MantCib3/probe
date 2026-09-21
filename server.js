@@ -181,12 +181,22 @@ function getClientIp(req) {
 function readBody(req, maxLen = 8192) {
   return new Promise((resolve, reject) => {
     let data = '';
+    let size = 0;
+    let tooLarge = false;
     req.on('data', chunk => {
+      if (tooLarge) return;
+      size += chunk.length;
+      if (size > maxLen) {
+        tooLarge = true;
+        const error = new Error('body_too_large');
+        error.code = 'BODY_TOO_LARGE';
+        reject(error);
+        return;
+      }
       data += chunk;
-      if (data.length > maxLen) { req.destroy(new Error('body_too_large')); }
     });
-    req.on('end',   () => resolve(data));
-    req.on('error', reject);
+    req.on('end', () => { if (!tooLarge) resolve(data); });
+    req.on('error', error => { if (!tooLarge) reject(error); });
   });
 }
 
@@ -204,9 +214,10 @@ async function handlePostEndpoint(pathname, req, res) {
     const raw = await readBody(req, 8192);
     body = JSON.parse(raw);
     if (typeof body !== 'object' || body === null) throw new Error('not_object');
-  } catch (_) {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'Invalid request body.' }));
+  } catch (error) {
+    const tooLarge = error && error.code === 'BODY_TOO_LARGE';
+    res.writeHead(tooLarge ? 413 : 400, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: tooLarge ? 'Request body is too large.' : 'Invalid request body.' }));
   }
 
   // Every form submission must carry a valid Turnstile token for its own
@@ -237,10 +248,16 @@ async function handlePostEndpoint(pathname, req, res) {
     }
     const entry = JSON.stringify({ type: 'contact', ts: new Date().toISOString(), name, email, message }) + '\n';
     fs.appendFile(path.join(REPORTS_DIR, 'contact.jsonl'), entry, 'utf8', () => {});
+    try {
+      await notifyByEmail('New contact form submission', `Name: ${name}\nEmail: ${email}\n\n${message}`, email);
+    } catch (error) {
+      console.error(`[email] contact notification failed: ${error.message}`);
+      res.writeHead(error.code === 'EMAIL_NOT_CONFIGURED' ? 503 : 502, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Message could not be delivered. Please try again later.' }));
+    }
     consumeSubmitRateLimit(ip);
-    notifyByEmail('New contact form submission', `Name: ${name}\nEmail: ${email}\n\n${message}`);
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ ok: true }));
+    return res.end(JSON.stringify({ ok: true, delivery: 'accepted' }));
   }
 
   if (pathname === '/api/report') {
@@ -255,44 +272,99 @@ async function handlePostEndpoint(pathname, req, res) {
     }
     const entry = JSON.stringify({ type: 'report', ts: new Date().toISOString(), site, username, correctStatus, notes }) + '\n';
     fs.appendFile(path.join(REPORTS_DIR, 'reports.jsonl'), entry, 'utf8', () => {});
+    try {
+      await notifyByEmail('New accuracy report', `Site: ${site}\nUsername: ${username}\nCorrect status: ${correctStatus}\n\n${notes}`);
+    } catch (error) {
+      console.error(`[email] report notification failed: ${error.message}`);
+      res.writeHead(error.code === 'EMAIL_NOT_CONFIGURED' ? 503 : 502, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Report could not be delivered. Please try again later.' }));
+    }
     consumeSubmitRateLimit(ip);
-    notifyByEmail('New accuracy report', `Site: ${site}\nUsername: ${username}\nCorrect status: ${correctStatus}\n\n${notes}`);
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ ok: true }));
+    return res.end(JSON.stringify({ ok: true, delivery: 'accepted' }));
   }
 
   res.writeHead(404); res.end('Not found');
 }
 
 /**
- * Fire-and-forget email notification via the Cloudflare Email Sending
- * REST API. No-op unless CF_EMAIL_ACCOUNT_ID / CF_EMAIL_API_TOKEN /
- * CF_EMAIL_FROM / CF_EMAIL_TO are all set — local JSONL storage above
- * remains the source of truth either way, this is just a convenience
- * ping so submissions don't require manually checking the server disk.
+ * Email notification via the Cloudflare Email Sending REST API. The form
+ * response waits for Cloudflare to accept or queue the message, so the UI
+ * never reports success for missing configuration or a rejected send.
  */
-function notifyByEmail(subject, text) {
-  const accountId = process.env.CF_EMAIL_ACCOUNT_ID;
-  const apiToken  = process.env.CF_EMAIL_API_TOKEN;
-  const from      = process.env.CF_EMAIL_FROM;
-  const to        = process.env.CF_EMAIL_TO;
-  if (!accountId || !apiToken || !from || !to) return;
+function getEmailConfig() {
+  const values = {
+    accountId: (process.env.CF_EMAIL_ACCOUNT_ID || '').trim(),
+    apiToken: (process.env.CF_EMAIL_API_TOKEN || '').trim(),
+    from: (process.env.CF_EMAIL_FROM || '').trim(),
+    to: (process.env.CF_EMAIL_TO || '').trim(),
+  };
+  const missing = Object.entries(values).filter(([, value]) => !value).map(([name]) => name);
+  return { ...values, configured: missing.length === 0, missing };
+}
 
-  const payload = JSON.stringify({ to, from, subject: `[PROBE] ${subject}`, text });
-  const req = https.request({
-    hostname: 'api.cloudflare.com',
-    path    : `/client/v4/accounts/${accountId}/email/sending/send`,
-    method  : 'POST',
-    headers : {
-      'Authorization': `Bearer ${apiToken}`,
-      'Content-Type' : 'application/json',
-      'Content-Length': Buffer.byteLength(payload),
-    },
-  }, (resp) => { resp.on('data', () => {}); resp.on('end', () => {}); });
-  req.setTimeout(8000, () => req.destroy());
-  req.on('error', () => {}); // best-effort — never blocks or breaks the submission
-  req.write(payload);
-  req.end();
+const EMAIL_CONFIG_AT_STARTUP = getEmailConfig();
+if (IS_PRODUCTION && !EMAIL_CONFIG_AT_STARTUP.configured) {
+  console.error(`[email] notifications disabled; missing configuration: ${EMAIL_CONFIG_AT_STARTUP.missing.join(', ')}`);
+}
+
+function notifyByEmail(subject, text, replyTo = '') {
+  const config = getEmailConfig();
+  if (!config.configured) {
+    const error = new Error('Cloudflare Email Sending environment variables are incomplete');
+    error.code = 'EMAIL_NOT_CONFIGURED';
+    return Promise.reject(error);
+  }
+
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({
+      to: config.to,
+      from: config.from,
+      subject: `[PROBE] ${subject}`,
+      text,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    });
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      fn(value);
+    };
+    const req = https.request({
+      hostname: 'api.cloudflare.com',
+      path: `/client/v4/accounts/${config.accountId}/email/sending/send`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiToken}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload),
+      },
+    }, (resp) => {
+      let responseBody = '';
+      resp.setEncoding('utf8');
+      resp.on('data', chunk => { if (responseBody.length < 16384) responseBody += chunk; });
+      resp.on('end', () => {
+        let result;
+        try { result = JSON.parse(responseBody); } catch (_) { result = null; }
+        if (resp.statusCode >= 200 && resp.statusCode < 300 && result && result.success === true) {
+          return finish(resolve, result.result || {});
+        }
+        const detail = result && Array.isArray(result.errors)
+          ? result.errors.map(item => item.message || item.code).filter(Boolean).join('; ')
+          : `HTTP ${resp.statusCode}`;
+        const error = new Error(`Cloudflare Email Sending rejected the request: ${detail || 'unknown error'}`);
+        error.code = 'EMAIL_SEND_FAILED';
+        finish(reject, error);
+      });
+    });
+    req.setTimeout(8000, () => req.destroy(new Error('Cloudflare Email Sending timed out')));
+    req.on('error', error => {
+      error.code = error.code || 'EMAIL_SEND_FAILED';
+      finish(reject, error);
+    });
+    req.write(payload);
+    req.end();
+  });
 }
 
 
@@ -781,6 +853,7 @@ const MIME = {
   '.txt' : 'text/plain; charset=utf-8',
   '.ico' : 'image/x-icon',
   '.svg' : 'image/svg+xml',
+  '.png' : 'image/png',
 };
 
 /* ── Input validation ─────────────────────────────────────────────────── */
@@ -2393,6 +2466,12 @@ const server = http.createServer((req, res) => {
 
   const pathname = urlObj.pathname;
 
+  res.on('finish', () => {
+    if (res.statusCode < 400) return;
+    const ray = String(req.headers['cf-ray'] || '').split('-', 1)[0].slice(0, 32);
+    console.warn(`[http] ${req.method} ${pathname} ${res.statusCode}${ray ? ` cf-ray=${ray}` : ''}`);
+  });
+
   const canonicalPath = LEGACY_PAGE_REDIRECTS.get(pathname);
   if (canonicalPath) {
     res.writeHead(301, { Location: `${canonicalPath}${urlObj.search}` });
@@ -3236,7 +3315,11 @@ const server = http.createServer((req, res) => {
   /* ── Public runtime config for the client ────────────────────────────── */
   if (pathname === '/api/config') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ turnstileSiteKey: TURNSTILE_SITEKEY, turnstileActions: TURNSTILE_ACTIONS }));
+    return res.end(JSON.stringify({
+      turnstileSiteKey: TURNSTILE_SITEKEY,
+      turnstileActions: TURNSTILE_ACTIONS,
+      emailNotificationsConfigured: getEmailConfig().configured,
+    }));
   }
 
   /* ── Serve sites.json for client ────────────────────────────────────── */
