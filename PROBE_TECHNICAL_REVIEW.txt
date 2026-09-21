@@ -1,0 +1,627 @@
+PROBE TECHNICAL AND INFRASTRUCTURE REVIEW
+=========================================
+
+Scope
+-----
+This document reviews the code in this repository, not only the public claims made by the site. It covers request routing, scanning, classification, browser behavior, auxiliary intelligence endpoints, contact/report sending, security controls, deployment, SEO, persistence, and current technical risks.
+
+The production application is a custom Node.js HTTP server with a vanilla HTML/CSS/JavaScript client. It is not a Next.js application. Render runs the Node process, and the public domain is intended to sit behind Cloudflare. No database is used by the runtime.
+
+Primary runtime files:
+- server.js: HTTP server, routing, probes, classification, security, SSE, and email.
+- script.js: browser interaction, scan rendering, filters, notes, exports, and dork UI.
+- sites.json: 707 historical username-source definitions.
+- name-sites.json: real-name source definitions.
+- worker.js: a separate Cloudflare Worker proxy that is not called by server.js.
+- render.yaml: Render service configuration.
+- index.html, privacy.html, roadmap.html, blog/: public pages.
+
+Verified catalog totals:
+- 707 historical definitions.
+- 373 non-defunct functional sources loaded by the server.
+- 324 automatic sources.
+- 49 manual-only sources marked undetectable.
+- 334 defunct historical entries excluded at startup.
+
+
+1. APPLICATION STARTUP AND DEPLOYMENT
+-------------------------------------
+
+Render installs packages and starts the server with:
+
+  buildCommand: npm install --omit=dev
+  startCommand: node server.js
+
+The server binds to process.env.PORT, a command-line port, or 3737. On Render it listens on 0.0.0.0; locally it listens on 127.0.0.1. If a local port is occupied, it retries once on an operating-system-assigned port.
+
+The catalog is loaded synchronously once at process startup:
+
+  const SITES = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'sites.json'), 'utf8')
+  ).filter(s => !s.defunct);
+
+  const NAME_SITES = JSON.parse(
+    fs.readFileSync(path.join(__dirname, 'name-sites.json'), 'utf8')
+  );
+
+Consequences:
+- Defunct records remain available for maintenance but never enter a public scan.
+- Editing sites.json on disk does not change the in-memory SITES array until restart.
+- Static requests for sites.json are not cached in the server's asset cache, but scan behavior still uses the startup copy.
+- Runtime state is process-local. A Render restart clears caches and rate-limit counters.
+
+Production environment variables:
+- NODE_ENV=production
+- TURNSTILE_SECRET: private server-side Turnstile secret.
+- TURNSTILE_HOSTNAMES: optional comma-separated hostname allowlist.
+- TRUST_PROXY=1: trust the right-most X-Forwarded-For hop from Render.
+- CF_FRONTED=1 when Cloudflare proxies the domain.
+- RESEND_API_KEY: Resend API credential.
+- RESEND_FROM: verified sender address.
+- RESEND_TO: notification recipient.
+- PORT: normally supplied by Render.
+
+The public Turnstile site key is intentionally present in script.js. It is not a secret. The private TURNSTILE_SECRET is read only by server.js.
+
+
+2. HTTP ROUTING AND STATIC DELIVERY
+-----------------------------------
+
+server.js uses http.createServer directly. It has no Express middleware or framework router. The controlling order is:
+
+1. Apply security headers.
+2. Parse the URL.
+3. Log failed requests without query strings.
+4. Redirect legacy .html URLs to clean canonical paths.
+5. Route POST contact/report requests.
+6. Reject unsupported methods.
+7. Handle HEAD requests.
+8. Apply auxiliary endpoint rate limiting.
+9. Hide production-only internal endpoints.
+10. Execute API routes.
+11. Reject unknown /api paths.
+12. Resolve and serve public files.
+
+Canonical routes are explicit:
+
+  const CLEAN_PAGE_ROUTES = new Map([
+    ['/roadmap', 'roadmap.html'],
+    ['/privacy', 'privacy.html'],
+    ['/blog/measuring-username-search-accuracy',
+      'blog/measuring-username-search-accuracy.html'],
+    ['/blog/why-probe-abstains', 'blog/why-probe-abstains.html'],
+    ['/blog/maintaining-a-source-catalog',
+      'blog/maintaining-a-source-catalog.html'],
+  ]);
+
+/index.html and the article .html paths receive permanent redirects to canonical paths. Unknown /api and /api/* requests return 404 rather than falling through to a browser-facing directory or file.
+
+Static path traversal is constrained by URL decoding, path normalization, and a final check that the resolved path remains below __dirname. HTML is sent no-cache. JavaScript and CSS are cached in process and sent with max-age=86400. Other public files use max-age=3600.
+
+.txt files are served as text/plain; charset=utf-8. This is how /llms.txt and /PROBE_TECHNICAL_REVIEW.txt are delivered.
+
+Security headers applied to every response:
+
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains (production)
+
+The Content Security Policy permits same-origin resources, Google Fonts, and Cloudflare Turnstile. frame-ancestors is none, base-uri is none, form-action is self, and object-src is none. style-src still allows unsafe-inline because the current pages contain inline style attributes.
+
+
+3. USERNAME SCAN REQUEST LIFECYCLE
+----------------------------------
+
+Browser entry point:
+
+  new EventSource(
+    `/api/check?username=${encodeURIComponent(username)}` + tokenParam
+  );
+
+Server endpoint:
+
+  GET /api/check?username=<value>&cf-token=<Turnstile token>
+
+The server validates usernames as 1-50 characters from the supported letters/numbers/dot/hyphen/underscore set. It resolves the client IP, opens an SSE response, checks the hourly scan limit, and verifies the Turnstile token with the expected action "scan".
+
+Only a successful Turnstile verification consumes one of the 10 scans per hour. The response stream emits:
+
+  { type: 'start', total, username }
+  { type: 'result', ...normalizedResult, done, total }
+  { type: 'done', done, total }
+
+Errors such as rate limiting or Turnstile rejection are sent as an SSE error object before the stream closes.
+
+The scan copies all 373 active sources into a queue and runs at most 20 at once. Each source is wrapped in a 15-second Promise.race deadline:
+
+  const probePromise = probeWithBrowserFallback(site, username);
+  const timeoutResult = new Promise(resolve =>
+    setTimeout(() => resolve({
+      name: site.name,
+      status: 'timeout',
+      reasonCodes: ['probe_timeout'],
+      detectionMethod: 'http'
+    }), 15000)
+  );
+
+  Promise.race([probePromise, timeoutResult]).then(...);
+
+A slow underlying request is not cancelled by this race; its result is simply ignored after the timeout result wins. Client disconnection stops writes but does not abort probes already in progress.
+
+For each result the server includes classification fields and selected site configuration such as cors, cfProxy, auth, checkMethod, errorMsg, positiveMsg, and checkUrl. The browser appends a result card immediately and updates progress from done/total.
+
+
+4. SOURCE REQUEST EXECUTION
+---------------------------
+
+probe(site, username) controls each username-source request.
+
+A. Authentication-required sources
+
+A source with requiresAuth returns immediately as auth_required. The server does not attempt to log in or use user credentials.
+
+B. Input-format shortcut
+
+If a username contains spaces and the source is not in an allowed category such as gaming, the code returns not_found with reason username_format_incompatible and confidence 0.55. This avoids malformed network requests but is a heuristic, not proof that an account is absent.
+
+C. Manual/undetectable sources
+
+ENABLE_UNDETECTABLE_STEALTH is false. An undetectable source therefore returns unknown unless a later per-source browser fallback is explicitly allowed and available. These are the 49 manual-only sources represented in public counts.
+
+D. Normal HTTP source
+
+The request target is selected in this order:
+
+  const targetTemplate = site.apiUrl || site.checkUrl || site.url;
+
+The result URL shown to the user remains site.url, so internal API/check URLs are not presented as profile links.
+
+doRequest performs HTTP(S) access with:
+- a Chrome-like user agent;
+- a 10-second request timeout;
+- response body limits;
+- up to three redirects;
+- one retry for selected transient failures;
+- a per-host interval to reduce bursts;
+- cookie handling across redirects.
+
+The main SSE deadline is currently shorter than the broader SITE_PROBE_TIMEOUT_MS setting, so the 15-second outer race is the practical user-visible limit.
+
+E. Browser fallback
+
+probeWithBrowserFallback first calls probe. It keeps any conclusive answer. For unknown answers, browser fallback runs only when:
+
+  (ENABLE_USERNAME_BROWSER_FALLBACK || site.allowBrowserFallback)
+  && chromiumStealth
+  && !site.noBrowserFallback
+
+The global flag is false. Per-source fallback can still run when allowBrowserFallback is true and optional browser packages are installed. Those packages are not declared in package.json, so the current Render install normally leaves chromiumStealth null.
+
+F. Wayback Machine fallback
+
+Any result still unknown is checked against the Wayback CDX API for an archived HTTP 200 record since 2022. An archive hit changes the result to found with confidence 0.6 and reason archive_org_fallback_found. This means "found" can describe historical existence, not necessarily a currently live profile; the reason code is essential context.
+
+
+5. DECISION AND CLASSIFICATION LOGIC
+------------------------------------
+
+classify(site, username, url, statusCode, headers, body, detectionMethod) is the central decision function. makeClassifiedResult creates a consistent evidence record. normalizeResult fills defaults for timeout/error/fallback paths.
+
+Result shape:
+
+  {
+    name,
+    category,
+    url,
+    status,
+    statusCode,
+    confidence,
+    reasonCodes,
+    evidence: {
+      checkedAt,
+      method,
+      statusCode,
+      bodyHash,
+      reasons
+    }
+  }
+
+The body hash is SHA-256 of the first 2,048 response characters. It is supporting evidence for response comparison, not a complete-content hash.
+
+Decision order is significant:
+
+1. HTTP redirect (301-308)
+   - Redirect to login/sign-in/auth pattern: not_found, confidence 0.95.
+   - Redirect to a challenge pattern: blocked, confidence 0.90.
+   - Other reachable redirect: found, confidence 0.70.
+
+2. HTTP 404 or 410
+   - not_found, confidence 0.98.
+
+3. HTTP 401, 403, 429, or 999
+   - blocked, confidence 0.90.
+
+4. site.notFoundStatus exact match
+   - not_found, confidence 0.94.
+
+5. HTTP 200 body/title decisions
+   - blocked title pattern;
+   - configured positiveMsg present/absent;
+   - configured errorMsg;
+   - not-found title pattern;
+   - blocked body pattern;
+   - deleted/suspended body pattern;
+   - not-found body pattern;
+   - required username-in-body decision;
+   - generic username body guard;
+   - explicit skipBodyCheck found decision.
+
+6. Any unhandled status
+   - unknown, confidence 0.30.
+
+Representative branch:
+
+  if (sc === 404 || sc === 410) {
+    return makeClassifiedResult(
+      base,
+      'not_found',
+      [sc === 404 ? 'http_404' : 'http_410'],
+      0.98
+    );
+  }
+
+  if (sc === 403 || sc === 401 || sc === 429 || sc === 999) {
+    return makeClassifiedResult(
+      base,
+      'blocked',
+      [`blocked_http_${sc}`],
+      0.9
+    );
+  }
+
+A material ordering risk exists here: the generic blocked-status branch runs before site.notFoundStatus. If a source intentionally defines 401 or 403 as its not-found response, the generic branch wins and the site-specific rule is unreachable. This should be covered by classifier tests before changing the order, because some sources genuinely use those codes for access blocking.
+
+The classifier deliberately abstains. A 200 page that lacks configured evidence and does not contain the username is unknown, not automatically not_found. This avoids treating generic landing pages, consent screens, or incomplete content as absence.
+
+Default confidence values added by normalizeResult are:
+- found 0.72
+- deleted 0.80
+- not_found 0.90
+- unknown 0.30
+- timeout 0.12
+- error 0.10
+
+These values are implementation constants, not calibrated probabilities. Consumers should use status plus reasonCodes and evidence, not confidence alone.
+
+
+6. BROWSER RENDERING, FILTERING, NOTES, AND EXPORTS
+---------------------------------------------------
+
+script.js controls the browser UI. startScan resets old state, requests the Turnstile token, starts /api/check, and renders each SSE result as it arrives.
+
+The client escapes displayed content and uses DOM construction for result cards. Cards carry data-site, data-category, data-status, and data-result-index attributes. applyFilters combines category and status filters without changing the underlying results array.
+
+The browser preserves only selected workstation state in localStorage:
+- probe_case_title
+- probe_case_content
+- np_edge
+- np_pos
+- np_detached
+- np_dx
+- np_dy
+
+Case-note rich HTML is passed through sanitizeRichHtml before storage. Notes and pins are not uploaded automatically. They remain in that browser profile until cleared or overwritten.
+
+Exports are generated entirely in the browser:
+- CSV: name, category, status, confidence, reasons, and URL.
+- JSON: query, mode, generation time, totals, and result objects.
+- Markdown: case-oriented notes/pins where available.
+
+Downloads use a Blob and a temporary object URL. There is no server-side export archive.
+
+The client does not preserve the full evidence object returned by the server in its primary result mapping; it retains reasonCodes and selected fields. Therefore exported JSON is useful operational output but is not a byte-for-byte archive of the full SSE evidence payload.
+
+
+7. AUXILIARY SEARCH AND PIVOT LOGIC
+-----------------------------------
+
+The server contains these public auxiliary endpoints, all covered by the 200 requests/hour/IP auxiliary limiter:
+
+GET /api/quick-check
+- Runs a small preferred source subset through probe.
+- Returns one JSON object after all quick checks complete.
+
+GET /api/email-check?q=<email>
+- SSE endpoint.
+- Validates and normalizes the email.
+- Runs Gravatar, domain analysis, the public HIBP page, DuckDuckGo, Bing, GitHub, and generated manual pivots.
+
+GET /api/phone-check?q=<phone>
+- SSE endpoint.
+- Accepts 7-15 digits with an optional leading plus.
+- Runs local number analysis, DuckDuckGo, Bing, and generated pivots.
+
+GET /api/domain-check?q=<domain>
+- SSE endpoint.
+- Runs DNS analysis, HTTP reachability, crt.sh certificate-transparency lookup, and manual pivots.
+
+GET /api/name-check?q=<name>&city=&state=&ageMin=&ageMax=
+- SSE endpoint over name-sites.json with concurrency 2.
+- Uses probeNameSearch, which requires the optional stealth browser packages.
+- If chromiumStealth is absent, every source returns unknown without an HTTP fallback. The current package.json does not install those browser packages, so this is an important deployment limitation.
+
+GET /api/dork-search?target=<term>&engine=<engine>
+- JSON endpoint.
+- Sends exact-phrase searches through r.jina.ai reader URLs.
+- Google and DDG selections use DuckDuckGo HTML because proxied Google returns consent/interstitial pages.
+- Bing and Yandex have one DDG fallback attempt.
+- Markdown SERP entries are parsed into title, URL, snippet, and engine, deduplicated, and capped at eight.
+
+GET /api/link-preview?url=<URL>
+- JSON endpoint used for dork/pin thumbnails.
+- Allows only HTTP(S), rejects private destinations, and uses publicLookup to reject DNS resolutions to non-public IP space.
+- Follows one validated redirect.
+- Reads a limited amount of page markup and extracts Open Graph/Twitter image metadata.
+
+The active browser code directly calls /api/dork-search and /api/link-preview. The source contains startNameScan, startEmailScan, and startPhoneScan wrappers that call runPivotQuery, but no runPivotQuery definition exists and those wrappers have no call sites. The corresponding server endpoints exist, but this portion of the browser integration is stale or incomplete and should not be described as a fully available user workflow until wired and tested.
+
+
+8. TURNSTILE AND RATE LIMITING
+------------------------------
+
+Turnstile protects three actions: scan, contact, and report. Server verification posts token, secret, and remote IP to Cloudflare siteverify, then checks:
+- result.success is true;
+- result.action matches the expected form action when supplied;
+- result.hostname belongs to TURNSTILE_HOSTNAMES when configured.
+
+In production, a missing TURNSTILE_SECRET fails closed. In local development it bypasses verification so the application can be tested without production credentials.
+
+Rate-limit buckets:
+- Username scans: 10 successful protected scans per hour per IP.
+- Auxiliary endpoints: 200 requests per hour per IP.
+- Contact/report submissions: 5 successfully delivered submissions per hour per IP.
+
+The maps are capped at 20,000 IP keys and swept every ten minutes. They are not shared across processes or hosts and are cleared on restart. Scaling to multiple Render instances would make the effective limit instance-dependent. A shared store such as Cloudflare Rate Limiting, Durable Objects, Redis, or another central store would be required for globally consistent enforcement.
+
+Client-IP trust order is:
+1. CF-Connecting-IP only when CF_FRONTED=1.
+2. Right-most X-Forwarded-For item only when TRUST_PROXY=1.
+3. Raw socket address otherwise.
+
+This avoids unconditionally trusting spoofable forwarding headers.
+
+
+9. CONTACT, REPORT, STORAGE, AND EMAIL DELIVERY
+-----------------------------------------------
+
+POST /api/contact and POST /api/report are the only accepted POST routes.
+
+Shared handling:
+- Limit body input to 8,192 bytes.
+- Parse JSON and reject non-object values.
+- Verify the form-specific Turnstile action.
+- Validate and length-limit fields.
+- Append one line of JSON to reports/.
+- Await Resend acceptance.
+- Return success only after Resend returns a 2xx response containing an id.
+
+Contact fields:
+- name: required, maximum 100 characters.
+- email: required, maximum 200 characters, basic email syntax check.
+- message: required, maximum 2,000 characters.
+
+Report fields:
+- site: required, maximum 100 characters.
+- username: maximum 50 characters.
+- correctStatus: should_be_found, should_be_not_found, or other.
+- notes: maximum 500 characters.
+
+Local append records:
+- reports/contact.jsonl
+- reports/reports.jsonl
+
+The append occurs before email delivery and uses an empty callback. Therefore a submission can be written locally even when the caller receives a 502/503 email failure, and a filesystem write failure is not surfaced. Render filesystems may also be ephemeral depending on service configuration, so these files should not be treated as durable primary storage.
+
+Resend request construction:
+
+  const payload = JSON.stringify({
+    to: config.to,
+    from: config.from,
+    subject: `[PROBE] ${subject}`,
+    text,
+    ...(replyTo ? { reply_to: replyTo } : {}),
+  });
+
+  https.request({
+    hostname: 'api.resend.com',
+    path: '/emails',
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+Contact email sets reply_to to the submitter. Accuracy reports do not. The request has an eight-second timeout. Missing configuration returns 503. Resend rejection or network failure returns 502 with categorized authentication, sender-configuration, rate-limit, or upstream errors.
+
+No API secret is sent to the browser. Submission text is sent to Resend and the configured mailbox, so it leaves the Render process as disclosed by the privacy page.
+
+
+10. SSRF AND OUTBOUND-REQUEST SAFETY
+------------------------------------
+
+publicLookup resolves outbound hostnames and rejects private, loopback, link-local, and other non-public addresses before connecting. The link-preview endpoint validates both the initial URL and its one redirect. Production-only general fetch/snapshot endpoints are disabled.
+
+The protections are materially stronger than hostname-string checks alone because DNS results are inspected. Remaining concerns are normal for any server-side fetcher:
+- Every redirect target must continue to use the guarded lookup path.
+- DNS behavior and IPv4-mapped/IPv6 edge cases require automated tests.
+- Response byte and time limits should stay enforced on every helper.
+
+
+11. CLOUDFLARE WORKER STATUS
+----------------------------
+
+worker.js is a separate allowlisted proxy intended to fetch selected sites from Cloudflare's network. It requires X-Probe-Key to match PROBE_SHARED_SECRET, validates the destination hostname against exact/suffix allowlists, limits methods, caps the response body, and optionally attaches X_BEARER_TOKEN for X/Twitter requests.
+
+The worker also restricts browser-readable CORS responses to ALLOWED_ORIGIN.
+
+However, server.js contains no request to this Worker and no Worker URL/shared-secret configuration. Current username probes intentionally send cfProxy/cors entries through the normal server path. Therefore worker.js is not part of the confirmed active Render scan architecture. It is a separately deployable, currently orphaned or future component. Maintaining it as if active creates security and operational drift; either integrate it server-side with secret management and tests or remove/archive it.
+
+
+12. INTERNAL AND DISABLED ROUTES
+--------------------------------
+
+/api/lab-probe is available only outside production and only from loopback. It executes one catalog source through the production probe function for accuracy work.
+
+The following routes are explicitly hidden with 404 in production:
+- /api/verify
+- /api/og-image
+- /api/fetch-page
+- /api/snapshot
+
+They remain development code and should be treated as dormant attack surface during maintenance. /api and unknown /api/* routes also return 404.
+
+
+13. SEO, STRUCTURED DATA, AND AI DISCOVERY
+------------------------------------------
+
+Canonical URLs, Open Graph metadata, Twitter metadata, robots.txt, sitemap.xml, and 1200x630 social images are present.
+
+Structured data now uses isolated JSON-LD rather than page-wide microdata:
+- Homepage: Organization, WebSite, and WebApplication graph.
+- Blog index: Blog with three BlogPosting children.
+- Three articles: complete BlogPosting objects with headline, description, canonical URL, image, dates, author, and publisher.
+- Privacy and roadmap: WebPage objects.
+
+All seven JSON-LD blocks parse successfully. Legacy itemscope/itemtype/itemprop markup was removed, including the blog-index pattern that attached blogPost directly to links without complete nested BlogPosting entities.
+
+llms.txt now supplies canonical product, methodology, roadmap, privacy, and article links plus interpretation/citation guidance. robots.txt allows general crawling while disallowing /api/ and the raw catalogs.
+
+Visible word-count audit:
+- Homepage: 246 words.
+- Privacy: 169 words.
+- Roadmap: 485 words.
+- Blog index: 148 words.
+- Accuracy article: 420 words.
+- Abstention article: 342 words.
+- Source-catalog article: 309 words.
+
+The blog index and privacy page are below generic 200-word audit thresholds. That is not automatically an SEO defect: one is a navigation index and the other is a focused policy page. Adding filler would weaken clarity. The better future improvement is substantive content only when policy details or article summaries genuinely need expansion.
+
+
+14. FRONTEND MINIFICATION
+-------------------------
+
+Readable source files remain authoritative. build-assets.js reproducibly generates:
+- script.min.js from script.js with Terser.
+- roadmap.min.js from roadmap.js with Terser.
+- styles.min.css from styles.css with Clean CSS.
+- editorial.min.css from editorial.css with Clean CSS.
+
+Run:
+
+  npm run build:assets
+
+Public pages reference the minified files with updated cache versions. Measured first-party asset sizes:
+
+  script.js          94,518 bytes -> script.min.js       58,322 bytes
+  styles.css         71,641 bytes -> styles.min.css      46,834 bytes
+  editorial.css       6,505 bytes -> editorial.min.css    5,278 bytes
+  roadmap.js            455 bytes -> roadmap.min.js         312 bytes
+
+Combined reduction: 173,119 bytes to 110,746 bytes, approximately 36 percent before transport compression. Server source is intentionally not minified because that would reduce production debuggability without reducing browser transfer size.
+
+The generated files are committed deployment artifacts. The current Render command omits development dependencies and does not rebuild them, so maintainers must run npm run build:assets whenever source JS/CSS changes. A future CI check should rebuild and fail on a dirty diff to prevent stale assets.
+
+
+15. PRIVACY AND DATA BOUNDARIES
+-------------------------------
+
+Username, email, phone, domain, name, and dork inputs are transmitted to the PROBE origin and may then be included in requests to relevant public services. Username scans are not private local computations.
+
+Case notes and panel preferences use browser localStorage. Contact/report content is written to local JSONL and sent through Resend. There is no analytics SDK visible in the reviewed runtime, no account system, no persistent login cookie, and no database-backed user profile.
+
+The privacy page warns against submitting passwords, tokens, or secrets and restricts use to lawful research. It also notes that public results are leads rather than identity proof. There is no automated retention scheduler, user data portal, or dedicated deletion workflow in code.
+
+
+16. TESTING AND OBSERVABILITY
+-----------------------------
+
+npm run check performs JavaScript syntax checks only:
+
+  node --check server.js
+  node --check script.js
+  node --check worker.js
+  node --check build-assets.js
+
+There is no automated unit, integration, or browser test suite in this folder. The most important missing tests are:
+- table-driven classify tests for every status/reason branch;
+- site-specific notFoundStatus precedence;
+- redirect/challenge/body-pattern fixtures;
+- Turnstile action and hostname validation;
+- publicLookup private-IP and redirect cases;
+- SSE start/result/done and cancellation behavior;
+- Resend success/error mapping;
+- contact/report write and delivery ordering;
+- generated-asset freshness;
+- canonical redirect and static MIME behavior;
+- browser smoke tests for scan, filters, exports, notes, and responsive layout.
+
+HTTP failure logging records method, pathname, status, and a shortened Cloudflare Ray ID. It deliberately omits query strings, reducing accidental logging of searched identifiers. There is no structured metrics, tracing, request ID, external error reporting, or durable scan telemetry.
+
+
+17. PRIORITIZED ENGINEERING FINDINGS
+------------------------------------
+
+HIGH: Core classification has no automated regression suite.
+The product's central trust decision is a branch-heavy function driven by remote responses. Add fixtures before significant classifier/catalog work.
+
+HIGH: Site-specific not-found status can lose to generic blocked status.
+classify checks 401/403/429/999 before site.notFoundStatus. Confirm affected catalog entries and encode intended precedence in tests.
+
+HIGH: Name/email/phone browser workflows are incomplete.
+The server endpoints exist, but client wrappers reference missing runPivotQuery and have no call sites. Name checks also need optional browser dependencies absent from package.json. Either complete the UI path or label/remove dormant behavior.
+
+MEDIUM: Rate limits are instance-local.
+Restarts and horizontal scaling reset or divide limits. Move abuse controls to Cloudflare or a shared store if traffic or risk grows.
+
+MEDIUM: Report persistence is non-durable and unobserved.
+JSONL writes ignore errors and occur before email acceptance. Use awaited writes plus durable storage if reports must be retained reliably.
+
+MEDIUM: A timed-out scan does not cancel the underlying request.
+The Promise.race controls user latency but can leave work running, consuming sockets after the result has already been emitted.
+
+MEDIUM: Worker code is not connected to production.
+Its allowlist and secrets can drift while providing no current benefit. Make its status explicit in deployment documentation.
+
+LOW: Confidence numbers look probabilistic but are constants.
+Expose them as heuristic confidence unless they are recalibrated against current labeled controls.
+
+LOW: CSP still allows inline styles.
+Removing inline style attributes would permit a stricter style-src policy.
+
+LOW: Generated minified assets can become stale.
+Add a CI build/diff check or make Render install build dependencies, generate assets, and prune them before startup.
+
+
+18. RECOMMENDED NEXT IMPLEMENTATION ORDER
+-----------------------------------------
+
+1. Add table-driven tests around classify and normalizeResult, including every catalog status override.
+2. Decide whether auxiliary name/email/phone modes are product features; wire and deploy them fully or remove stale client wrappers.
+3. Make scan cancellation abort active HTTP/browser work.
+4. Await JSONL writes and move submissions to durable storage if retention matters.
+5. Move public abuse controls to a shared edge/store when scaling beyond one process.
+6. Add CI checks for syntax, classifier fixtures, JSON-LD parsing, links/routes, and minified-asset freshness.
+7. Integrate worker.js through server-side authenticated calls or archive it.
+8. Add basic structured metrics for scan totals, source failures, timeouts, and classifier reason codes without logging searched identifiers.
+
+
+FINAL ASSESSMENT
+----------------
+
+PROBE's active username pipeline is coherent: a protected SSE request fans out across the runtime-filtered catalog, returns reason-coded evidence, and deliberately preserves unknown/blocked states instead of forcing every response into found/not-found. Static routing, canonical URLs, SSRF-aware helpers, form validation, truthful Resend acceptance, and security headers are solid foundations.
+
+The largest reliability gap is not the visible UI or SEO layer. It is the absence of tests around the classifier and the mismatch between several auxiliary capabilities present in server code and what the current browser/deployment can actually execute. Treating those paths explicitly, and making report storage and rate limiting durable when needed, will raise confidence more than adding new sources or generic page copy.

@@ -1,0 +1,28 @@
+# PROBE
+
+> PROBE is a free username-intelligence tool that checks a public username across 373 functional sources and reports evidence-aware found, not-found, blocked, unknown, and manual-review results.
+
+PROBE is intended for lawful research using publicly reachable information. A result is a lead, not proof of identity or ownership. Verify important findings independently.
+
+## Primary pages
+
+- [Username search](https://usernameprobe.com/): The interactive PROBE application and its current source coverage.
+- [Methodology and accuracy](https://usernameprobe.com/blog/measuring-username-search-accuracy): How decision accuracy, coverage, uncertainty, and the 947-control evaluation are measured.
+- [Why results can be unknown](https://usernameprobe.com/blog/why-probe-abstains): Why blocked or ambiguous responses are not forced into found or not-found classifications.
+- [Maintaining 373 sources](https://usernameprobe.com/blog/maintaining-a-source-catalog): How the 324 automatic checks and 49 manual-only links are maintained.
+- [Roadmap](https://usernameprobe.com/roadmap): Shipped capabilities and planned reliability work.
+- [Privacy and acceptable use](https://usernameprobe.com/privacy): Data handling, local notes, submissions, and usage restrictions.
+- [Blog index](https://usernameprobe.com/blog/): All published PROBE technical articles.
+
+## Interpretation
+
+- PROBE checks public web responses; it does not authenticate to third-party accounts.
+- `found` means the source returned evidence consistent with a public profile.
+- `not_found` means the source returned source-specific evidence that the profile is absent.
+- `blocked` and `unknown` mean the available response was insufficient for a reliable decision.
+- Manual-only links are useful investigation pivots but are not automatically classified.
+- Current functional coverage is 373 sources: 324 automatic checks and 49 manual-only links.
+
+## Citation guidance
+
+Cite the specific methodology or article page when discussing PROBE's measurements or decision rules. Include the measurement date when quoting accuracy figures because source behavior changes over time. Do not describe a username match as proof that two accounts belong to the same person.

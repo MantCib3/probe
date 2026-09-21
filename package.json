@@ -5,12 +5,16 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check script.js && node --check worker.js"
+    "build:assets": "node build-assets.js",
+    "check": "node --check server.js && node --check script.js && node --check worker.js && node --check build-assets.js"
   },
   "engines": {
     "node": ">=22.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "terser": "^5.51.2"
+  },
   "dependencies": {
     "cheerio": "1.2.0"
   }

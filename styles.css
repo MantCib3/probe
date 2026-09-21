@@ -1,7 +1,7 @@
 /* ── Reset & Root ────────────────────────────────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { scroll-padding-top: 68px; scroll-behavior: smooth; }
+html { scroll-padding-top: 68px; scroll-behavior: smooth; overflow-x: clip; }
 
 :root {
   --primary : #000;
@@ -37,6 +37,7 @@ body {
   background: var(--white);
   font-weight: 400;
   letter-spacing: 0;
+  overflow-x: clip;
 }
 
 h1, h2, h3, h4 {

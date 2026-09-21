@@ -16,18 +16,45 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="PROBE | Username Intelligence">
   <meta name="twitter:description" content="Search a username across 373 functional sources with evidence-aware results.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://usernameprobe.com/#organization",
+        "name": "PROBE",
+        "url": "https://usernameprobe.com/",
+        "logo": "https://usernameprobe.com/favicon.svg"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://usernameprobe.com/#website",
+        "name": "PROBE",
+        "url": "https://usernameprobe.com/",
+        "publisher": { "@id": "https://usernameprobe.com/#organization" }
+      },
+      {
+        "@type": "WebApplication",
+        "name": "PROBE Username Intelligence",
+        "url": "https://usernameprobe.com/",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Any",
+        "description": "Search a username across 373 functional sources with evidence-aware results.",
+        "isAccessibleForFree": true,
+        "publisher": { "@id": "https://usernameprobe.com/#organization" }
+      }
+    ]
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.min.css?v=12">
   <!-- Cloudflare Turnstile — replace data-sitekey with your own key from dash.cloudflare.com -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </head>
-<body itemscope itemtype="https://schema.org/WebApplication">
-  <meta itemprop="name" content="PROBE">
-  <meta itemprop="applicationCategory" content="SecurityApplication">
-  <meta itemprop="operatingSystem" content="Any">
-  <link itemprop="url" href="https://usernameprobe.com/">
+<body>
 
   <!-- Navigation -->
   <nav class="navbar" id="navbar">
@@ -49,7 +76,7 @@
   <!-- ── Hero / Search ───────────────────────────────────────────────── -->
   <section id="search" class="hero">
     <div class="hero-content">
-      <h1 class="probe-wordmark" itemprop="name">PROBE</h1>
+      <h1 class="probe-wordmark">PROBE</h1>
 
       <!-- Username search -->
       <div class="search-box" id="searchBox">
@@ -224,7 +251,7 @@
         <p class="hero-eyebrow">About PROBE</p>
         <h2 class="about-heading">Public clues.<br>Clearer context.</h2>
       </div>
-      <div class="about-copy" itemprop="description">
+      <div class="about-copy">
         <p>PROBE helps you find where a public username appears online. It checks <strong id="heroCount">373</strong> sources across social networks, developer communities, forums, gaming platforms, marketplaces, and the wider web.</p>
         <p>Each result is a useful lead, not proof that two accounts belong to the same person. When a site does not give us a clear answer, we say so and leave the final check to you.</p>
         <a class="text-link" href="/blog/measuring-username-search-accuracy">Read how we measure accuracy <span aria-hidden="true">↗</span></a>
@@ -338,6 +365,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=9" defer></script>
+  <script src="script.min.js?v=10" defer></script>
 </body>
 </html>
