@@ -3329,6 +3329,7 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({
       turnstileSiteKey: TURNSTILE_SITEKEY,
       turnstileActions: TURNSTILE_ACTIONS,
+      emailProvider: 'resend',
       emailNotificationsConfigured: getEmailConfig().configured,
     }));
   }
