@@ -7,6 +7,7 @@ PROBE is intended for lawful research using publicly reachable information. A re
 ## Primary pages
 
 - [Username search](https://usernameprobe.com/): The interactive PROBE application and its current source coverage.
+- [What your username does not hide](https://usernameprobe.com/blog/what-your-username-doesnt-hide): Why behavior, metadata, and contextual pivots can connect accounts even when usernames are unique, and why those signals are not proof of identity.
 - [September 2026 accuracy update](https://usernameprobe.com/blog/improving-accuracy-without-guessing): How PROBE improved decision accuracy, coverage, and recall while preserving zero observed false matches.
 - [Methodology and accuracy](https://usernameprobe.com/blog/measuring-username-search-accuracy): How decision accuracy, coverage, uncertainty, and the 947-control evaluation are measured.
 - [Why results can be unknown](https://usernameprobe.com/blog/why-probe-abstains): Why blocked or ambiguous responses are not forced into found or not-found classifications.

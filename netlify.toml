@@ -48,6 +48,12 @@
   force = true
 
 [[redirects]]
+  from = "/blog/what-your-username-doesnt-hide.html"
+  to = "/blog/what-your-username-doesnt-hide"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/blog/improving-accuracy-without-guessing.html"
   to = "/blog/improving-accuracy-without-guessing"
   status = 301
@@ -79,6 +85,11 @@
 [[redirects]]
   from = "/privacy"
   to = "/privacy.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/what-your-username-doesnt-hide"
+  to = "/blog/what-your-username-doesnt-hide.html"
   status = 200
 
 [[redirects]]

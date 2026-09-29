@@ -2475,6 +2475,7 @@ const CACHEABLE_EXT = new Set(['.css', '.js']);
 const CLEAN_PAGE_ROUTES = new Map([
   ['/roadmap', 'roadmap.html'],
   ['/privacy', 'privacy.html'],
+  ['/blog/what-your-username-doesnt-hide', 'blog/what-your-username-doesnt-hide.html'],
   ['/blog/improving-accuracy-without-guessing', 'blog/improving-accuracy-without-guessing.html'],
   ['/blog/measuring-username-search-accuracy', 'blog/measuring-username-search-accuracy.html'],
   ['/blog/why-probe-abstains', 'blog/why-probe-abstains.html'],
