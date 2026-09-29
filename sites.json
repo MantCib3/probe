@@ -1343,6 +1343,7 @@
     "urlMain": "https://api.younow.com",
     "category": "social",
     "checkMethod": "message",
+    "positiveMsg": "\"userId\":",
     "errorMsg": "\"errorMsg\":\"No users found\"",
     "cors": true,
     "expectedStatus": 200
@@ -1584,7 +1585,8 @@
     "checkMethod": "message",
     "errorMsg": "minecraft.api_failure",
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "notFoundStatus": 400
   },
   {
     "name": "Minecraft List",
@@ -1665,7 +1667,7 @@
     "urlMain": "https://api.geekdo.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "\"isValid\":true",
+    "positiveMsg": "\"message\":\"Sorry, this username is already taken.\"",
     "cors": true,
     "expectedStatus": 200
   },
@@ -1899,6 +1901,7 @@
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "notFoundStatus": 400,
+    "skipBodyCheck": true,
     "cors": true
   },
   {
@@ -1922,6 +1925,7 @@
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User not found!\"",
     "notFoundStatus": 400,
+    "skipBodyCheck": true,
     "cors": true
   },
   {
@@ -2337,6 +2341,7 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "<title>Page Not Found - ACF Support</title>",
+    "skipBodyCheck": true,
     "expectedStatus": 200,
     "notFoundStatus": 404
   },
@@ -2863,6 +2868,7 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "<title>404 Not Found</title>",
+    "skipBodyCheck": true,
     "expectedStatus": 200,
     "notFoundStatus": 404
   },
@@ -4579,6 +4585,7 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "class=\"not_found_text\"",
+    "abstainOn200": true,
     "expectedStatus": 200,
     "notFoundStatus": 404
   },
@@ -5683,7 +5690,8 @@
     "urlMain": "https://poe.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"user\":null",
+    "errorMsg": "<title>User - Poe</title>",
+    "skipBodyCheck": true,
     "expectedStatus": 200
   },
   {
@@ -7157,7 +7165,7 @@
     "checkMethod": "message",
     "errorMsg": "<title>404 - Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 400
   },
   {
     "name": "wego",
@@ -7248,6 +7256,7 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"available\":true",
+    "skipBodyCheck": true,
     "expectedStatus": 200
   },
   {

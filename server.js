@@ -16,18 +16,29 @@ try {
   chromiumStealth.use(require('puppeteer-extra-plugin-stealth')());
 } catch (_) { /* run: npm install playwright-extra puppeteer-extra-plugin-stealth */ }
 
-const SITES      = JSON.parse(fs.readFileSync(path.join(__dirname, 'sites.json'), 'utf8')).filter(s => !s.defunct);
+const SITES_PATH = path.join(__dirname, 'sites.json');
+const SITES_SOURCE = fs.readFileSync(SITES_PATH, 'utf8');
+const SITES      = JSON.parse(SITES_SOURCE).filter(s => !s.defunct);
 const NAME_SITES = JSON.parse(fs.readFileSync(path.join(__dirname, 'name-sites.json'), 'utf8'));
 const PORT       = process.env.PORT || process.argv[2] || 3737;
 const CONCURRENCY = 20;
 const TIMEOUT_MS  = 10000;
 const MAX_BODY    = 32768;
 const SITE_PROBE_TIMEOUT_MS = 45000;
+const PROBE_DEADLINE_MS = 15000;
 
 const STEALTH_CONCURRENCY = 4;
 const STEALTH_TIMEOUT_MS  = 16000;
 const ENABLE_USERNAME_BROWSER_FALLBACK = false;
 const ENABLE_UNDETECTABLE_STEALTH = false;
+const LAB_RUNTIME_FINGERPRINT = Object.freeze({
+  classifierSha256: crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex'),
+  catalogSha256: crypto.createHash('sha256').update(SITES_SOURCE).digest('hex'),
+  nodeVersion: process.version,
+  probeDeadlineMs: PROBE_DEADLINE_MS,
+  browserFallbackAvailable: Boolean(chromiumStealth),
+  browserFallbackEnabled: ENABLE_USERNAME_BROWSER_FALLBACK,
+});
 
 /* ── Environment / trust configuration ────────────────────────────────
  * IS_PRODUCTION — true when running on Render. Used to decide whether a
@@ -776,12 +787,12 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
     return makeClassifiedResult(base, 'not_found', [sc === 404 ? 'http_404' : 'http_410'], 0.98);
   }
 
-  if (sc === 403 || sc === 401 || sc === 429 || sc === 999) {
-    return makeClassifiedResult(base, 'blocked', [`blocked_http_${sc}`], 0.9);
-  }
-
   if (site.notFoundStatus !== undefined && sc === site.notFoundStatus) {
     return makeClassifiedResult(base, 'not_found', ['site_specific_not_found_status'], 0.94);
+  }
+
+  if (sc === 403 || sc === 401 || sc === 429 || sc === 999) {
+    return makeClassifiedResult(base, 'blocked', [`blocked_http_${sc}`], 0.9);
   }
 
   if (sc === 200) {
@@ -816,6 +827,10 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
 
     if (NOT_FOUND_BODY_PATTERNS.some(p => lbody.includes(p))) {
       return makeClassifiedResult(base, 'not_found', ['body_not_found_pattern'], 0.87);
+    }
+
+    if (site.abstainOn200) {
+      return makeClassifiedResult(base, 'unknown', ['site_200_abstention'], 0.3);
     }
 
     if (site.usernameInBody) {
@@ -1786,7 +1801,7 @@ function cookieJarFor(cookieJars, hostname) {
   return cookieJars.get(hostname);
 }
 
-function makeReqOptions(parsed, overrideUA, cookieJars) {
+function makeReqOptions(parsed, overrideUA, cookieJars, signal) {
   const ua = overrideUA || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
   const cookies = [...cookieJarFor(cookieJars, parsed.hostname)].map(([name, value]) => `${name}=${value}`).join('; ');
   return {
@@ -1812,10 +1827,14 @@ function makeReqOptions(parsed, overrideUA, cookieJars) {
       ...(cookies ? { 'Cookie': cookies } : {}),
     },
     timeout: TIMEOUT_MS,
+    ...(signal ? { signal } : {}),
   };
 }
 
-function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cookieJars = new Map()) {
+function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cookieJars = new Map(), signal) {
+  if (signal?.aborted) {
+    return finish({ name: site.name, category: site.category, url: origUrl, status: 'timeout', statusCode: 0 });
+  }
   let parsed;
   try { parsed = new URL(url); }
   catch (_) { return finish({ name: site.name, category: site.category, url: origUrl, status: 'error', statusCode: 0 }); }
@@ -1831,7 +1850,8 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     : null;
 
   const startRequest = () => {
-  const req = mod.request(makeReqOptions(parsed, crawlerUA, cookieJars), (res) => {
+  if (signal?.aborted) return finish({ ...base, status: 'timeout', statusCode: 0 });
+  const req = mod.request(makeReqOptions(parsed, crawlerUA, cookieJars, signal), (res) => {
     const sc      = res.statusCode;
     const headers = res.headers;
     updateCookieJar(cookieJarFor(cookieJars, parsed.hostname), headers['set-cookie']);
@@ -1839,7 +1859,7 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     if ((sc === 429 || sc === 503) && attempt < MAX_TRANSIENT_RETRIES) {
       res.resume();
       return setTimeout(
-        () => doRequest(site, username, origUrl, url, hops, finish, attempt + 1, cookieJars),
+        () => doRequest(site, username, origUrl, url, hops, finish, attempt + 1, cookieJars, signal),
         retryDelayMs(headers, attempt)
       );
     }
@@ -1882,10 +1902,12 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
           loc.includes('verify-browser') || loc.includes('bot-check')) {
         return finish({ ...base, status: 'unknown', statusCode: sc });
       }
-      // Redirect to domain root (no sub-path) → user doesn't exist
+      // Redirect to domain root (no sub-path) → user doesn't exist, unless
+      // the username is encoded in the hostname and only the protocol changed.
       try {
         const absURL = new URL(locRaw, url);
-        if (absURL.pathname === '/' && !absURL.search) {
+        const profileIsHostBased = parsed.pathname === '/' && !parsed.search;
+        if (absURL.pathname === '/' && !absURL.search && !profileIsHostBased) {
           return finish({ ...base, status: 'not_found', statusCode: sc });
         }
         // Redirect to /404 or /not-found path → user doesn't exist
@@ -1896,7 +1918,7 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
 
       // Follow redirect if within hop limit
       if (hops < MAX_REDIRECT_HOPS) {
-        return doRequest(site, username, origUrl, absLoc, hops + 1, finish, attempt, cookieJars);
+        return doRequest(site, username, origUrl, absLoc, hops + 1, finish, attempt, cookieJars, signal);
       }
       // Gave up following — treat as found
       return finish({ ...base, status: 'found', statusCode: sc });
@@ -1917,7 +1939,7 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
 
   req.on('timeout', () => { req.destroy(new Error('timeout')); });
   req.on('error', (err) => {
-    if (err.message === 'timeout') {
+    if (err.message === 'timeout' || err.code === 'ABORT_ERR') {
       finish({ ...base, status: 'timeout', statusCode: 0 });
     } else {
       finish({ ...base, status: 'error', statusCode: 0 });
@@ -1954,7 +1976,7 @@ async function ensureBrowser() {
   return _browserTask;
 }
 
-async function probeStealth(site, username) {
+async function probeStealth(site, username, signal) {
   const profileUrl = site.url.replace(/\{\}/g, encodeURIComponent(username));
   const base = { name: site.name, category: site.category, url: profileUrl };
 
@@ -1964,7 +1986,9 @@ async function probeStealth(site, username) {
 
   await acquireBSlot();
   let context;
+  let abortBrowser;
   try {
+    if (signal?.aborted) return { ...base, status: 'timeout', statusCode: 0 };
     const b = await ensureBrowser();
     context = await b.newContext({
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -1972,6 +1996,8 @@ async function probeStealth(site, username) {
       viewport : { width: 1280, height: 800 },
       extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
     });
+    abortBrowser = () => context?.close().catch(() => {});
+    signal?.addEventListener('abort', abortBrowser, { once: true });
     const page = await context.newPage();
     let statusCode = 0;
     let title = '', text = '';
@@ -1983,12 +2009,14 @@ async function probeStealth(site, username) {
     title = await page.title().catch(() => '');
     text  = await page.evaluate(() => document.body ? document.body.innerText : '').catch(() => '');
     await context.close();
+    if (signal?.aborted) return { ...base, status: 'timeout', statusCode: 0 };
     const syntheticBody = `<title>${title}</title>\n${text}`;
     return classify(site, username, profileUrl, statusCode || 200, {}, syntheticBody, 'browser');
   } catch (err) {
     if (context) try { await context.close(); } catch (_) {}
     return { ...base, status: 'unknown', statusCode: 0 };
   } finally {
+    if (abortBrowser) signal?.removeEventListener('abort', abortBrowser);
     releaseBSlot();
   }
 }
@@ -2008,7 +2036,7 @@ function isUsernameFormatPlausible(username, site) {
   return true;
 }
 
-function probe(site, username) {
+function probe(site, username, signal) {
   // Optional fast-path: skip stealth for undetectable sites.
   // Sites that require authentication — server-side check is never possible
   if (site.requiresAuth) {
@@ -2063,7 +2091,7 @@ function probe(site, username) {
     });
   }
 
-  if (site.undetectable) return probeStealth(site, username);
+  if (site.undetectable) return probeStealth(site, username, signal);
 
   return new Promise((resolve) => {
     // Sites with a calibrated internal API endpoint — hit that directly
@@ -2077,19 +2105,19 @@ function probe(site, username) {
 
     // The URL shown to the user in results is always the profile URL, not the API URL
     const profileUrl = site.url.replace(/\{\}/g, encodeURIComponent(username));
-    doRequest(site, username, profileUrl, url, 0, resolve);
+    doRequest(site, username, profileUrl, url, 0, resolve, 0, new Map(), signal);
   });
 }
 
-async function probeWithBrowserFallback(site, username) {
-  const first = await probe(site, username);
+async function probeWithBrowserFallback(site, username, signal) {
+  const first = await probe(site, username, signal);
 
   // Keep fast-path result when already conclusive.
   if (first.status !== 'unknown') return first;
 
   let result = first;
   if ((ENABLE_USERNAME_BROWSER_FALLBACK || site.allowBrowserFallback) && chromiumStealth && !site.noBrowserFallback) {
-    const second = await probeStealth(site, username);
+    const second = await probeStealth(site, username, signal);
     const secondReasons = Array.isArray(second.reasonCodes) ? second.reasonCodes : [];
     result = {
       ...second,
@@ -2107,7 +2135,7 @@ async function probeWithBrowserFallback(site, username) {
   // one single, already-final verdict per site instead of needing its own
   // follow-up network round.
   if (result.status === 'unknown') {
-    const archived = await probeArchiveOrgFallback(result.url).catch(() => false);
+    const archived = await probeArchiveOrgFallback(result.url, signal).catch(() => false);
     if (archived) {
       const reasons = Array.isArray(result.reasonCodes) ? result.reasonCodes : [];
       result = { ...result, status: 'found', confidence: 0.6, reasonCodes: [...reasons, 'archive_org_fallback_found'] };
@@ -2117,9 +2145,42 @@ async function probeWithBrowserFallback(site, username) {
   return result;
 }
 
+function probeWithDeadline(site, username, deadlineMs = 15000) {
+  const controller = new AbortController();
+  let deadlineTimer;
+  const timeoutResult = new Promise(resolve => {
+    deadlineTimer = setTimeout(() => {
+      controller.abort();
+      resolve({
+        name: site.name,
+        category: site.category,
+        url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
+        status: 'timeout',
+        statusCode: 0,
+        reasonCodes: ['probe_timeout'],
+        detectionMethod: 'http',
+        bodyHash: null,
+      });
+    }, deadlineMs);
+  });
+  const promise = Promise.race([
+    probeWithBrowserFallback(site, username, controller.signal),
+    timeoutResult,
+  ]).finally(() => clearTimeout(deadlineTimer));
+
+  return {
+    controller,
+    promise,
+    cancel() {
+      clearTimeout(deadlineTimer);
+      controller.abort();
+    },
+  };
+}
+
 // Wayback Machine CDX lookup — open CORS-free API, no key needed. Returns
 // true if the given URL was archived with a 200 response since 2022.
-function probeArchiveOrgFallback(profileUrl) {
+function probeArchiveOrgFallback(profileUrl, signal) {
   return new Promise((resolve) => {
     let cdxUrl;
     try {
@@ -2127,7 +2188,7 @@ function probeArchiveOrgFallback(profileUrl) {
       cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(cdxTarget)}&output=json&limit=2&filter=statuscode:200&from=20220101&fl=timestamp&matchType=prefix`;
     } catch (_) { return resolve(false); }
 
-    const req = https.get(cdxUrl, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+    const req = https.get(cdxUrl, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' }, ...(signal ? { signal } : {}) }, (res) => {
       if (res.statusCode !== 200) { res.resume(); return resolve(false); }
       let body = '';
       res.setEncoding('utf8');
@@ -2414,6 +2475,7 @@ const CACHEABLE_EXT = new Set(['.css', '.js']);
 const CLEAN_PAGE_ROUTES = new Map([
   ['/roadmap', 'roadmap.html'],
   ['/privacy', 'privacy.html'],
+  ['/blog/improving-accuracy-without-guessing', 'blog/improving-accuracy-without-guessing.html'],
   ['/blog/measuring-username-search-accuracy', 'blog/measuring-username-search-accuracy.html'],
   ['/blog/why-probe-abstains', 'blog/why-probe-abstains.html'],
   ['/blog/maintaining-a-source-catalog', 'blog/maintaining-a-source-catalog.html'],
@@ -2554,12 +2616,18 @@ const server = http.createServer((req, res) => {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Invalid site or username.' }));
     }
-    probe(site, username)
+    const activeProbe = probeWithDeadline(site, username, PROBE_DEADLINE_MS);
+    res.on('close', () => {
+      if (!res.writableEnded) activeProbe.cancel();
+    });
+    activeProbe.promise
       .then(result => {
+        if (res.destroyed) return;
         res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ ok: true, result }));
+        res.end(JSON.stringify({ ok: true, runtimeFingerprint: LAB_RUNTIME_FINGERPRINT, result: normalizeResult(result) }));
       })
       .catch(error => {
+        if (res.destroyed) return;
         res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
         res.end(JSON.stringify({ ok: false, error: error.message }));
       });
@@ -2584,7 +2652,12 @@ const server = http.createServer((req, res) => {
     });
 
     let cancelled = false;
-    req.on('close', () => { cancelled = true; });
+    const activeProbes = new Set();
+    req.on('close', () => {
+      cancelled = true;
+      for (const activeProbe of activeProbes) activeProbe.cancel();
+      activeProbes.clear();
+    });
 
     const send = (obj) => {
       if (!cancelled && !res.writableEnded) {
@@ -2615,20 +2688,13 @@ const server = http.createServer((req, res) => {
       send({ type: 'start', total, username });
 
       function tick() {
-        while (active < CONCURRENCY && idx < total) {
+        while (!cancelled && active < CONCURRENCY && idx < total) {
           const site = queue[idx++];
           active++;
-          const PROBE_DEADLINE_MS = 15000;
-          const probePromise  = probeWithBrowserFallback(site, username);
-          const timeoutResult = new Promise(resolve =>
-            setTimeout(() => resolve({
-              name: site.name, category: site.category,
-              url:  site.url.replace(/\{\}/g, encodeURIComponent(username)),
-              status: 'timeout', statusCode: 0,
-              reasonCodes: ['probe_timeout'], detectionMethod: 'http', bodyHash: null,
-            }), PROBE_DEADLINE_MS)
-          );
-          Promise.race([probePromise, timeoutResult]).then(result => {
+          const activeProbe = probeWithDeadline(site, username, PROBE_DEADLINE_MS);
+          activeProbes.add(activeProbe);
+          activeProbe.promise.then(result => {
+            activeProbes.delete(activeProbe);
             active--;
             done++;
             const normalized = normalizeResult(result);
@@ -2645,6 +2711,7 @@ const server = http.createServer((req, res) => {
             if (!cancelled) send({ type: 'result', ...normalized, done, total, ...extra });
             tick();
           }).catch(() => {
+            activeProbes.delete(activeProbe);
             active--;
             done++;
             const fallback = normalizeResult({
@@ -3489,22 +3556,26 @@ server.on('error', (err) => {
   throw err;
 });
 
-server.listen(PORT, HOST, () => {
-  const addr = server.address();
-  const activePort = addr && typeof addr === 'object' ? addr.port : PORT;
+if (require.main === module) {
+  server.listen(PORT, HOST, () => {
+    const addr = server.address();
+    const activePort = addr && typeof addr === 'object' ? addr.port : PORT;
 
-  console.log(`\n  ██████╗ ██████╗  ██████╗ ██████╗ ███████╗`);
-  console.log(`  ██╔══██╗██╔══██╗██╔═══██╗██╔══██╗██╔════╝`);
-  console.log(`  ██████╔╝██████╔╝██║   ██║██████╔╝█████╗  `);
-  console.log(`  ██╔═══╝ ██╔══██╗██║   ██║██╔══██╗██╔══╝  `);
-  console.log(`  ██║     ██║  ██║╚██████╔╝██████╔╝███████╗`);
-  console.log(`  ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝`);
-  console.log(`\n  Username Intelligence — ${SITES.length} platforms`);
-  console.log(`  http://localhost:${activePort}`);
-  if (chromiumStealth && (ENABLE_UNDETECTABLE_STEALTH || ENABLE_USERNAME_BROWSER_FALLBACK)) {
-    ensureBrowser().catch(() => {});
-    console.log(`  Stealth browser: warming up (${STEALTH_CONCURRENCY} concurrent tabs)\n`);
-  } else {
-    console.log(`  Stealth browser: disabled for username scans\n`);
-  }
-});
+    console.log(`\n  ██████╗ ██████╗  ██████╗ ██████╗ ███████╗`);
+    console.log(`  ██╔══██╗██╔══██╗██╔═══██╗██╔══██╗██╔════╝`);
+    console.log(`  ██████╔╝██████╔╝██║   ██║██████╔╝█████╗  `);
+    console.log(`  ██╔═══╝ ██╔══██╗██║   ██║██╔══██╗██╔══╝  `);
+    console.log(`  ██║     ██║  ██║╚██████╔╝██████╔╝███████╗`);
+    console.log(`  ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝`);
+    console.log(`\n  Username Intelligence — ${SITES.length} platforms`);
+    console.log(`  http://localhost:${activePort}`);
+    if (chromiumStealth && (ENABLE_UNDETECTABLE_STEALTH || ENABLE_USERNAME_BROWSER_FALLBACK)) {
+      ensureBrowser().catch(() => {});
+      console.log(`  Stealth browser: warming up (${STEALTH_CONCURRENCY} concurrent tabs)\n`);
+    } else {
+      console.log(`  Stealth browser: disabled for username scans\n`);
+    }
+  });
+}
+
+module.exports = { classify, makeClassifiedResult, normalizeResult, probe, probeWithDeadline };

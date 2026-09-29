@@ -48,6 +48,12 @@
   force = true
 
 [[redirects]]
+  from = "/blog/improving-accuracy-without-guessing.html"
+  to = "/blog/improving-accuracy-without-guessing"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/blog/measuring-username-search-accuracy.html"
   to = "/blog/measuring-username-search-accuracy"
   status = 301
@@ -73,6 +79,11 @@
 [[redirects]]
   from = "/privacy"
   to = "/privacy.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/improving-accuracy-without-guessing"
+  to = "/blog/improving-accuracy-without-guessing.html"
   status = 200
 
 [[redirects]]

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Improving Accuracy Without Guessing | PROBE</title>
+  <meta name="description" content="How PROBE raised username-search coverage to 75.92% and decision accuracy to 96.38% while preserving zero observed false matches.">
+  <link rel="canonical" href="https://usernameprobe.com/blog/improving-accuracy-without-guessing">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Improving Accuracy Without Guessing">
+  <meta property="og:description" content="A full-catalog evidence cycle raised PROBE's coverage and recall while preserving zero observed false matches.">
+  <meta property="og:url" content="https://usernameprobe.com/blog/improving-accuracy-without-guessing">
+  <meta property="og:image" content="https://usernameprobe.com/social/improving-accuracy-without-guessing.png?v=1">
+  <meta property="og:image:secure_url" content="https://usernameprobe.com/social/improving-accuracy-without-guessing.png?v=1">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="PROBE accuracy update showing 96.38 percent decision accuracy, 75.92 percent coverage, and zero observed false matches.">
+  <meta property="article:published_time" content="2026-09-28">
+  <meta property="article:modified_time" content="2026-09-28">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Improving Accuracy Without Guessing">
+  <meta name="twitter:description" content="How PROBE improved coverage and recall without turning uncertainty into false confidence.">
+  <meta name="twitter:image" content="https://usernameprobe.com/social/improving-accuracy-without-guessing.png?v=1">
+  <meta name="twitter:image:alt" content="PROBE accuracy update showing 96.38 percent decision accuracy, 75.92 percent coverage, and zero observed false matches.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Improving Accuracy Without Guessing",
+    "description": "How PROBE raised username-search coverage to 75.92% and decision accuracy to 96.38% while preserving zero observed false matches.",
+    "url": "https://usernameprobe.com/blog/improving-accuracy-without-guessing",
+    "mainEntityOfPage": "https://usernameprobe.com/blog/improving-accuracy-without-guessing",
+    "image": "https://usernameprobe.com/social/improving-accuracy-without-guessing.png?v=1",
+    "datePublished": "2026-09-28",
+    "dateModified": "2026-09-28",
+    "author": { "@type": "Organization", "name": "PROBE", "url": "https://usernameprobe.com/" },
+    "publisher": { "@type": "Organization", "name": "PROBE", "url": "https://usernameprobe.com/", "logo": { "@type": "ImageObject", "url": "https://usernameprobe.com/favicon.svg" } }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
+  <link rel="stylesheet" href="/styles.min.css?v=13">
+  <link rel="stylesheet" href="/editorial.min.css?v=2">
+</head>
+<body class="editorial-body">
+  <nav class="navbar editorial-nav"><div class="nav-container"><a href="/" class="nav-logo">PROBE</a><a class="editorial-nav-back" href="/blog/">All posts</a></div></nav>
+  <main class="editorial-main article-main">
+    <article>
+      <header class="article-header">
+        <p class="editorial-kicker">Accuracy update</p>
+        <h1 class="editorial-title article-title">Improving Accuracy Without Guessing</h1>
+        <p class="editorial-deck">A better username search is not the one that always answers. It is the one that knows when the evidence is strong enough.</p>
+        <div class="article-meta"><time datetime="2026-09-28">28 September 2026</time><span>7 min read</span></div>
+      </header>
+      <div class="article-copy">
+        <p>PROBE now gives a clear found-or-not-found answer in 75.92% of our production-parity tests, up from 72.44%. Decision accuracy rose from 95.34% to 96.38%, and recall for known accounts rose from 85.05% to 88.70%. Most importantly, none of the 648 missing-account controls were reported as found.</p>
+        <div class="article-metric" aria-label="Latest accuracy campaign headline metrics">
+          <div><strong>96.38%</strong><span>decision accuracy</span></div>
+          <div><strong>75.92%</strong><span>decision coverage</span></div>
+          <div><strong>0</strong><span>observed false matches</span></div>
+        </div>
+        <h2>Start with evidence, not a bigger claim</h2>
+        <p>We began by collecting browser evidence across all 373 active sources. That run recorded response codes, redirects, page content, screenshots, and selected JSON responses. It did not automatically label every source as working or broken. A challenge page or identical response shell is evidence of uncertainty, not evidence that an account exists.</p>
+        <p>We then compared that browser evidence with the same request and classification path used by the live service. The measurement campaign contained 947 controls across all 324 automatic sources: 299 usernames expected to exist and 648 expected not to exist. The remaining 49 active sources are manual-only and stay outside the automatic accuracy score.</p>
+        <h2>Change only what a paired test supports</h2>
+        <p>Each source fix needed a known account and valid missing usernames that produced a repeatable difference. That exposed exact signals such as an availability response, a missing-profile title, a source-specific status code, or a stable identity field. Generic rules such as “HTTP 200 means found” were not accepted.</p>
+        <p>The controls also had to resemble usernames that each platform would accept. Our earlier generated names were long and contained underscores. Some sites rejected that format before checking whether the username existed. We replaced them with short, lowercase alphanumeric controls so the test reaches the behavior it is meant to measure.</p>
+        <p>Where a page echoed any requested username into a generic shell, PROBE was changed to abstain rather than treat the reflection as proof. That conservative rule removed a false match found during the final verification pass.</p>
+        <h2>A repeatable improvement cycle</h2>
+        <p>The work is now organized as a cycle instead of a collection of broad rescans:</p>
+        <ul>
+          <li>run one complete production-parity campaign;</li>
+          <li>group unclear results by body guard, unusual status, blocking, timeout, or request error;</li>
+          <li>retry only the actionable cohorts at low concurrency;</li>
+          <li>apply a source rule only after paired positive and negative evidence agrees;</li>
+          <li>run focused checks, the full test suites, and one final campaign;</li>
+          <li>preserve checkpoints and provenance so a later run can be compared honestly.</li>
+        </ul>
+        <p>This matters because repeating the full catalog until the numbers look better would mix temporary network variation with real improvement. The targeted retry showed that most remaining uncertainty is structural: generic response shells, access blocks, unusual server responses, and timeouts.</p>
+        <h2>What the result means</h2>
+        <p>The final campaign made 719 clear decisions from 947 controls. It fully verified 196 of 324 automatic sources, compared with 177 in the published baseline. Calibration was ready, and the held-out test retained 100% decision accuracy at 83.87% coverage.</p>
+        <p>Zero observed false matches does not mean a false match is impossible. It means none appeared in this controlled run, and the release gate prevents us from trading that result away merely to increase coverage. Public username data remains a lead, not proof that two accounts belong to the same person.</p>
+        <h2>Ready for the live service</h2>
+        <p>The production rules, source catalog, tests, and public measurements now agree. The release gate is ready: accuracy remains above 95%, coverage is above 75%, observed found precision is 100%, and the campaign contains no observed false matches. Future work can focus on specific blocked or ambiguous sources without weakening the evidence standard that produced these gains.</p>
+      </div>
+    </article>
+  </main>
+  <footer class="footer"><div class="container footer-inner"><div class="footer-brand"><span class="footer-logo">PROBE</span><p>Open-source username research with evidence-aware results.</p></div><nav class="footer-links" aria-label="Footer navigation"><div><span class="footer-label">Explore</span><a href="/#search">Search</a><a href="/#about">About</a><a href="/#sites">Platforms</a></div><div><span class="footer-label">Follow the work</span><a href="/blog/">Blog</a><a href="/roadmap">Roadmap</a></div><div><span class="footer-label">Use responsibly</span><a href="/privacy">Privacy &amp; acceptable use</a><a href="/#contact">Contact</a></div></nav></div><div class="container footer-bottom"><span>Public data is a lead, not proof. Verify before drawing conclusions.</span><span>&copy; 2026 PROBE</span></div></footer>
+</body>
+</html>
