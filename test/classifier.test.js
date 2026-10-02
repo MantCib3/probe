@@ -48,6 +48,16 @@ describe('classify', () => {
       expected: ['blocked', 'blocked_http_403', 0.9],
     },
     {
+      name: 'treats an AWS WAF challenge header as blocked',
+      input: { statusCode: 202, headers: { 'x-amzn-waf-action': 'challenge' } },
+      expected: ['blocked', 'blocked_aws_waf_challenge', 0.9],
+    },
+    {
+      name: 'treats an AWS WAF challenge body on status 202 as blocked',
+      input: { statusCode: 202, body: '<script src="https://token.awswaf.com/challenge.js"></script>' },
+      expected: ['blocked', 'blocked_aws_waf_challenge', 0.9],
+    },
+    {
       name: 'honors the StreamLabs 401 not-found status before generic blocking',
       input: { source: site({ name: 'StreamLabs', notFoundStatus: 401 }), statusCode: 401 },
       expected: ['not_found', 'site_specific_not_found_status', 0.94],

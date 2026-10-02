@@ -795,6 +795,14 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
     return makeClassifiedResult(base, 'blocked', [`blocked_http_${sc}`], 0.9);
   }
 
+  if (headers && headers['x-amzn-waf-action']) {
+    return makeClassifiedResult(base, 'blocked', ['blocked_aws_waf_challenge'], 0.9);
+  }
+
+  if (sc === 202 && (body.includes('token.awswaf.com') || body.includes('aws-waf') || body.includes('challenge.js'))) {
+    return makeClassifiedResult(base, 'blocked', ['blocked_aws_waf_challenge'], 0.9);
+  }
+
   if (sc === 200) {
     const lbody = body.toLowerCase();
     const tm = body.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -1811,7 +1819,7 @@ function makeReqOptions(parsed, overrideUA, cookieJars, signal) {
     method  : 'GET',
     headers : {
       'User-Agent'               : ua,
-      'Accept'                   : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept'                   : 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.9,image/avif,image/webp,*/*;q=0.8',
       'Accept-Language'          : 'en-US,en;q=0.9',
       'Referer'                  : `${parsed.protocol}//${parsed.host}/`,
       'Cache-Control'            : 'max-age=0',
@@ -1856,7 +1864,7 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     const headers = res.headers;
     updateCookieJar(cookieJarFor(cookieJars, parsed.hostname), headers['set-cookie']);
 
-    if ((sc === 429 || sc === 503) && attempt < MAX_TRANSIENT_RETRIES) {
+    if ((sc === 429 || sc === 502 || sc === 503 || sc === 504) && attempt < MAX_TRANSIENT_RETRIES) {
       res.resume();
       return setTimeout(
         () => doRequest(site, username, origUrl, url, hops, finish, attempt + 1, cookieJars, signal),

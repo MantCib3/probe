@@ -2169,7 +2169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(() => {
       // Fallback count — update if site list size changes
       document.querySelectorAll('#heroCount, #siteCount, .step-count').forEach(el => {
-        el.textContent = '373';
+        el.textContent = '366';
       });
     });
 

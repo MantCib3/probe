@@ -190,7 +190,7 @@
     "urlMain": "https://bitbucket.org",
     "category": "developer",
     "checkMethod": "status_code",
-    "apiUrl": "https://api.bitbucket.org/2.0/users/{}",
+    "apiUrl": "https://api.bitbucket.org/2.0/repositories/{}?pagelen=1",
     "skipBodyCheck": true,
     "cors": true,
     "expectedStatus": 200,
@@ -1276,14 +1276,12 @@
   },
   {
     "name": "Steemit",
-    "url": "https://signup.steemit.com/api/check_username?username={}",
-    "urlMain": "https://signup.steemit.com",
+    "url": "https://steemit.com/@{}",
+    "urlMain": "https://steemit.com",
     "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "\"success\":true",
-    "positiveMsg": "\"success\":false",
-    "cors": true,
-    "expectedStatus": 200
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "Tellonym",
@@ -1622,12 +1620,12 @@
   },
   {
     "name": "OPGG",
-    "url": "https://eune.op.gg/summoners/eune/{}",
-    "urlMain": "https://eune.op.gg",
+    "url": "https://op.gg/lol/summoners/eune/{}",
+    "urlMain": "https://op.gg",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Guide - OP.GG",
-    "expectedStatus": 200
+    "undetectable": true,
+    "caveat": "Summoner pages require the full Riot ID (name and tag); a username alone does not resolve to a profile."
   },
   {
     "name": "osu!",
@@ -1940,11 +1938,10 @@
   },
   {
     "name": "JSFiddle",
-    "url": "https://jsfiddle.net/user/{}/",
+    "url": "https://jsfiddle.net/u/{}/",
     "urlMain": "https://jsfiddle.net",
     "category": "developer",
-    "checkMethod": "message",
-    "errorMsg": "That page doesn't exist.",
+    "checkMethod": "status_code",
     "allowBrowserFallback": false,
     "cfProxy": true,
     "expectedStatus": 200,
@@ -2067,10 +2064,9 @@
     "urlMain": "https://pcpartpicker.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "The page you requested could not be found.",
     "cfProxy": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "undetectable": true,
+    "caveat": "Profile pages redirect every visitor to the login page without an authenticated session."
   },
   {
     "name": "DOTAFire",
@@ -2103,7 +2099,8 @@
     "checkMethod": "message",
     "errorMsg": "You seem to have stumbled upon a page that does not exist.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "Diablo",
@@ -2443,10 +2440,13 @@
   },
   {
     "name": "Arch Linux GitLab",
-    "url": "https://gitlab.archlinux.org/api/v4/users?username={}",
+    "url": "https://gitlab.archlinux.org/{}",
     "urlMain": "https://gitlab.archlinux.org",
-    "category": "social",
+    "category": "developer",
     "checkMethod": "message",
+    "apiUrl": "https://gitlab.archlinux.org/api/v4/users?username={}",
+    "checkUrl": "https://gitlab.archlinux.org/api/v4/users?username={}",
+    "positiveMsg": "\"id\":",
     "errorMsg": "[]",
     "expectedStatus": 200
   },
@@ -2647,12 +2647,12 @@
   },
   {
     "name": "Blogmarks",
-    "url": "http://blogmarks.net/user/{}",
+    "url": "https://blogmarks.net/user/{}",
     "urlMain": "https://blogmarks.net",
     "category": "misc",
     "checkMethod": "message",
-    "positiveMsg": "class=\"mark\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "errorMsg": "this user does not exist"
   },
   {
     "name": "Bluesky Username",
@@ -2752,10 +2752,13 @@
   },
   {
     "name": "Cameo",
-    "url": "https://www.cameo.com/api/v2/users/{}",
+    "url": "https://www.cameo.com/{}",
     "urlMain": "https://cameo.com",
     "category": "shopping",
     "checkMethod": "message",
+    "apiUrl": "https://www.cameo.com/api/v2/users/{}",
+    "checkUrl": "https://www.cameo.com/api/v2/users/{}",
+    "positiveMsg": "\"username\":",
     "errorMsg": "\"message\":\"We could not find the user:",
     "expectedStatus": 200,
     "notFoundStatus": 404
@@ -3014,7 +3017,7 @@
     "urlMain": "https://cracked.com",
     "category": "social",
     "checkMethod": "message",
-    "positiveMsg": "Member Since",
+    "positiveMsg": "property=\"og:url\" content=\"https://www.cracked.com/members/",
     "expectedStatus": 200,
     "notFoundStatus": 302
   },
@@ -3409,7 +3412,8 @@
     "checkMethod": "message",
     "errorMsg": "Not Found (404) | EyeEm",
     "expectedStatus": 200,
-    "notFoundStatus": 301
+    "notFoundStatus": 301,
+    "defunct": true
   },
   {
     "name": "Fabswingers",
@@ -4204,8 +4208,8 @@
     "urlMain": "https://hubski.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "No such user.",
-    "expectedStatus": 200
+    "undetectable": true,
+    "caveat": "Hubski is invite-only; existing and missing profiles both return the same login page without an authenticated session."
   },
   {
     "name": "HudsonRock",
@@ -4234,7 +4238,8 @@
     "checkMethod": "message",
     "errorMsg": "We couldn't find the page you are looking for.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "icq-chat",
@@ -4404,12 +4409,12 @@
   },
   {
     "name": "Issuu",
-    "url": "https://issuu.com/call/signup/v2/check-username/{}",
+    "url": "https://issuu.com/{}",
     "urlMain": "https://issuu.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "\"status\":\"available\"",
-    "expectedStatus": 200
+    "category": "content",
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "notFoundStatus": 404
   },
   {
     "name": "iXBT Forum",
@@ -4692,8 +4697,8 @@
     "urlMain": "https://magix.info",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Page not found",
-    "expectedStatus": 200
+    "undetectable": true,
+    "caveat": "Profile pages redirect every visitor to the login page without an authenticated session."
   },
   {
     "name": "Malpedia Actors",
@@ -5210,7 +5215,8 @@
     "checkMethod": "message",
     "errorMsg": "not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "myWishBoard",
@@ -6227,9 +6233,8 @@
     "urlMain": "https://skeb.jp",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "Skeb - Request Box",
-    "expectedStatus": 200,
-    "notFoundStatus": 503
+    "undetectable": true,
+    "caveat": "Profiles render client-side; the server response is the same shell for existing and missing users, and the API rate-limits anonymous requests."
   },
   {
     "name": "SlackHoles",
@@ -6279,6 +6284,7 @@
     "urlMain": "https://{}.smugmug.com",
     "category": "content",
     "checkMethod": "message",
+    "positiveMsg": "schema.org/Person",
     "errorMsg": "schema.org/Thing",
     "expectedStatus": 200,
     "notFoundStatus": 404
@@ -6323,7 +6329,8 @@
     "checkMethod": "message",
     "errorMsg": "The resource you are looking for has been removed, had its name changed, or is temporarily unavailable.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true
   },
   {
     "name": "sofurry",
@@ -6465,6 +6472,7 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "WE ARE SORRY, THE PAGE YOU REQUESTED CANNOT BE FOUND",
+    "skipBodyCheck": true,
     "expectedStatus": 200,
     "notFoundStatus": 404
   },
@@ -6515,9 +6523,8 @@
     "urlMain": "https://secure.tagged.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "Tagged - The social network for meeting new people",
-    "expectedStatus": 200,
-    "notFoundStatus": 302
+    "undetectable": true,
+    "caveat": "Profile pages redirect every visitor to the sign-up page without an authenticated session."
   },
   {
     "name": "TamTam",
@@ -6588,9 +6595,8 @@
     "urlMain": "https://teamtreehouse.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "Oops, Something went missing",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "undetectable": true,
+    "caveat": "Profile pages require a signed-in session; existing and missing users are not reliably distinguishable."
   },
   {
     "name": "Teespring",
@@ -6911,9 +6917,8 @@
     "urlMain": "https://vapenews.ru",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>404</title>",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "undetectable": true,
+    "caveat": "Profile pages redirect every visitor to the home page without an authenticated session."
   },
   {
     "name": "Venmo",
@@ -6973,7 +6978,8 @@
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "Blog inexistant",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   },
   {
     "name": "VirusTotal",
@@ -7457,6 +7463,7 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "По Вашему запросу люди не найдены.",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true
   }
 ]
