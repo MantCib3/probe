@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checking the Checks | PROBE</title>
+  <meta name="description" content="How re-examining PROBE's own test labels raised decision accuracy to 98.69% and recall to 95.87% with zero observed false matches, and which part of the gain came from a smaller catalog.">
+  <link rel="canonical" href="https://usernameprobe.com/blog/checking-the-checks">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Checking the Checks">
+  <meta property="og:description" content="Stale labels, moved endpoints, and an honest denominator: what PROBE learned by re-testing its own answer key.">
+  <meta property="og:url" content="https://usernameprobe.com/blog/checking-the-checks">
+  <meta property="og:image" content="https://usernameprobe.com/social/checking-the-checks.png?v=1">
+  <meta property="og:image:secure_url" content="https://usernameprobe.com/social/checking-the-checks.png?v=1">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Checking the Checks: PROBE accuracy update showing 98.69 percent decision accuracy, 95.87 percent recall, and zero observed false matches.">
+  <meta property="article:published_time" content="2026-10-02">
+  <meta property="article:modified_time" content="2026-10-02">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Checking the Checks">
+  <meta name="twitter:description" content="What PROBE learned by re-testing its own answer key: stale labels, moved endpoints, and an honest denominator.">
+  <meta name="twitter:image" content="https://usernameprobe.com/social/checking-the-checks.png?v=1">
+  <meta name="twitter:image:alt" content="Checking the Checks: PROBE accuracy update showing 98.69 percent decision accuracy, 95.87 percent recall, and zero observed false matches.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Checking the Checks",
+    "description": "How re-examining PROBE's own test labels raised decision accuracy to 98.69% and recall to 95.87% with zero observed false matches, and which part of the gain came from a smaller catalog.",
+    "url": "https://usernameprobe.com/blog/checking-the-checks",
+    "mainEntityOfPage": "https://usernameprobe.com/blog/checking-the-checks",
+    "image": "https://usernameprobe.com/social/checking-the-checks.png?v=1",
+    "datePublished": "2026-10-02",
+    "dateModified": "2026-10-02",
+    "author": { "@type": "Organization", "name": "PROBE", "url": "https://usernameprobe.com/" },
+    "publisher": { "@type": "Organization", "name": "PROBE", "url": "https://usernameprobe.com/", "logo": { "@type": "ImageObject", "url": "https://usernameprobe.com/favicon.svg" } }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
+  <link rel="stylesheet" href="/styles.min.css?v=13">
+  <link rel="stylesheet" href="/editorial.min.css?v=2">
+</head>
+<body class="editorial-body">
+  <nav class="navbar editorial-nav"><div class="nav-container"><a href="/" class="nav-logo">PROBE</a><a class="editorial-nav-back" href="/blog/">All posts</a></div></nav>
+  <main class="editorial-main article-main">
+    <article>
+      <header class="article-header">
+        <p class="editorial-kicker">Accuracy update</p>
+        <h1 class="editorial-title article-title">Checking the Checks</h1>
+        <p class="editorial-deck">An accuracy score is only as honest as the answer key behind it. This round, we tested the answer key too.</p>
+        <div class="article-meta"><time datetime="2026-10-02">2 October 2026</time><span>6 min read</span></div>
+      </header>
+      <div class="article-copy">
+        <p>PROBE now makes a correct found-or-not-found decision 98.69% of the time it gives a clear answer, up from 96.38% in our September update. Recall for known accounts rose from 88.70% to 95.87%, and the number of missed accounts fell from 26 to 9. None of the 618 missing-account controls was reported as found.</p>
+        <div class="article-metric" aria-label="October accuracy campaign headline metrics">
+          <div><strong>98.69%</strong><span>decision accuracy</span></div>
+          <div><strong>95.87%</strong><span>known-account recall</span></div>
+          <div><strong>0</strong><span>observed false matches</span></div>
+        </div>
+        <p>Those numbers deserve an explanation, because part of the improvement came from fixing PROBE and part came from fixing the test.</p>
+        <h2>When a miss is not really a miss</h2>
+        <p>Our measurement campaign checks each automatic source against usernames we expect to exist and usernames we expect not to exist. In September, 26 known accounts were reported as not found. A tempting response would be to loosen the rules until those 26 turned green. We did the opposite: we opened each one in a real browser, next to a randomly generated username that should not exist, and compared what each page actually showed.</p>
+        <p>The 26 misses fell into clearly different groups:</p>
+        <ul>
+          <li><strong>The account was gone.</strong> Five labelled accounts no longer existed. The site showed the same not-found page for them as for the random control, while still showing a separately verified live profile correctly. PROBE was right; our answer key was out of date.</li>
+          <li><strong>The site had moved.</strong> Five sources had changed where profiles live or how they respond. JSFiddle moved public profiles to a new path, Steemit's old availability endpoint now returns the same error for every username, and Bitbucket now exposes accounts through its public repositories API. Each fix was accepted only after a real account and two random usernames produced a repeatable difference.</li>
+          <li><strong>The page was behind a login.</strong> Several sites now send every visitor to the same sign-in or sign-up page, whether the account exists or not. No public response can separate those cases, so those sources became manual-only links.</li>
+          <li><strong>The site had closed.</strong> Ubisoft's forums now redirect to a closure notice, and EyeEm profile links now land on a different stock-photo service. Those sources were retired.</li>
+        </ul>
+        <p>Eight misses remain unresolved. On those sources we could not confirm that any live account is still detectable, so we did not invent a fix or quietly relabel the test. They stay counted as misses until the evidence says otherwise.</p>
+        <h2>A label is only as good as the page that produced it</h2>
+        <p>Halfway through this round, the campaign reported two false matches. That is the result our release gate exists to stop, so the work paused until we understood it.</p>
+        <p>Both cases were usernames that an earlier automated review had labelled as missing. That review had compared each username against a random control and seen the same 404 for both, which looked like solid evidence. The problem was the endpoint: it had stopped working and returned 404 for every username. Once PROBE checked the correct page, both accounts were plainly real. The false matches were not PROBE claiming an account that did not exist; they were the answer key claiming that real accounts did not exist.</p>
+        <p>We corrected both labels with the new evidence and recorded why they changed. We also removed other automatically reviewed labels on still-unresolved sources from calibration, since they may share the same weakness. The rerun reported zero false matches.</p>
+        <h2>Smaller details that changed outcomes</h2>
+        <p>Some fixes were about how pages are read rather than what they say. PROBE reads only the start of each page to keep searches fast. On Cracked, the text that identifies a member profile appears well beyond that limit, so real profiles looked empty. The fix uses a profile marker that appears near the top of the page instead.</p>
+        <p>Other sites now answer automated requests with an AWS bot-protection challenge. Those responses are now reported as blocked instead of being interpreted as a profile page or a missing account. That costs some coverage on a few sources, but a challenge page says nothing about whether an account exists.</p>
+        <h2>An honest denominator</h2>
+        <p>The catalog changed during this work. PROBE now has 366 functional sources: 309 automatic checks and 57 manual-only links, compared with 373, 324, and 49 in September. Retired sources and login-walled sources no longer count toward the automatic score.</p>
+        <p>That matters when reading the numbers. Removing sources that could never give a clear answer makes coverage look better without making any remaining check smarter. So the headline figure we focus on is accuracy among clear decisions, along with the concrete changes behind it: 205 of 309 automatic sources are now fully verified, compared with 196 in September; 10 source rules were rewritten from paired evidence, 8 sources moved to manual-only, and 7 were retired; and five stale labels were replaced with live evidence. Coverage moved only slightly, from 75.92% to 76.36%, and we do not treat that as a headline gain.</p>
+        <p>We also added a test that compares every published source count on the site with the live catalog. If the catalog changes and a page does not, the build fails.</p>
+        <h2>What it still does not mean</h2>
+        <p>Zero observed false matches is a property of this controlled run, not a guarantee about every future search. Sites change, accounts are deleted, and protections are added without notice. Some correct results in September became blocked or timed out in this run because of rate limits and bot checks; those are counted honestly as unclear answers rather than retried until they look better.</p>
+        <p>A found result is still a lead, not proof that two accounts belong to the same person.</p>
+        <h2>What comes next</h2>
+        <p>With the source checks in a stable, measurable state, the next milestone is collecting public profile details such as display names, profile pictures, and short biographies. Those details will only be attached to results PROBE has already confirmed as found, so extra information never becomes a shortcut around the evidence standard described here.</p>
+      </div>
+    </article>
+  </main>
+  <footer class="footer"><div class="container footer-inner"><div class="footer-brand"><span class="footer-logo">PROBE</span><p>Open-source username research with evidence-aware results.</p></div><nav class="footer-links" aria-label="Footer navigation"><div><span class="footer-label">Explore</span><a href="/#search">Search</a><a href="/#about">About</a><a href="/#sites">Platforms</a></div><div><span class="footer-label">Follow the work</span><a href="/blog/">Blog</a><a href="/roadmap">Roadmap</a></div><div><span class="footer-label">Use responsibly</span><a href="/privacy">Privacy &amp; acceptable use</a><a href="/#contact">Contact</a></div></nav></div><div class="container footer-bottom"><span>Public data is a lead, not proof. Verify before drawing conclusions.</span><span>&copy; 2026 PROBE</span></div></footer>
+</body>
+</html>
