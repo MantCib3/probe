@@ -382,8 +382,46 @@ function headSlice(body) {
 /* Returns { picture?, name?, bio?, location?, links?, joined?, followers? }
  * or null. Only call for results already classified as found. */
 function extractProfile(site, username, body, contentType, pageUrl) {
+  return extractWith(hintFor(site), site, username, body, contentType, pageUrl);
+}
+
+/* The follow-up GET for fields the scan page cannot supply, or null when the
+ * source has none or the scan already filled every field it would add. */
+function followUpPlan(site, username, profile) {
   const hint = hintFor(site);
-  if (!hint || !hint.fields || !body) return null;
+  const followUp = hint && hint.followUp;
+  if (!followUp || !followUp.fields || typeof followUp.url !== 'string') return null;
+  if (!Object.keys(followUp.fields).some(field => !profile || profile[field] === undefined)) return null;
+  let url;
+  try { url = new URL(followUp.url.replace(/\{\}/g, encodeURIComponent(username))); } catch (_) { return null; }
+  if (url.protocol !== 'https:') return null;
+  return {
+    url: url.href,
+    maxBytes: Math.min(followUp.maxBytes || MAX_EXTENDED_BYTES, MAX_EXTENDED_BYTES),
+    headOnly: Boolean(followUp.headOnly),
+  };
+}
+
+/* Fills fields missing from the scan-page profile using the follow-up
+ * response. A response that never mentions the username (a login wall or a
+ * generic landing page) contributes nothing. */
+function mergeFollowUp(site, username, profile, body, contentType, pageUrl) {
+  const hint = hintFor(site);
+  if (!hint || !hint.followUp || !body || !body.toLowerCase().includes(username.toLowerCase())) return profile;
+  const extra = extractWith(hint.followUp, site, username, body, contentType, pageUrl);
+  if (!extra) return profile;
+  const merged = { ...(profile || {}) };
+  for (const field of FIELDS) {
+    if (merged[field] === undefined && extra[field] !== undefined) merged[field] = extra[field];
+  }
+  if (merged.bio && merged.name && merged.bio === merged.name) delete merged.bio;
+  const ordered = {};
+  FIELDS.forEach(field => { if (merged[field] !== undefined) ordered[field] = merged[field]; });
+  return Object.keys(ordered).length ? ordered : null;
+}
+
+function extractWith(hint, site, username, body, contentType, pageUrl) {
+  if (!hint || !hint.fields || !Object.keys(hint.fields).length || !body) return null;
   const source = hint.headOnly ? headSlice(body) : body;
   let schemas;
   try {
@@ -418,8 +456,10 @@ module.exports = {
   extractAll,
   extractProfile,
   findUserObject,
+  followUpPlan,
   hintFor,
   mapObject,
+  mergeFollowUp,
   readPlan,
   setHints,
 };

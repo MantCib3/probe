@@ -1514,6 +1514,80 @@ function withProfile(result, site, username, body, contentType, fetchedUrl) {
   return profile ? { ...result, profile } : result;
 }
 
+const FOLLOW_UP_TIMEOUT_MS = 5000;
+const FOLLOW_UP_MAX_HOPS = 3;
+
+/* One GET for profile details a source's scan page cannot supply (its
+ * profile page, or a public data feed). Runs only after a found verdict, never
+ * changes that verdict, and gives up quietly on any error, block or timeout. */
+function fetchFollowUpPage(site, plan, signal) {
+  const crawlerUA = site.crawlerUA === 'googlebot'
+    ? 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+    : site.crawlerUA === 'twitterbot' ? 'Twitterbot/1.0'
+    : site.crawlerUA === 'facebookbot' ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
+    : null;
+  const cookieJars = new Map();
+  return new Promise(resolve => {
+    let settled = false;
+    const done = value => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', abort);
+      resolve(value);
+    };
+    const controller = new AbortController();
+    const abort = () => { controller.abort(); done(null); };
+    const timer = setTimeout(abort, FOLLOW_UP_TIMEOUT_MS);
+    if (signal) {
+      if (signal.aborted) return abort();
+      signal.addEventListener('abort', abort, { once: true });
+    }
+    const get = (url, hops) => {
+      let parsed;
+      try { parsed = new URL(url); } catch (_) { return done(null); }
+      if (parsed.protocol !== 'https:') return done(null);
+      scheduleHostRequest(parsed.hostname, () => {
+        if (settled) return;
+        const req = https.request(makeReqOptions(parsed, crawlerUA, cookieJars, controller.signal), res => {
+          updateCookieJar(cookieJarFor(cookieJars, parsed.hostname), res.headers['set-cookie']);
+          const sc = res.statusCode;
+          if (sc >= 300 && sc < 400 && res.headers.location && hops < FOLLOW_UP_MAX_HOPS) {
+            res.resume();
+            let next;
+            try { next = new URL(res.headers.location, url).href; } catch (_) { return done(null); }
+            return get(next, hops + 1);
+          }
+          if (sc < 200 || sc >= 300) { res.resume(); return done(null); }
+          let body = '';
+          res.setEncoding('utf8');
+          res.on('data', chunk => {
+            body += chunk;
+            if (body.length >= plan.maxBytes || (plan.headOnly && /<\/head\s*>/i.test(body.slice(-(chunk.length + 8))))) res.destroy();
+          });
+          res.on('close', () => done({ body, contentType: res.headers['content-type'] || '', url }));
+          res.on('error', () => done(null));
+        });
+        req.on('timeout', () => req.destroy(new Error('timeout')));
+        req.on('error', () => done(null));
+        req.end();
+      });
+    };
+    get(plan.url, 0);
+  });
+}
+
+async function withFollowUpProfile(result, site, username, signal) {
+  if (!result || result.status !== 'found' || result.resolvedBy === 'browser') return result;
+  if ((result.reasonCodes || []).includes('archive_org_fallback_found')) return result;
+  const plan = profileMetadata.followUpPlan(site, username, result.profile);
+  if (!plan) return result;
+  const page = await fetchFollowUpPage(site, plan, signal).catch(() => null);
+  if (!page) return result;
+  const profile = profileMetadata.mergeFollowUp(site, username, result.profile || null, page.body, page.contentType, page.url);
+  return profile ? { ...result, profile } : result;
+}
+
 /* ── Display name extractor (optional field on 'found' results) ────────── */
 function extractDisplayName(title, username) {
   if (!title) return null;
@@ -2200,10 +2274,13 @@ function probeWithDeadline(site, username, deadlineMs = 15000) {
       });
     }, deadlineMs);
   });
-  const promise = Promise.race([
+  const detection = Promise.race([
     probeWithBrowserFallback(site, username, controller.signal),
     timeoutResult,
   ]).finally(() => clearTimeout(deadlineTimer));
+  // The follow-up has its own short budget so it can never turn a finished
+  // verdict into a timeout; cancel() still aborts it.
+  const promise = detection.then(result => withFollowUpProfile(result, site, username, controller.signal));
 
   return {
     controller,
@@ -2512,6 +2589,7 @@ const CACHEABLE_EXT = new Set(['.css', '.js']);
 const CLEAN_PAGE_ROUTES = new Map([
   ['/roadmap', 'roadmap.html'],
   ['/privacy', 'privacy.html'],
+  ['/blog/profile-details-pilot', 'blog/profile-details-pilot.html'],
   ['/blog/checking-the-checks', 'blog/checking-the-checks.html'],
   ['/blog/what-your-username-doesnt-hide', 'blog/what-your-username-doesnt-hide.html'],
   ['/blog/improving-accuracy-without-guessing', 'blog/improving-accuracy-without-guessing.html'],

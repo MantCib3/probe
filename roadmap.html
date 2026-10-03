@@ -22,7 +22,7 @@
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="/styles.min.css?v=13"><link rel="stylesheet" href="/editorial.min.css?v=2">
+  <link rel="stylesheet" href="/styles.min.css?v=13"><link rel="stylesheet" href="/editorial.min.css?v=3">
   <script src="/roadmap.min.js?v=3" defer></script>
 </head>
 <body class="editorial-body">
@@ -32,7 +32,7 @@
       <p class="editorial-kicker">Build in public</p>
       <h1 class="editorial-title">The Road Ahead</h1>
       <p class="editorial-deck">What is already working, what we are improving now, and what we may build next. Select a milestone to read more.</p>
-      <div class="roadmap-legend" aria-label="Roadmap status legend"><span class="legend-item"><span class="legend-dot shipped"></span>Shipped</span><span class="legend-item"><span class="legend-dot progress"></span>In progress</span><span class="legend-item"><span class="legend-dot next"></span>Next</span><span class="legend-item"><span class="legend-dot"></span>Exploring</span></div>
+      <div class="roadmap-legend" aria-label="Roadmap status legend"><span class="legend-item"><span class="legend-dot shipped"></span>Shipped</span><span class="legend-item"><span class="legend-dot progress"></span>In progress</span><span class="legend-item"><span class="legend-dot pilot"></span>Pilot</span><span class="legend-item"><span class="legend-dot next"></span>Next</span><span class="legend-item"><span class="legend-dot"></span>Exploring</span></div>
     </header>
 
     <div class="roadmap-track">
@@ -59,6 +59,10 @@
           <div class="milestone-detail" id="roadmap-hardening" hidden><p>We are reviewing 32 apparent missed accounts and testing alternative routes for sites that block or limit requests. The current problem groups include 53 sources returning HTTP 403, four returning HTTP 429, and six showing challenge pages. Some sources appear in more than one group.</p></div>
         </article>
         <article class="roadmap-stop">
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-profile"><span class="milestone-top"><span class="milestone-state pilot">Pilot</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Profile details on found results</span></button>
+          <div class="milestone-detail" id="roadmap-profile" hidden><p>Found results can now show a profile picture, name, short bio, and a few public facts, read from the page the scan already loads or one follow-up page. Each source’s rules are tested against real and made-up accounts first, and nothing is stored. Coverage is still partial while we watch how it behaves on live traffic.</p></div>
+        </article>
+        <article class="roadmap-stop">
           <button class="milestone" aria-expanded="false" aria-controls="roadmap-health"><span class="milestone-top"><span class="milestone-state next">Next</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Automatic source checks</span></button>
           <div class="milestone-detail" id="roadmap-health" hidden><p>Run known real and missing usernames on a schedule, watch for changes in site responses, and create a review list when tests go stale. The aim is to catch site changes before users have to report them.</p></div>
         </article>
@@ -71,8 +75,8 @@
           <div class="milestone-detail" id="roadmap-bulk" hidden><p>Search a limited list of usernames, follow each job’s progress, and export the combined results. A documented API would provide secure access with clear usage limits and a stable response format.</p></div>
         </article>
         <article class="roadmap-stop">
-          <button class="milestone" aria-expanded="false" aria-controls="roadmap-collect"><span class="milestone-top"><span class="milestone-state">Exploring</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Profile details and screenshots</span></button>
-          <div class="milestone-detail" id="roadmap-collect" hidden><p>Collect public details such as profile pictures, biographies, links, and follower counts, with optional screenshots. Browser-based collection would only be used when a normal request cannot reach the page reliably.</p></div>
+          <button class="milestone" aria-expanded="false" aria-controls="roadmap-collect"><span class="milestone-top"><span class="milestone-state">Exploring</span><span class="milestone-toggle" aria-hidden="true">+</span></span>          <span class="milestone-title">Deeper profile details and screenshots</span></button>
+                    <div class="milestone-detail" id="roadmap-collect" hidden><p>Reach details that need a full browser to appear, such as pages built by scripts or sites that block normal requests, with optional screenshots. This would run only when someone asks for it on a specific result.</p></div>
         </article>
         <article class="roadmap-stop">
           <button class="milestone" aria-expanded="false" aria-controls="roadmap-community"><span class="milestone-top"><span class="milestone-state">Exploring</span><span class="milestone-toggle" aria-hidden="true">+</span></span><span class="milestone-title">Community suggestions and access plans</span></button>

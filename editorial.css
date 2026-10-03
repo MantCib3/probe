@@ -132,6 +132,7 @@
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; }
 .legend-dot.shipped { background: #16834b; }
 .legend-dot.progress { background: #d68b00; }
+.legend-dot.pilot { background: #2563eb; }
 .legend-dot.next { background: #111; }
 
 .roadmap-track { position: relative; padding: 1rem 0 2rem; }
@@ -165,6 +166,7 @@
 .milestone-state { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .milestone-state.shipped { color: #16834b; }
 .milestone-state.progress { color: #9a6500; }
+.milestone-state.pilot { color: #1d4ed8; }
 .milestone-title { display: block; margin-top: 0.35rem; font-size: 1.25rem; font-weight: 700; }
 .milestone-toggle { color: #777; font-size: 1.2rem; transition: transform 180ms ease; }
 .milestone[aria-expanded="true"] .milestone-toggle { transform: rotate(45deg); }

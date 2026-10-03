@@ -74,6 +74,40 @@ test('rejected control values, numeric and username bios are dropped', t => {
   assert.deepEqual(bio('Painter & potter'), { bio: 'Painter & potter' });
 });
 
+test('follow-up plans only cover missing fields and only over https', t => {
+  withHints(t, {
+    Example: {
+      fields: { name: [{ schema: 'json_api' }] },
+      followUp: { url: 'https://example.com/u/{}', fields: { picture: [{ schema: 'open_graph' }], bio: [{ schema: 'open_graph' }] }, headOnly: true, maxBytes: 999999999 },
+    },
+  });
+  const plan = metadata.followUpPlan(SITE, 'al ice', { name: 'Alice' });
+  assert.deepEqual(plan, { url: 'https://example.com/u/al%20ice', maxBytes: metadata.MAX_EXTENDED_BYTES, headOnly: true });
+  assert.equal(metadata.followUpPlan(SITE, 'alice', { picture: 'https://x/a.jpg', bio: 'Hi' }), null);
+
+  withHints(t, { Example: { fields: {}, followUp: { url: 'http://example.com/u/{}', fields: { bio: [{ schema: 'meta' }] } } } });
+  assert.equal(metadata.followUpPlan(SITE, 'alice', null), null);
+});
+
+test('follow-up pages fill gaps but never override or speak for other users', t => {
+  withHints(t, {
+    Example: {
+      fields: { name: [{ schema: 'json_api' }] },
+      followUp: { url: 'https://example.com/u/{}', fields: { name: [{ schema: 'open_graph' }], picture: [{ schema: 'open_graph' }] }, rejectValues: { picture: ['https://example.com/img/generic.jpg'] } },
+    },
+  });
+  const page = ogPage('<meta property="og:title" content="Someone Else"><meta property="og:image" content="https://cdn.example.com/alice.jpg">');
+  assert.deepEqual(
+    metadata.mergeFollowUp(SITE, 'alice', { name: 'Alice Smith' }, page, 'text/html', 'https://example.com/u/alice'),
+    { picture: 'https://cdn.example.com/alice.jpg', name: 'Alice Smith' },
+  );
+  const loginWall = '<html><head><meta property="og:title" content="Log in"><meta property="og:image" content="https://cdn.example.com/brand.jpg"></head></html>';
+  assert.deepEqual(metadata.mergeFollowUp(SITE, 'alice', { name: 'Alice Smith' }, loginWall, 'text/html', SITE.url), { name: 'Alice Smith' });
+  assert.equal(metadata.mergeFollowUp(SITE, 'alice', null, loginWall, 'text/html', SITE.url), null);
+  const generic = ogPage('<meta property="og:image" content="https://example.com/img/generic.jpg">');
+  assert.equal(metadata.mergeFollowUp(SITE, 'alice', null, generic, 'text/html', SITE.url), null);
+});
+
 async function serve(t, handler) {
   const server = http.createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -111,4 +145,29 @@ test('a not-found result never reads past the classification window or gets a pr
   assert.equal(result.status, 'not_found');
   assert.equal(result.profile, undefined);
   assert.ok(written < 400000, `upstream wrote ${written} bytes before the probe closed`);
+});
+
+test('a found API check keeps its verdict when the follow-up cannot be used', async t => {
+  let followUps = 0;
+  const port = await serve(t, (req, res) => {
+    if (req.url.startsWith('/api/')) {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify({ username: 'alice', name: 'Alice Smith' }));
+    }
+    followUps++;
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(ogPage('<meta property="og:image" content="https://cdn.example.com/alice.jpg">'));
+  });
+  const site = { name: 'Local', category: 'test', url: `http://127.0.0.1:${port}/u/{}`, apiUrl: `http://127.0.0.1:${port}/api/{}`, checkMethod: 'status_code' };
+  withHints(t, {
+    Local: {
+      fields: { name: [{ schema: 'json_api' }] },
+      followUp: { url: `http://127.0.0.1:${port}/u/{}`, fields: { picture: [{ schema: 'open_graph' }] } },
+    },
+  });
+
+  const result = await probeWithDeadline(site, 'alice', 4000).promise;
+  assert.equal(result.status, 'found');
+  assert.deepEqual(result.profile, { name: 'Alice Smith' });
+  assert.equal(followUps, 0, 'plain-http follow-up must be refused');
 });
