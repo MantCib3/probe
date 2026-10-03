@@ -1087,6 +1087,75 @@ function initPlatformsGrid(sites) {
   if (hint) hint.innerHTML = `${count} platforms &nbsp;·&nbsp; social · developer · gaming · content · and more`;
 }
 
+/* ── Profile details (public page fields read during the scan) ───────── */
+function httpsUrl(value) {
+  try {
+    const u = new URL(String(value));
+    return u.protocol === 'https:' ? u.href : null;
+  } catch (_) { return null; }
+}
+
+function normaliseProfile(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const text = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+  const profile = {
+    picture  : httpsUrl(raw.picture),
+    name     : text(raw.name, 80),
+    bio      : text(raw.bio, 280),
+    location : text(raw.location, 80),
+    links    : Array.isArray(raw.links) ? raw.links.map(httpsUrl).filter(Boolean).slice(0, 5) : [],
+    joined   : typeof raw.joined === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.joined) ? raw.joined : null,
+    followers: Number.isFinite(raw.followers) && raw.followers >= 0 ? Math.round(raw.followers) : null,
+  };
+  const hasAny = profile.picture || profile.name || profile.bio || profile.location || profile.links.length || profile.joined || profile.followers !== null;
+  return hasAny ? profile : null;
+}
+
+function compactCount(n) {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '')}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, '')}K`;
+  return String(n);
+}
+
+function profileBlockHtml(profile) {
+  const facts = [];
+  if (profile.location) facts.push(`<span>${escHtml(profile.location)}</span>`);
+  if (profile.joined) facts.push(`<span>Joined ${escHtml(profile.joined.slice(0, 7))}</span>`);
+  if (profile.followers !== null) facts.push(`<span>${escHtml(compactCount(profile.followers))} followers</span>`);
+  profile.links.slice(0, 2).forEach(link => {
+    let host = link;
+    try { host = new URL(link).hostname.replace(/^www\./, ''); } catch (_) {}
+    facts.push(`<a href="${escHtml(link)}" target="_blank" rel="noopener noreferrer nofollow">${escHtml(host)}</a>`);
+  });
+  return `
+    <div class="profile-meta${profile.picture ? ' has-avatar' : ''}" title="Read from the public profile page during this scan. Not stored. A match is a lead, not proof of identity.">
+      <div class="profile-text">
+        ${profile.name ? `<div class="profile-name">${escHtml(profile.name)}</div>` : ''}
+        ${profile.bio ? `<div class="profile-bio">${escHtml(profile.bio)}</div>` : ''}
+        ${facts.length ? `<div class="profile-facts">${facts.join('')}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function attachProfileAvatar(card, picture) {
+  const block = card.querySelector('.profile-meta');
+  if (!block) return;
+  const img = document.createElement('img');
+  img.className = 'profile-avatar';
+  img.alt = '';
+  img.width = 40;
+  img.height = 40;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+  img.addEventListener('error', () => {
+    img.remove();
+    block.classList.remove('has-avatar');
+  }, { once: true });
+  img.src = picture;
+  block.prepend(img);
+}
+
 /* ── Card creation ───────────────────────────────────────────────────── */
 function makeCard(r, animDelay = 0) {
   const card = document.createElement('div');
@@ -1109,9 +1178,11 @@ function makeCard(r, animDelay = 0) {
     ? `<span class="site-url auth-req-note">🔒 open manually to check</span>`
     : `<span class="site-url">${urlDisplay}</span>`;
 
-  const displayNameHtml = r.displayName
+  const profile = r.status === 'found' ? normaliseProfile(r.profile) : null;
+  const displayNameHtml = !profile && r.displayName
     ? `<div class="display-name">${escHtml(r.displayName)}</div>`
     : '';
+  const profileHtml = profile ? profileBlockHtml(profile) : '';
 
   const reasons = humanizeReasons(Array.isArray(r.reasonCodes) ? r.reasonCodes.slice(0, 2) : []);
   const reasonHtml = reasons.length
@@ -1131,10 +1202,13 @@ function makeCard(r, animDelay = 0) {
     </div>
     <div class="site-name">${escHtml(r.name)}</div>
     ${displayNameHtml}
+    ${profileHtml}
     ${reasonHtml}
     ${badgeHtml}
     ${manualLink}
   `;
+
+  if (profile && profile.picture) attachProfileAvatar(card, profile.picture);
 
   // Store profile URL for archive.org fallback
   card.dataset.profileUrl = r.url || '';
@@ -1452,6 +1526,7 @@ function startScan(username, cfToken) {
         statusCode  : msg.statusCode || null,
         reasonCodes : Array.isArray(msg.reasonCodes) ? msg.reasonCodes : [],
         displayName : msg.displayName || null,
+        profile     : msg.status === 'found' ? normaliseProfile(msg.profile) : null,
         resolvedBy  : msg.resolvedBy || null,
       };
       results.push(result);
@@ -1668,15 +1743,25 @@ function resetDomainScanControls() {
 }
 
 /* ── Export helpers ──────────────────────────────────────────────────── */
+function csvCell(value) {
+  let text = String(value ?? '');
+  // Profile fields come from third-party pages; neutralise spreadsheet formulas.
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
 function buildCsvRows(subset) {
-  const header = 'Name,Category,Status,Confidence,Reasons,URL';
-  const rows = subset.map(r =>
-    [r.name, r.category, r.status,
+  const header = 'Name,Category,Status,Confidence,Reasons,URL,Profile name,Bio,Picture,Location,Joined,Followers,Links';
+  const rows = subset.map(r => {
+    const p = r.profile || {};
+    return [r.name, r.category, r.status,
      typeof r.confidence === 'number' ? Math.round(r.confidence * 100) : '',
-     Array.isArray(r.reasonCodes) ? r.reasonCodes.join('|') : '', r.url]
-      .map(v => `"${String(v).replace(/"/g, '""')}"`)
-      .join(',')
-  );
+     Array.isArray(r.reasonCodes) ? r.reasonCodes.join('|') : '', r.url,
+     p.name || '', p.bio || '', p.picture || '', p.location || '', p.joined || '',
+     p.followers ?? '', Array.isArray(p.links) ? p.links.join(' ') : '']
+      .map(csvCell)
+      .join(',');
+  });
   return [header, ...rows].join('\r\n');
 }
 

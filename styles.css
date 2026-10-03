@@ -969,6 +969,54 @@ button.stat-item.stat-pill.active .dot { color: #fff !important; }
   letter-spacing: 0.02em;
 }
 
+.profile-meta {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin: 0.15rem 0 0.4rem;
+  min-width: 0;
+}
+.profile-avatar {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.profile-text { min-width: 0; flex: 1; }
+.profile-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-bio {
+  font-size: 0.74rem;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-top: 0.1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.6rem;
+  font-size: 0.68rem;
+  color: #6b7280;
+  margin-top: 0.2rem;
+}
+.profile-facts a { color: var(--muted); text-decoration: none; }
+.profile-facts a:hover { color: var(--primary); text-decoration: underline; }
+
 .site-url {
   display: block;
   font-size: 0.74rem;

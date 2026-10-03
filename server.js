@@ -8,6 +8,7 @@ const fs    = require('fs');
 const path  = require('path');
 const crypto = require('crypto');
 const { URL } = require('url');
+const profileMetadata = require('./profile-metadata');
 
 // Stealth browser — lazy-loaded; absent gracefully if not installed
 let chromiumStealth = null;
@@ -1506,6 +1507,13 @@ function buildDomainPivots(domain) {
   ];
 }
 
+/* ── Profile details (found results only) ────────────────────────────── */
+function withProfile(result, site, username, body, contentType, fetchedUrl) {
+  if (!result || result.status !== 'found' || !body) return result;
+  const profile = profileMetadata.extractProfile(site, username, body, contentType, fetchedUrl);
+  return profile ? { ...result, profile } : result;
+}
+
 /* ── Display name extractor (optional field on 'found' results) ────────── */
 function extractDisplayName(title, username) {
   if (!title) return null;
@@ -1933,14 +1941,35 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     }
 
     // ── Non-redirect: read body and classify ──────────────────────────
+    // Classification always uses the first MAX_BODY bytes. Sources whose
+    // profile details sit further down (per metadata-hints.json) keep
+    // streaming only once that prefix already classifies as found.
+    const readPlan = profileMetadata.readPlan(site);
     let body = '';
+    let classifyBody = null;
+    let early = null;
+    let stopped = false;
     res.setEncoding('utf8');
     res.on('data', chunk => {
+      if (stopped) return;
       body += chunk;
-      if (body.length >= MAX_BODY) res.destroy();
+      if (classifyBody === null && body.length >= MAX_BODY) {
+        classifyBody = body;
+        if (!readPlan) { stopped = true; return res.destroy(); }
+        early = classify(site, username, origUrl, sc, headers, classifyBody);
+        if (early.status !== 'found') { stopped = true; return res.destroy(); }
+      }
+      if (classifyBody !== null && readPlan && (
+        body.length >= readPlan.maxBytes ||
+        (readPlan.headOnly && /<\/head\s*>/i.test(body.slice(-(chunk.length + 8))))
+      )) {
+        stopped = true;
+        res.destroy();
+      }
     });
     res.on('close', () => {
-      finish(classify(site, username, origUrl, sc, headers, body));
+      const result = early || classify(site, username, origUrl, sc, headers, classifyBody ?? body);
+      finish(withProfile(result, site, username, body, headers['content-type'], url));
     });
     res.on('error', () => finish({ ...base, status: 'error', statusCode: 0 }));
   });
@@ -3588,4 +3617,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { classify, makeClassifiedResult, normalizeResult, probe, probeWithDeadline };
+module.exports = { classify, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile };
