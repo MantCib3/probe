@@ -44,17 +44,6 @@
     "errorMsg": "\"code\":400"
   },
   {
-    "name": "Tumblr",
-    "url": "https://{}.tumblr.com/",
-    "urlMain": "https://tumblr.com",
-    "category": "social",
-    "checkMethod": "status_code",
-    "apiUrl": "https://{}.tumblr.com/rss",
-    "notFoundStatus": 404,
-    "skipBodyCheck": true,
-    "cors": true
-  },
-  {
     "name": "VK",
     "url": "https://vk.com/{}",
     "urlMain": "https://vk.com",
@@ -770,16 +759,6 @@
     "notFoundStatus": 404
   },
   {
-    "name": "Lemmy",
-    "url": "https://lemmy.world/u/{}",
-    "urlMain": "https://lemmy.world",
-    "category": "forum",
-    "checkMethod": "message",
-    "positiveMsg": "\"actor_id\":",
-    "errorMsg": "Page Not Found",
-    "cfProxy": true
-  },
-  {
     "name": "Lobste.rs",
     "url": "https://lobste.rs/u/{}",
     "urlMain": "https://lobste.rs",
@@ -837,13 +816,6 @@
     "category": "professional",
     "checkMethod": "status_code",
     "expectedStatus": 200
-  },
-  {
-    "name": "Guru",
-    "url": "https://www.guru.com/freelancers/{}/",
-    "urlMain": "https://www.guru.com",
-    "category": "professional",
-    "checkMethod": "status_code"
   },
   {
     "name": "Upwork",
@@ -909,14 +881,6 @@
     "undetectable": true,
     "positiveMsg": "Society6 Artist</title>",
     "errorMsg": "Page not found"
-  },
-  {
-    "name": "Threadless",
-    "url": "https://www.threadless.com/{}",
-    "urlMain": "https://www.threadless.com",
-    "category": "shopping",
-    "checkMethod": "status_code",
-    "cfProxy": true
   },
   {
     "name": "Poshmark",
@@ -1067,19 +1031,6 @@
     "category": "misc",
     "checkMethod": "status_code",
     "expectedStatus": 301,
-    "notFoundStatus": 404
-  },
-  {
-    "name": "Untappd",
-    "url": "https://untappd.com/user/{}",
-    "urlMain": "https://untappd.com",
-    "category": "misc",
-    "checkMethod": "message",
-    "allowBrowserFallback": false,
-    "positiveMsg": "class=\"cont user_profile\"",
-    "errorMsg": "class=\"search_404\"",
-    "cfProxy": true,
-    "expectedStatus": 200,
     "notFoundStatus": 404
   },
   {
@@ -1275,15 +1226,6 @@
     "notFoundStatus": 404
   },
   {
-    "name": "Steemit",
-    "url": "https://steemit.com/@{}",
-    "urlMain": "https://steemit.com",
-    "category": "social",
-    "checkMethod": "status_code",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "Tellonym",
     "url": "https://api.tellonym.me/profiles/name/{}",
     "urlMain": "https://api.tellonym.me",
@@ -1400,17 +1342,6 @@
     "notFoundStatus": 404
   },
   {
-    "name": "Destructoid",
-    "url": "https://www.destructoid.com/?name={}",
-    "urlMain": "https://www.destructoid.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "Error in query",
-    "allowBrowserFallback": false,
-    "cfProxy": true,
-    "expectedStatus": 200
-  },
-  {
     "name": "Anime-Planet",
     "url": "https://www.anime-planet.com/users/{}",
     "urlMain": "https://www.anime-planet.com/users/",
@@ -1437,32 +1368,6 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "404 Not Found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
-    "name": "weheartit",
-    "url": "https://weheartit.com/{}",
-    "urlMain": "https://weheartit.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": " (404)</title>",
-    "allowBrowserFallback": false,
-    "positiveMsg": " on We Heart It</title>",
-    "cfProxy": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
-    "name": "solo.to",
-    "url": "https://solo.to/{}",
-    "urlMain": "https://solo.to",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "Page not found",
-    "allowBrowserFallback": false,
-    "positiveMsg": "solo.to",
-    "cfProxy": true,
     "expectedStatus": 200,
     "notFoundStatus": 404
   },
@@ -1606,17 +1511,6 @@
     "allowBrowserFallback": false,
     "cors": true,
     "expectedStatus": 200
-  },
-  {
-    "name": "Moxfield",
-    "url": "https://api2.moxfield.com/v1/users/{}",
-    "urlMain": "https://api2.moxfield.com",
-    "category": "gaming",
-    "checkMethod": "message",
-    "errorMsg": "\"status\":404",
-    "notFoundStatus": 404,
-    "allowBrowserFallback": false,
-    "cors": true
   },
   {
     "name": "OPGG",
@@ -1774,16 +1668,6 @@
     "allowBrowserFallback": false,
     "expectedStatus": 200,
     "notFoundStatus": 404
-  },
-  {
-    "name": "TruckersMP",
-    "url": "https://truckersmp.com/user/search?search={}",
-    "urlMain": "https://truckersmp.com",
-    "category": "gaming",
-    "checkMethod": "message",
-    "errorMsg": "<h4>Could not find any member using these credentials</h4>",
-    "cors": true,
-    "expectedStatus": 200
   },
   {
     "name": "lichess.org",
@@ -2012,18 +1896,6 @@
     "caveat": "Manual check only: the previous static GraphQL URL never included the username"
   },
   {
-    "name": "Hackernoon",
-    "url": "https://hackernoon.com/u/{}",
-    "urlMain": "https://hackernoon.com",
-    "category": "developer",
-    "checkMethod": "status_code",
-    "allowBrowserFallback": false,
-    "apiUrl": "https://hackernoon.com/u/{}/rss",
-    "notFoundStatus": 404,
-    "skipBodyCheck": true,
-    "cors": true
-  },
-  {
     "name": "TryHackMe",
     "url": "https://tryhackme.com/api/user/exist/{}",
     "urlMain": "https://tryhackme.com",
@@ -2103,17 +1975,6 @@
     "defunct": true
   },
   {
-    "name": "Diablo",
-    "url": "https://diablo2.io/member/{}/",
-    "urlMain": "https://diablo2.io",
-    "category": "gaming",
-    "checkMethod": "message",
-    "errorMsg": "The requested user does not exist",
-    "allowBrowserFallback": false,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "SimplePlanes",
     "url": "https://www.simpleplanes.com/u/{}",
     "urlMain": "https://www.simpleplanes.com",
@@ -2123,18 +1984,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 302,
     "defunct": true
-  },
-  {
-    "name": "smule",
-    "url": "https://www.smule.com/api/profile/?handle={}",
-    "urlMain": "https://www.smule.com",
-    "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "\"code\":",
-    "allowBrowserFallback": false,
-    "cors": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 400
   },
   {
     "name": "Mixcloud",
@@ -2200,17 +2049,6 @@
     "notFoundStatus": 404
   },
   {
-    "name": "Researchgate",
-    "url": "https://www.researchgate.net/profile/{}",
-    "urlMain": "https://www.researchgate.net",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "20+ million researchers on ResearchGate",
-    "allowBrowserFallback": false,
-    "expectedStatus": 200,
-    "notFoundStatus": 301
-  },
-  {
     "name": "Houzz",
     "url": "https://www.houzz.com/user/{}",
     "urlMain": "https://www.houzz.com",
@@ -2231,17 +2069,6 @@
     "undetectable": true,
     "positiveMsg": "\"success\":false",
     "cors": true,
-    "expectedStatus": 200
-  },
-  {
-    "name": "LibraryThing",
-    "url": "https://www.librarything.com/profile/{}",
-    "urlMain": "https://www.librarything.com",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "Error: This user doesn't exist",
-    "allowBrowserFallback": false,
-    "cfProxy": true,
     "expectedStatus": 200
   },
   {
@@ -2439,18 +2266,6 @@
     "defunct": true
   },
   {
-    "name": "Arch Linux GitLab",
-    "url": "https://gitlab.archlinux.org/{}",
-    "urlMain": "https://gitlab.archlinux.org",
-    "category": "developer",
-    "checkMethod": "message",
-    "apiUrl": "https://gitlab.archlinux.org/api/v4/users?username={}",
-    "checkUrl": "https://gitlab.archlinux.org/api/v4/users?username={}",
-    "positiveMsg": "\"id\":",
-    "errorMsg": "[]",
-    "expectedStatus": 200
-  },
-  {
     "name": "Arduino (Forum)",
     "url": "https://forum.arduino.cc/u/{}.json",
     "urlMain": "https://forum.arduino.cc",
@@ -2534,16 +2349,6 @@
     "defunct": true
   },
   {
-    "name": "BabyPips",
-    "url": "https://forums.babypips.com/u/{}.json",
-    "urlMain": "https://forums.babypips.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "bblog_ru",
     "url": "https://www.babyblog.ru/user/{}",
     "urlMain": "https://babyblog.ru",
@@ -2593,16 +2398,6 @@
     "errorMsg": "This user is currently not available",
     "expectedStatus": 200,
     "defunct": true
-  },
-  {
-    "name": "BiggerPockets",
-    "url": "https://www.biggerpockets.com/users/{}",
-    "urlMain": "https://biggerpockets.com",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "Page not found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "Bimpos",
@@ -2677,16 +2472,6 @@
     "notFoundStatus": 404
   },
   {
-    "name": "Booknode",
-    "url": "https://booknode.com/profil/{}",
-    "urlMain": "https://booknode.com",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "<title>Page non trouvée",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "Boosty",
     "url": "https://api.boosty.to/v1/blog/{}",
     "urlMain": "https://api.boosty.to",
@@ -2707,15 +2492,6 @@
     "undetectable": true,
     "expectedStatus": 200,
     "notFoundStatus": 302
-  },
-  {
-    "name": "Brickset",
-    "url": "https://brickset.com/profile/{}",
-    "urlMain": "https://brickset.com",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "<title>{name} | Brickset</title>",
-    "expectedStatus": 200
   },
   {
     "name": "Bunpro",
@@ -2782,15 +2558,6 @@
     "errorMsg": "Ошибка 404",
     "expectedStatus": 200,
     "notFoundStatus": 404
-  },
-  {
-    "name": "CastingCallClub",
-    "url": "https://www.castingcall.club/{}",
-    "urlMain": "https://castingcall.club",
-    "category": "professional",
-    "checkMethod": "message",
-    "expectedStatus": 200,
-    "notFoundStatus": 302
   },
   {
     "name": "cda.pl",
@@ -2863,17 +2630,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 404,
     "defunct": true
-  },
-  {
-    "name": "CHEEZburger",
-    "url": "https://cheezburger.com/Editor/{}",
-    "urlMain": "https://cheezburger.com",
-    "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "<title>404 Not Found</title>",
-    "skipBodyCheck": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "Choko.Link",
@@ -2978,16 +2734,6 @@
     "errorMsg": "No search results found.",
     "expectedStatus": 200,
     "defunct": true
-  },
-  {
-    "name": "coroflot",
-    "url": "https://www.coroflot.com/{}",
-    "urlMain": "https://coroflot.com",
-    "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "Looking for something?",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "Coub",
@@ -3135,16 +2881,6 @@
     "errorMsg": "Użytkownik o podanym pseudonimie nie istnieje.",
     "expectedStatus": 200,
     "defunct": true
-  },
-  {
-    "name": "Designspriation",
-    "url": "https://www.designspiration.com/{}/",
-    "urlMain": "https://designspiration.com",
-    "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "Content Not Found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "destream",
@@ -3446,16 +3182,6 @@
     "defunct": true
   },
   {
-    "name": "fanpop",
-    "url": "https://www.fanpop.com/fans/{}",
-    "urlMain": "https://fanpop.com",
-    "category": "social",
-    "checkMethod": "message",
-    "positiveMsg": "Fanpopping since",
-    "expectedStatus": 200,
-    "notFoundStatus": 302
-  },
-  {
     "name": "Fanslist (OnlyFans)",
     "url": "https://fanslist.com/search?q={}",
     "urlMain": "https://fanslist.com",
@@ -3638,15 +3364,6 @@
     "defunct": true
   },
   {
-    "name": "fotka",
-    "url": "https://api.fotka.com/v2/user/dataStatic?login={}",
-    "urlMain": "https://api.fotka.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "ERROR",
-    "expectedStatus": 200
-  },
-  {
     "name": "Fotolog Archived Profile",
     "url": "https://archive.org/wayback/available?url=https://www.fotolog.com/{}",
     "urlMain": "https://archive.org",
@@ -3663,16 +3380,6 @@
     "checkMethod": "message",
     "errorMsg": "{}",
     "undetectable": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
-    "name": "Freelance.RU",
-    "url": "https://freelance.ru/{}",
-    "urlMain": "https://freelance.ru",
-    "category": "professional",
-    "checkMethod": "message",
-    "errorMsg": "class=\"msg_error alert alert-danger\"",
     "expectedStatus": 200,
     "notFoundStatus": 404
   },
@@ -4284,16 +3991,6 @@
     "defunct": true
   },
   {
-    "name": "ilovegrowingmarijuana",
-    "url": "https://support.ilovegrowingmarijuana.com/u/{}",
-    "urlMain": "https://support.ilovegrowingmarijuana.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "Oops! That page doesn’t exist or is private",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "imagefap",
     "url": "https://www.imagefap.com/profile/{}",
     "urlMain": "https://imagefap.com",
@@ -4326,32 +4023,12 @@
     "defunct": true
   },
   {
-    "name": "Immunefi",
-    "url": "https://immunefi.com/profile/{}/",
-    "urlMain": "https://immunefi.com",
-    "category": "developer",
-    "checkMethod": "message",
-    "errorMsg": "id=\"__next_error__\"",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "inaturalist",
     "url": "https://api.inaturalist.org/v1/users/{}",
     "urlMain": "https://api.inaturalist.org",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
-    "name": "Independent academia",
-    "url": "https://independent.academia.edu/{}",
-    "urlMain": "https://independent.academia.edu",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "Academia.edu",
     "expectedStatus": 200,
     "notFoundStatus": 404
   },
@@ -4387,15 +4064,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 410,
     "defunct": true
-  },
-  {
-    "name": "interpals",
-    "url": "https://www.interpals.net/{}",
-    "urlMain": "https://interpals.net",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "User not found",
-    "expectedStatus": 200
   },
   {
     "name": "Intigriti",
@@ -4741,16 +4409,6 @@
     "errorMsg": "Deze gebruiker is niet geregistreerd",
     "expectedStatus": 200,
     "defunct": true
-  },
-  {
-    "name": "Marshmallow",
-    "url": "https://marshmallow-qa.com/{}",
-    "urlMain": "https://marshmallow-qa.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "For compensation, here are cats for you.",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "Martech",
@@ -5125,26 +4783,6 @@
     "defunct": true
   },
   {
-    "name": "my_instants",
-    "url": "https://www.myinstants.com/en/profile/{}/",
-    "urlMain": "https://myinstants.com",
-    "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "Page not found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
-    "name": "MyBuilder.com",
-    "url": "https://www.mybuilder.com/profile/view/{}",
-    "urlMain": "https://mybuilder.com",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "Whoops! You broke our site!",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "MyFitnessPal Author",
     "url": "https://blog.myfitnesspal.com/author/{}/",
     "urlMain": "https://blog.myfitnesspal.com",
@@ -5217,16 +4855,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 404,
     "defunct": true
-  },
-  {
-    "name": "myWishBoard",
-    "url": "https://mywishboard.com/@{}",
-    "urlMain": "https://mywishboard.com",
-    "category": "shopping",
-    "checkMethod": "message",
-    "errorMsg": "class=\"MwbError\"",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "naija_planet",
@@ -5864,16 +5492,6 @@
     "defunct": true
   },
   {
-    "name": "Public.com",
-    "url": "https://public.com/@{}",
-    "urlMain": "https://public.com",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "<title>404 - Page Not Found</title>",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "QUEER PL",
     "url": "https://queer.pl/user/{}",
     "urlMain": "https://queer.pl",
@@ -5894,16 +5512,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 404,
     "defunct": true
-  },
-  {
-    "name": "Raddle.me",
-    "url": "https://raddle.me/user/{}",
-    "urlMain": "https://raddle.me",
-    "category": "social",
-    "checkMethod": "message",
-    "errorMsg": "404 Not Found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "Rant.li",
@@ -6051,16 +5659,6 @@
     "defunct": true
   },
   {
-    "name": "Scammer.info",
-    "url": "https://scammer.info/u/{}.json",
-    "urlMain": "https://scammer.info",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "The requested URL or resource could not be found",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "Scored",
     "url": "https://scored.co/api/v2/user/about.json?user={}",
     "urlMain": "https://scored.co",
@@ -6155,16 +5753,6 @@
     "expectedStatus": 200
   },
   {
-    "name": "setlist.fm",
-    "url": "https://www.setlist.fm/user/{}",
-    "urlMain": "https://setlist.fm",
-    "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "Sorry, the page you requested doesn't exist",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
-  },
-  {
     "name": "SFD",
     "url": "https://www.sfd.pl/profile/{}",
     "urlMain": "https://sfd.pl",
@@ -6246,16 +5834,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 404,
     "defunct": true
-  },
-  {
-    "name": "slant",
-    "url": "https://www.slant.co/users/{}",
-    "urlMain": "https://slant.co",
-    "category": "shopping",
-    "checkMethod": "message",
-    "errorMsg": "404 - Page Not Found - Slant",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "slides",
@@ -6395,15 +5973,6 @@
     "expectedStatus": 200
   },
   {
-    "name": "StackShare",
-    "url": "https://stackshare.io/{}",
-    "urlMain": "https://stackshare.io",
-    "category": "developer",
-    "checkMethod": "message",
-    "errorMsg": "\\\"content\\\":\\\"The requested page could not be found.\\\"",
-    "expectedStatus": 200
-  },
-  {
     "name": "Statuspage",
     "url": "https://{}.statuspage.io/api/v2/status.json",
     "urlMain": "https://{}.statuspage.io",
@@ -6423,16 +5992,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 404,
     "defunct": true
-  },
-  {
-    "name": "StoryCorps",
-    "url": "https://archive.storycorps.org/user/{}/",
-    "urlMain": "https://archive.storycorps.org",
-    "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "We're sorry, but the page",
-    "expectedStatus": 200,
-    "notFoundStatus": 404
   },
   {
     "name": "StreamElements",
@@ -6857,15 +6416,6 @@
     "expectedStatus": 200,
     "notFoundStatus": 404,
     "defunct": true
-  },
-  {
-    "name": "Unlisted Videos",
-    "url": "https://unlistedvideos.com/search.php?user={}",
-    "urlMain": "https://unlistedvideos.com",
-    "category": "misc",
-    "checkMethod": "message",
-    "errorMsg": "content=\"\"/>",
-    "expectedStatus": 200
   },
   {
     "name": "USA Life",

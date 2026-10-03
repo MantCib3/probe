@@ -100,45 +100,6 @@
         ]
       }
     },
-    "Arch Linux GitLab": {
-      "fields": {},
-      "followUp": {
-        "url": "https://gitlab.archlinux.org/{}",
-        "fields": {
-          "picture": [
-            {
-              "schema": "open_graph"
-            },
-            {
-              "schema": "twitter_card"
-            }
-          ],
-          "name": [
-            {
-              "schema": "open_graph",
-              "prefix": "",
-              "suffix": " · GitLab"
-            },
-            {
-              "schema": "twitter_card",
-              "prefix": "",
-              "suffix": " · GitLab"
-            }
-          ]
-        },
-        "maxBytes": 65536,
-        "headOnly": true,
-        "rejectValues": {
-          "picture": [
-            "https://gitlab.archlinux.org/assets/twitter_card-570ddb06edf56a2312253c5872489847a0f385112ddbcd71ccfa1570febab5d2.jpg"
-          ],
-          "name": [
-            "Sign in · GitLab",
-            "Making sure you're not a bot!"
-          ]
-        }
-      }
-    },
     "Arduino (Forum)": {
       "fields": {
         "joined": [
@@ -189,24 +150,6 @@
           }
         ]
       }
-    },
-    "BiggerPockets": {
-      "fields": {
-        "joined": [
-          {
-            "schema": "embedded_json"
-          }
-        ],
-        "followers": [
-          {
-            "schema": "embedded_json"
-          },
-          {
-            "schema": "json_ld"
-          }
-        ]
-      },
-      "maxBytes": 77824
     },
     "Bio Site": {
       "fields": {
@@ -408,46 +351,6 @@
         ]
       }
     },
-    "CastingCallClub": {
-      "fields": {
-        "picture": [
-          {
-            "schema": "open_graph"
-          },
-          {
-            "schema": "twitter_card"
-          }
-        ],
-        "name": [
-          {
-            "schema": "open_graph",
-            "prefix": "",
-            "suffix": " | Casting Call Club"
-          },
-          {
-            "schema": "twitter_card",
-            "prefix": "",
-            "suffix": " | Casting Call Club"
-          },
-          {
-            "schema": "html_title",
-            "prefix": "",
-            "suffix": " | Casting Call Club"
-          }
-        ],
-        "bio": [
-          {
-            "schema": "open_graph"
-          }
-        ]
-      },
-      "headOnly": true,
-      "rejectValues": {
-        "name": [
-          "Nothing here · Casting Call Club"
-        ]
-      }
-    },
     "cfx.re": {
       "fields": {
         "location": [
@@ -464,33 +367,6 @@
           {
             "schema": "json_api"
           }
-        ]
-      }
-    },
-    "CHEEZburger": {
-      "fields": {
-        "picture": [
-          {
-            "schema": "json_ld"
-          }
-        ],
-        "name": [
-          {
-            "schema": "html_title",
-            "prefix": "Recent Posts from ",
-            "suffix": ""
-          }
-        ],
-        "bio": [
-          {
-            "schema": "json_ld"
-          }
-        ]
-      },
-      "maxBytes": 180224,
-      "rejectValues": {
-        "name": [
-          "404 Not Found"
         ]
       }
     },
@@ -865,44 +741,6 @@
         ]
       }
     },
-    "Designspriation": {
-      "fields": {
-        "picture": [
-          {
-            "schema": "open_graph"
-          },
-          {
-            "schema": "twitter_card"
-          }
-        ],
-        "name": [
-          {
-            "schema": "open_graph",
-            "prefix": "Collections ",
-            "suffix": " (@{u}) has discovered on Designspiration"
-          },
-          {
-            "schema": "twitter_card",
-            "prefix": "Collections ",
-            "suffix": " (@{u}) has discovered on Designspiration"
-          },
-          {
-            "schema": "html_title",
-            "prefix": "Collections ",
-            "suffix": " (@{u}) has discovered on Designspiration"
-          }
-        ]
-      },
-      "headOnly": true,
-      "rejectValues": {
-        "picture": [
-          "https://s.dspncdn.com/a1/webapp/img/content/meta/default_meta_display.jpg"
-        ],
-        "name": [
-          "Designspiration - 404 Not Found Page Error"
-        ]
-      }
-    },
     "Dev.to": {
       "fields": {
         "picture": [
@@ -1076,43 +914,6 @@
       "rejectValues": {
         "name": [
           "Flickr"
-        ]
-      }
-    },
-    "fotka": {
-      "fields": {
-        "name": [
-          {
-            "schema": "json_api"
-          }
-        ],
-        "location": [
-          {
-            "schema": "json_api"
-          }
-        ]
-      }
-    },
-    "Freelance.RU": {
-      "fields": {
-        "picture": [
-          {
-            "schema": "open_graph"
-          }
-        ],
-        "name": [
-          {
-            "schema": "open_graph"
-          }
-        ]
-      },
-      "headOnly": true,
-      "rejectValues": {
-        "picture": [
-          "https://freelance.ru/img/logo/freelance_ru.svg"
-        ],
-        "name": [
-          "Not Found (#404)"
         ]
       }
     },
@@ -1884,33 +1685,6 @@
         ]
       }
     },
-    "myWishBoard": {
-      "fields": {
-        "name": [
-          {
-            "schema": "open_graph",
-            "prefix": "@{u} (",
-            "suffix": ") on myWishBoard"
-          },
-          {
-            "schema": "twitter_card",
-            "prefix": "@{u} (",
-            "suffix": ") on myWishBoard"
-          },
-          {
-            "schema": "html_title",
-            "prefix": "@{u} (",
-            "suffix": ") – wishlist, wishes and dreams on myWishBoard"
-          }
-        ]
-      },
-      "headOnly": true,
-      "rejectValues": {
-        "name": [
-          "Error 404 - Page not found"
-        ]
-      }
-    },
     "Nifty Gateway": {
       "fields": {
         "picture": [
@@ -2306,36 +2080,6 @@
         ]
       }
     },
-    "solo.to": {
-      "fields": {
-        "picture": [
-          {
-            "schema": "open_graph"
-          }
-        ],
-        "name": [
-          {
-            "schema": "open_graph",
-            "prefix": "",
-            "suffix": " · solo.to"
-          },
-          {
-            "schema": "html_title",
-            "prefix": "",
-            "suffix": " · solo.to"
-          }
-        ]
-      },
-      "headOnly": true,
-      "rejectValues": {
-        "picture": [
-          "https://cdn.solo.to/images/main.jpg"
-        ],
-        "name": [
-          "Not Found · solo.to"
-        ]
-      }
-    },
     "SoundCloud": {
       "fields": {
         "picture": [
@@ -2413,39 +2157,6 @@
           ]
         }
       }
-    },
-    "Steemit": {
-      "fields": {
-        "picture": [
-          {
-            "schema": "twitter_card"
-          }
-        ],
-        "bio": [
-          {
-            "schema": "twitter_card"
-          },
-          {
-            "schema": "meta"
-          }
-        ],
-        "location": [
-          {
-            "schema": "embedded_json"
-          }
-        ],
-        "links": [
-          {
-            "schema": "embedded_json"
-          }
-        ],
-        "joined": [
-          {
-            "schema": "embedded_json"
-          }
-        ]
-      },
-      "maxBytes": 471040
     },
     "StreamElements": {
       "fields": {
@@ -2694,47 +2405,6 @@
             "schema": "json_api"
           }
         ]
-      }
-    },
-    "Tumblr": {
-      "fields": {
-        "name": [
-          {
-            "schema": "html_title",
-            "prefix": "Untitled",
-            "suffix": ""
-          }
-        ]
-      },
-      "headOnly": true,
-      "rejectValues": {
-        "name": [
-          "Not found."
-        ]
-      },
-      "followUp": {
-        "url": "https://{}.tumblr.com/",
-        "fields": {
-          "picture": [
-            {
-              "schema": "open_graph"
-            }
-          ],
-          "bio": [
-            {
-              "schema": "open_graph"
-            },
-            {
-              "schema": "meta"
-            }
-          ],
-          "joined": [
-            {
-              "schema": "embedded_json"
-            }
-          ]
-        },
-        "maxBytes": 118784
       }
     },
     "Twitcasting": {
