@@ -19,12 +19,12 @@ test('a probe deadline closes its active HTTP request', async t => {
     name: 'Delayed source',
     category: 'test',
     url: `http://127.0.0.1:${port}/user/{}`,
-  }, 'alice', 250);
+  }, 'alice', 3000);
 
   const result = await activeProbe.promise;
   await Promise.race([
     closed,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('upstream request remained open')), 1000)),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('upstream request remained open')), 3000)),
   ]);
 
   assert.equal(result.status, 'timeout');

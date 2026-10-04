@@ -50,7 +50,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="styles.min.css?v=13">
+  <link rel="stylesheet" href="styles.min.css?v=17">
   <!-- Cloudflare Turnstile — replace data-sitekey with your own key from dash.cloudflare.com -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </head>
@@ -68,7 +68,7 @@
         <li><a href="#contact">Contact</a></li>
       </ul>
       <button class="hamburger" id="hamburger" type="button" aria-label="Toggle menu" aria-controls="navMenu" aria-expanded="false">
-        <span></span><span></span><span></span>
+        <span></span>
       </button>
     </div>
   </nav>
@@ -126,7 +126,7 @@
       <div class="scan-stats">
         <span class="stat-item">
           <span class="stat-num" id="statChecked">0</span>
-          <span class="stat-label">checked</span>
+          <span class="stat-label">processed</span>
         </span>
         <span class="stat-sep">/</span>
         <span class="stat-item">
@@ -152,6 +152,11 @@
           <span class="dot dot-error">●</span>
           <span class="stat-num" id="statError">0</span>
           <span class="stat-label">error</span>
+        </button>
+        <button class="stat-item stat-pill stat-skipped" data-status-filter="skipped" title="Filter: incompatible usernames skipped without a request">
+          <span class="dot dot-skipped" aria-hidden="true">●</span>
+          <span class="stat-num" id="statSkipped">0</span>
+          <span class="stat-label">skipped</span>
         </button>
       </div>
     </div>
@@ -207,8 +212,13 @@
   <!-- ── Pivots ─────────────────────────────────────────────────────── -->
   <section id="pivots" class="pivots-section">
     <div class="container">
-      <h2 class="section-heading sm">Pivots</h2>
-      <p class="section-intro">Curated reference sources for the current scan target — displayed as static cards you open manually. Nothing here is fetched or searched automatically.</p>
+      <button class="research-toggle" id="researchToggle" type="button" aria-expanded="false" aria-controls="researchBody">
+        <span><span class="research-title">Research tools</span><span class="research-caption">Search engines &amp; manual pivots</span></span>
+        <span class="research-toggle-mark" aria-hidden="true">+</span>
+      </button>
+      <div class="research-body" id="researchBody" inert>
+      <div class="research-content">
+      <p class="section-intro">Search engines look for indexed references. Email, phone and name pivots are reference links you open manually, not automatic checks.</p>
 
       <div class="pivot-shell">
         <div class="dork-column">
@@ -240,6 +250,8 @@
             </div>
           </div>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   </section>
@@ -365,6 +377,6 @@
     </div>
   </div>
 
-  <script src="script.min.js?v=11" defer></script>
+  <script src="script.min.js?v=14" defer></script>
 </body>
 </html>

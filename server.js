@@ -9,6 +9,7 @@ const path  = require('path');
 const crypto = require('crypto');
 const { URL } = require('url');
 const profileMetadata = require('./profile-metadata');
+const usernameRules = require('./username-rules');
 
 // Stealth browser — lazy-loaded; absent gracefully if not installed
 let chromiumStealth = null;
@@ -20,6 +21,7 @@ try {
 const SITES_PATH = path.join(__dirname, 'sites.json');
 const SITES_SOURCE = fs.readFileSync(SITES_PATH, 'utf8');
 const SITES      = JSON.parse(SITES_SOURCE).filter(s => !s.defunct);
+usernameRules.validateCatalog(SITES);
 const NAME_SITES = JSON.parse(fs.readFileSync(path.join(__dirname, 'name-sites.json'), 'utf8'));
 const PORT       = process.env.PORT || process.argv[2] || 3737;
 const CONCURRENCY = 20;
@@ -35,6 +37,7 @@ const ENABLE_UNDETECTABLE_STEALTH = false;
 const LAB_RUNTIME_FINGERPRINT = Object.freeze({
   classifierSha256: crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex'),
   catalogSha256: crypto.createHash('sha256').update(SITES_SOURCE).digest('hex'),
+  usernameRulesSha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, 'username-rules.js'))).digest('hex'),
   nodeVersion: process.version,
   probeDeadlineMs: PROBE_DEADLINE_MS,
   browserFallbackAvailable: Boolean(chromiumStealth),
@@ -815,7 +818,10 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
 
     if (site.positiveMsg) {
       const found = body.includes(site.positiveMsg);
-      return makeClassifiedResult(base, found ? 'found' : 'not_found', ['site_positive_message'], found ? 0.9 : 0.9);
+      const missingStatus = site.positiveMissingStatus === 'unknown' ? 'unknown' : 'not_found';
+      return makeClassifiedResult(base, found ? 'found' : missingStatus,
+        [found || missingStatus === 'not_found' ? 'site_positive_message' : 'site_positive_message_missing'],
+        found || missingStatus === 'not_found' ? 0.9 : 0.3);
     }
 
     if (site.errorMsg && body.includes(site.errorMsg)) {
@@ -2132,22 +2138,33 @@ async function probeStealth(site, username, signal) {
   }
 }
 
-// WhatsMyName's public dataset doesn't ship a per-site username-format
-// regex, so we can't replicate its exact per-platform validation. As a
-// cheap, safe proxy that still meaningfully cuts false positives: most
-// platforms reject usernames containing raw spaces (a strong signal the
-// input is actually a full name/phrase, not a handle) — except a handful
-// of categories (gaming platforms like Roblox/PSN/Xbox/Steam commonly use
-// space-containing display names). Skipping the network request entirely
-// for a clearly-incompatible format is both faster and reduces noise from
-// odd site-specific behavior on malformed input.
-const ALLOW_SPACE_CATEGORIES = new Set(['gaming']);
-function isUsernameFormatPlausible(username, site) {
-  if (/\s/.test(username) && !ALLOW_SPACE_CATEGORIES.has(site.category)) return false;
-  return true;
+function usernamePreflight(site, username) {
+  const reason = usernameRules.incompatibleReason(site, username);
+  if (!reason) return null;
+  return makeClassifiedResult({
+    name: site.name,
+    category: site.category,
+    url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
+    statusCode: 0,
+    detectionMethod: 'format_check',
+    bodyHash: null,
+  }, 'skipped', ['username_format_incompatible'], 1, { formatReason: reason });
+}
+
+function planUsernameScan(sites, username) {
+  const queue = [];
+  const skipped = [];
+  for (const site of sites) {
+    const result = usernamePreflight(site, username);
+    if (result) skipped.push(result);
+    else queue.push(site);
+  }
+  return { total: sites.length, queue, skipped };
 }
 
 function probe(site, username, signal) {
+  const skipped = usernamePreflight(site, username);
+  if (skipped) return Promise.resolve(skipped);
   // Optional fast-path: skip stealth for undetectable sites.
   // Sites that require authentication — server-side check is never possible
   if (site.requiresAuth) {
@@ -2160,22 +2177,6 @@ function probe(site, username, signal) {
       reasonCodes: ['requires_authentication'],
       confidence: 1.0,
       detectionMethod: 'http',
-      bodyHash: null,
-    });
-  }
-
-  // Format is obviously incompatible with this platform — skip the network
-  // request entirely rather than risk a misleading response.
-  if (!isUsernameFormatPlausible(username, site)) {
-    return Promise.resolve({
-      name: site.name,
-      category: site.category,
-      url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
-      status: 'not_found',
-      statusCode: 0,
-      reasonCodes: ['username_format_incompatible'],
-      confidence: 0.55,
-      detectionMethod: 'format_check',
       bodyHash: null,
     });
   }
@@ -2245,7 +2246,7 @@ async function probeWithBrowserFallback(site, username, signal) {
   // a separate client-side pass; folding it in here means the frontend gets
   // one single, already-final verdict per site instead of needing its own
   // follow-up network round.
-  if (result.status === 'unknown') {
+  if (result.status === 'unknown' && !site.noArchiveFallback) {
     const archived = await probeArchiveOrgFallback(result.url, signal).catch(() => false);
     if (archived) {
       const reasons = Array.isArray(result.reasonCodes) ? result.reasonCodes : [];
@@ -2346,6 +2347,7 @@ function getQuickSites() {
 }
 
 function toQuickStatus(status) {
+  if (status === 'skipped') return 'skipped';
   if (status === 'found' || status === 'deleted') return 'taken';
   if (status === 'not_found') return 'available';
   return 'unknown';
@@ -2798,14 +2800,17 @@ const server = http.createServer((req, res) => {
 
       consumeRateLimit(ip);
 
-      const queue = [...SITES];
-      const total = queue.length;
+      const { total, queue, skipped } = planUsernameScan(SITES, username);
       let idx = 0, active = 0, done = 0;
 
-      send({ type: 'start', total, username });
+      send({ type: 'start', total, username, skipped: skipped.length, scheduled: queue.length });
+      for (const result of skipped) {
+        done++;
+        send({ type: 'result', ...result, done, total });
+      }
 
       function tick() {
-        while (!cancelled && active < CONCURRENCY && idx < total) {
+        while (!cancelled && active < CONCURRENCY && idx < queue.length) {
           const site = queue[idx++];
           active++;
           const activeProbe = probeWithDeadline(site, username, PROBE_DEADLINE_MS);
@@ -2845,7 +2850,7 @@ const server = http.createServer((req, res) => {
             tick();
           });
         }
-        if (idx >= total && active === 0 && !res.writableEnded) {
+        if (idx >= queue.length && active === 0 && !res.writableEnded) {
           send({ type: 'done', done, total });
           res.end();
         }
@@ -2879,6 +2884,7 @@ const server = http.createServer((req, res) => {
           category: r.category,
           status: toQuickStatus(r.status),
           sourceStatus: r.status,
+          formatReason: r.formatReason || null,
           url: r.url,
         }));
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -3695,4 +3701,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { classify, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile };
+module.exports = { classify, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan };

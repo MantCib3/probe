@@ -1,6 +1,11 @@
 [
   {
     "name": "X (Twitter)",
+    "usernameRule": {
+      "pattern": "^[a-z0-9_]{1,15}$",
+      "description": "X usernames use letters, digits or underscores, at most 15 characters; short legacy handles are allowed.",
+      "source": "https://help.x.com/en/managing-your-account/x-username-rules"
+    },
     "url": "https://x.com/{}",
     "urlMain": "https://x.com",
     "category": "social",
@@ -58,7 +63,12 @@
     "url": "https://mastodon.social/@{}",
     "urlMain": "https://mastodon.social",
     "category": "social",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "usernameRule": {
+      "pattern": "^[a-z0-9_]+$",
+      "description": "This lookup uses a local mastodon.social username: letters, digits or underscores, not a user@server address.",
+      "source": "https://github.com/mastodon/mastodon/blob/main/app/models/account.rb"
+    }
   },
   {
     "name": "Bluesky",
@@ -120,7 +130,12 @@
     "category": "social",
     "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Flickr",
@@ -154,6 +169,11 @@
   },
   {
     "name": "GitHub",
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]{1,39}$",
+      "description": "GitHub usernames use letters, digits, hyphens or managed-user underscores, at most 39 characters.",
+      "source": "https://docs.github.com/en/enterprise-cloud@latest/admin/managing-iam/iam-configuration-reference/username-considerations-for-external-authentication"
+    },
     "url": "https://github.com/{}",
     "urlMain": "https://github.com",
     "category": "developer",
@@ -164,6 +184,11 @@
   },
   {
     "name": "GitLab",
+    "usernameRule": {
+      "pattern": "^[a-z0-9_.-]+$",
+      "description": "GitLab username paths use letters, digits, underscores, dots or hyphens; legacy lengths remain allowed.",
+      "source": "https://github.com/gitlabhq/gitlabhq/blob/master/lib/gitlab/path_regex.rb"
+    },
     "url": "https://gitlab.com/{}",
     "urlMain": "https://gitlab.com",
     "category": "developer",
@@ -199,6 +224,11 @@
   },
   {
     "name": "PyPI",
+    "usernameRule": {
+      "pattern": "^[a-z0-9](?:[a-z0-9._-]{0,48}[a-z0-9])?$",
+      "description": "PyPI usernames are 1-50 characters, with alphanumeric ends and letters, digits, dots, underscores or hyphens inside.",
+      "source": "https://github.com/pypi/warehouse/blob/main/warehouse/accounts/models.py"
+    },
     "url": "https://pypi.org/user/{}/",
     "urlMain": "https://pypi.org",
     "category": "developer",
@@ -226,7 +256,12 @@
     "category": "developer",
     "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "DEV handles use letters, digits, underscores or hyphens; no new-registration minimum is imposed.",
+      "source": "https://github.com/forem/forem/blob/main/app/validators/cross_model_slug_validator.rb"
+    }
   },
   {
     "name": "CodePen",
@@ -416,7 +451,12 @@
     "errorMsg": "Account Not Found",
     "cfProxy": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Itch.io",
@@ -425,7 +465,12 @@
     "category": "gaming",
     "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "PSN Profiles",
@@ -508,7 +553,12 @@
     "skipBodyCheck": true,
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Patreon",
@@ -610,7 +660,12 @@
     "apiUrl": "https://{}.bandcamp.com/feed.rss",
     "notFoundStatus": 404,
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Last.fm",
@@ -711,6 +766,11 @@
   },
   {
     "name": "Reddit",
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "Reddit usernames use letters, digits, underscores or hyphens; historical short handles remain allowed.",
+      "source": "https://github.com/reddit-archive/reddit/blob/master/r2/r2/lib/validator/validator.py"
+    },
     "url": "https://www.reddit.com/user/{}",
     "urlMain": "https://www.reddit.com",
     "category": "forum",
@@ -766,7 +826,12 @@
     "checkMethod": "message",
     "errorMsg": "No such user",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "Lobsters usernames use letters, digits, underscores or hyphens; legacy lengths remain allowed.",
+      "source": "https://github.com/lobsters/lobsters/blob/master/app/models/concerns/username_attribute.rb"
+    }
   },
   {
     "name": "Slashdot",
@@ -987,7 +1052,12 @@
     "category": "misc",
     "checkMethod": "message",
     "positiveMsg": "tgme_page_title",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Telegram usernames use letters, digits or underscores; short collectible handles remain allowed.",
+      "source": "https://core.telegram.org/method/account.checkUsername"
+    }
   },
   {
     "name": "Goodreads",
@@ -1013,7 +1083,12 @@
     "url": "https://{}.carrd.co/",
     "urlMain": "https://carrd.co",
     "category": "misc",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Instructables",
@@ -1082,7 +1157,12 @@
     "checkUrl": "https://www.snapchat.com/@{}",
     "positiveMsg": "is on Snapchat!",
     "errorMsg": "NOT_FOUND",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_.-]+$",
+      "description": "Snapchat usernames use letters, digits, underscores, dots or hyphens; legacy lengths remain allowed.",
+      "source": "https://help.snapchat.com/hc/en-us/articles/7012349845140-How-do-I-change-my-Snapchat-username"
+    }
   },
   {
     "name": "Docker Hub",
@@ -1851,7 +1931,12 @@
     "errorMsg": "\"error\":\"Not Found\"",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "RubyGems account handles use letters, digits, underscores or hyphens; package-name rules do not apply.",
+      "source": "https://github.com/rubygems/rubygems.org/blob/master/lib/patterns.rb"
+    }
   },
   {
     "name": "Scratch",
@@ -2036,7 +2121,12 @@
     "errorMsg": "Blog not found",
     "allowBrowserFallback": false,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "WordPress.com (Public)",
@@ -2046,7 +2136,12 @@
     "checkMethod": "message",
     "errorMsg": "\"error\":\"unknown_blog\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Houzz",
@@ -2079,7 +2174,12 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, the requested page could not be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "X",
@@ -2491,7 +2591,12 @@
     "positiveMsg": "- BOOTH</title>",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Bunpro",
@@ -2547,7 +2652,12 @@
     "checkMethod": "message",
     "errorMsg": ".carbonmade.com not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Career.habr",
@@ -2775,7 +2885,12 @@
     "checkMethod": "message",
     "errorMsg": "Site not found :-(",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Cropty",
@@ -3659,7 +3774,12 @@
     "checkMethod": "message",
     "errorMsg": "Page not found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Habbo.com.br",
@@ -4737,7 +4857,12 @@
     "checkMethod": "message",
     "errorMsg": "id=\"page_404\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Muck Rack",
@@ -4843,7 +4968,12 @@
     "checkMethod": "message",
     "errorMsg": "<title>Adobe Portfolio | Build your own personalized website</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Myspreadshop",
@@ -5792,7 +5922,12 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, this shop is currently unavailable.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Showup.tv",
@@ -5865,7 +6000,12 @@
     "positiveMsg": "schema.org/Person",
     "errorMsg": "schema.org/Thing",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Snipfeed",
@@ -5918,7 +6058,12 @@
     "checkMethod": "message",
     "errorMsg": "SoFurry - Error | SoFurry",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Soup",
@@ -5980,7 +6125,12 @@
     "checkMethod": "message",
     "errorMsg": "<html><body>You are being <a href=\"https://www.statuspage.io\">redirected</a>.</body></html>",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "steller",
@@ -6721,7 +6871,12 @@
     "checkMethod": "message",
     "errorMsg": "<title>404 - Page Not Found",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "wego",
@@ -6752,7 +6907,12 @@
     "checkMethod": "message",
     "positiveMsg": "workspaceName",
     "expectedStatus": 200,
-    "notFoundStatus": 307
+    "notFoundStatus": 307,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "Wikimapia",
@@ -6807,12 +6967,14 @@
   },
   {
     "name": "WordPress.org (Forums)",
-    "url": "https://login.wordpress.org/wp-json/wporg/v1/username-available/{}",
-    "urlMain": "https://login.wordpress.org",
+    "url": "https://wordpress.org/support/users/{}/",
+    "urlMain": "https://wordpress.org/support",
     "category": "content",
     "checkMethod": "message",
-    "errorMsg": "\"available\":true",
-    "skipBodyCheck": true,
+    "positiveMsg": "&#039;s Profile &#124; WordPress.org</title>",
+    "positiveMissingStatus": "unknown",
+    "noArchiveFallback": true,
+    "notFoundStatus": 404,
     "expectedStatus": 200
   },
   {
@@ -6845,7 +7007,12 @@
     "checkMethod": "message",
     "positiveMsg": "s Xanga Site | Just",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "usernameRule": {
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
+      "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    }
   },
   {
     "name": "xHamster",

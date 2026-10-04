@@ -4,6 +4,7 @@
 const STATUS_LABEL = {
   found       : 'FOUND',
   not_found   : 'NOT FOUND',
+  skipped     : 'SKIPPED',
   deleted     : 'DELETED',
   error       : 'ERROR',
   timeout     : 'TIMEOUT',
@@ -25,6 +26,7 @@ const REASON_LABEL = {
   body_guard_username_match: 'Username matched on page',
   body_guard_no_username_match: 'Profile loaded but username was not confirmed',
   site_positive_message: 'Site-specific positive signal matched',
+  site_positive_message_missing: 'Required profile signal absent - cannot confirm account',
   skip_body_check_enabled: 'Direct profile response accepted',
   username_present_in_body: 'Username explicitly present in page content',
   archive_org_fallback_found: 'Found archived in the Wayback Machine',
@@ -186,6 +188,7 @@ const statTotal         = $('statTotal');
 const statFound         = $('statFound');
 const statBlocked       = $('statBlocked');
 const statNotFound      = $('statNotFound');
+const statSkipped       = $('statSkipped');
 const statError         = $('statError');
 const resultsGrid       = $('resultsGrid');
 const foundOnlyToggle   = $('foundOnlyToggle');
@@ -199,9 +202,21 @@ const manualCheckToggle = $('manualCheckToggle');
 const caseTimeline      = $('caseTimeline');
 const evidencePanel     = $('evidencePanel');
 const filterCategories  = $('filterCategories');
-const navbar            = $('navbar');
 const hamburger         = $('hamburger');
 const navMenu           = $('navMenu');
+const researchToggle    = $('researchToggle');
+const researchBody      = $('researchBody');
+
+function setResearchOpen(open) {
+  researchToggle.setAttribute('aria-expanded', String(open));
+  researchBody.classList.toggle('open', open);
+  researchBody.inert = !open;
+}
+
+function statusBadgeHtml(status) {
+  const label = STATUS_LABEL[status] || String(status || 'unknown').toUpperCase();
+  return `<span class="status-badge ${escHtml(status || 'unknown')}" role="img" aria-label="${escHtml(label)}" title="${escHtml(label)}">${escHtml(label)}</span>`;
+}
 const dorkTabs          = $('dorkTabs');
 const dorkResultsList   = $('dorkResultsList');
 const dorkStatus        = $('dorkStatus');
@@ -304,6 +319,7 @@ function renderEvidenceForResult(index) {
   }
 
   const reasons = humanizeReasons(Array.isArray(r.reasonCodes) ? r.reasonCodes : []);
+  if (r.formatReason) reasons.push(r.formatReason);
   const lines = [
     `Source: ${r.name}`,
     `Status: ${r.status}`,
@@ -329,9 +345,10 @@ function renderQuickChecks(items = []) {
   const html = items.map(item => {
     const statusLabel = item.status === 'taken' ? 'taken'
       : item.status === 'available' ? 'available'
+      : item.status === 'skipped' ? 'incompatible'
       : 'unclear';
     return `
-      <span class="quick-pill ${escHtml(item.status)}" title="${escHtml(item.name)}: ${escHtml(statusLabel)}">
+      <span class="quick-pill ${escHtml(item.status)}" title="${escHtml(item.name)}: ${escHtml(item.formatReason || statusLabel)}">
         <span class="qp-name">${escHtml(item.name)}</span>
         <span class="qp-state">${escHtml(statusLabel)}</span>
       </span>
@@ -1185,6 +1202,7 @@ function makeCard(r, animDelay = 0) {
   const profileHtml = profile ? profileBlockHtml(profile) : '';
 
   const reasons = humanizeReasons(Array.isArray(r.reasonCodes) ? r.reasonCodes.slice(0, 2) : []);
+  if (r.formatReason) reasons.push(r.formatReason);
   const reasonHtml = reasons.length
     ? `<div class="reason-codes" title="Classification signals">${escHtml(reasons.join(' · '))}</div>`
     : '';
@@ -1197,7 +1215,7 @@ function makeCard(r, animDelay = 0) {
   const isPinned = pinnedItems.some(p => p.name === r.name);
   card.innerHTML = `
     <div class="card-top">
-      <span class="status-badge ${r.status}">${STATUS_LABEL[r.status] || r.status.toUpperCase()}</span>
+      ${statusBadgeHtml(r.status)}
       <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge" title="${escHtml(r.category)}">${escHtml(r.category)}</span><button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button><button class="report-btn" data-report-site="${escHtml(r.name)}" title="Report incorrect result">⚑</button></div>
     </div>
     <div class="site-name">${escHtml(r.name)}</div>
@@ -1234,7 +1252,6 @@ function makeIntelCard(r, animDelay = 0) {
   card.style.animationDelay = `${animDelay}ms`;
 
   const urlAttr = safeUrl(r.url || '');
-  const statusText = STATUS_LABEL[r.status] || String(r.status || '').toUpperCase();
   const summaryHtml = r.summary ? `<div class="display-name">${escHtml(r.summary)}</div>` : '';
   const detailHtml = r.detail ? `<div class="reason-codes">${escHtml(r.detail)}</div>` : '';
   const linkLabel = r.status === 'link'
@@ -1246,7 +1263,7 @@ function makeIntelCard(r, animDelay = 0) {
 
   card.innerHTML = `
     <div class="card-top">
-      <span class="status-badge ${r.status === 'link' ? 'link' : r.status}">${statusText}</span>
+      ${statusBadgeHtml(r.status)}
       <div class="card-top-right"><span class="category-badge">${escHtml(r.category || 'intel')}</span></div>
     </div>
     <div class="site-name">${escHtml(r.name)}</div>
@@ -1267,14 +1284,13 @@ function makeNameCard(r, animDelay = 0) {
   card.style.animationDelay = `${animDelay}ms`;
 
   const urlAttr = safeUrl(r.url || '');
-  const statusText = STATUS_LABEL[r.status] || String(r.status || '').toUpperCase();
   const summaryHtml = r.summary ? `<div class="display-name">${escHtml(r.summary)}</div>` : '';
   const detailHtml = r.detail ? `<div class="reason-codes">${escHtml(r.detail)}</div>` : '';
   const linkLabel = r.status === 'found' ? 'Open source ↗' : 'Open search ↗';
 
   card.innerHTML = `
     <div class="card-top">
-      <span class="status-badge ${escHtml(r.status || 'unknown')}">${statusText}</span>
+      ${statusBadgeHtml(r.status)}
       <span class="category-badge">people-finder</span>
     </div>
     <div class="site-name">${escHtml(r.name)}</div>
@@ -1310,6 +1326,8 @@ function _applyVerdict(card, verdict, label) {
   if (statusEl) {
     statusEl.className = `status-badge ${verdict}`;
     statusEl.textContent = label || (STATUS_LABEL[verdict] || verdict.toUpperCase());
+    statusEl.setAttribute('aria-label', statusEl.textContent);
+    statusEl.title = statusEl.textContent;
   }
   const idx = results.findIndex(r => r.name === card.dataset.site);
   if (idx !== -1) results[idx].status = verdict;
@@ -1323,7 +1341,11 @@ async function _clientVerifyOne(job) {
   card.classList.add('cv-verifying');
   const statusEl = card.querySelector('.status-badge');
   const prevText = statusEl ? statusEl.textContent : '';
-  if (statusEl) statusEl.textContent = '…';
+  if (statusEl) {
+    statusEl.textContent = '…';
+    statusEl.setAttribute('aria-label', 'Verifying');
+    statusEl.title = 'Verifying';
+  }
 
   try {
     // No-cors redirect detection — sends user's browser cookies to the site.
@@ -1342,11 +1364,19 @@ async function _clientVerifyOne(job) {
     } else {
       // Redirected or error → keep auth_required
       card.classList.remove('cv-verifying');
-      if (statusEl) statusEl.textContent = prevText;
+      if (statusEl) {
+        statusEl.textContent = prevText;
+        statusEl.setAttribute('aria-label', prevText);
+        statusEl.title = prevText;
+      }
     }
   } catch (_) {
     card.classList.remove('cv-verifying');
-    if (statusEl) statusEl.textContent = prevText;
+    if (statusEl) {
+      statusEl.textContent = prevText;
+      statusEl.setAttribute('aria-label', prevText);
+      statusEl.title = prevText;
+    }
   }
 }
 
@@ -1424,6 +1454,7 @@ function updateStats(done, total) {
   statFound.textContent    = found;
   statBlocked.textContent  = blocked;
   statNotFound.textContent = notFound;
+  statSkipped.textContent = results.filter(r => r.status === 'skipped').length;
   statError.textContent    = error;
   if (done !== undefined && total !== undefined) {
     progressBarFill.style.width = total ? `${(done / total) * 100}%` : '0%';
@@ -1465,6 +1496,8 @@ function resetScanState() {
 function startScan(username, cfToken) {
   if (scanActive) return;
   scanActive = true;
+  document.body.classList.add('scan-running');
+  setResearchOpen(true);
 
   resetScanState();
   renderQuickChecks([]);
@@ -1500,6 +1533,7 @@ function startScan(username, cfToken) {
     if (msg.type === 'error') {
       if (evtSource) { evtSource.close(); evtSource = null; }
       scanActive = false;
+      document.body.classList.remove('scan-running');
       scanBtn.disabled = false;
       scanBtn.textContent = 'SCAN';
       progressBarFill.parentElement.classList.remove('scanning');
@@ -1525,6 +1559,10 @@ function startScan(username, cfToken) {
         status      : msg.status || 'unknown',
         statusCode  : msg.statusCode || null,
         reasonCodes : Array.isArray(msg.reasonCodes) ? msg.reasonCodes : [],
+        formatReason: msg.formatReason || null,
+        detectionMethod: msg.detectionMethod || null,
+        confidence  : typeof msg.confidence === 'number' ? msg.confidence : null,
+        evidence    : msg.evidence || null,
         displayName : msg.displayName || null,
         profile     : msg.status === 'found' ? normaliseProfile(msg.profile) : null,
         resolvedBy  : msg.resolvedBy || null,
@@ -1710,6 +1748,7 @@ function cancelScan() {
 
 function resetScanControls() {
   scanActive = false;
+  document.body.classList.remove('scan-running');
   scanBtn.disabled = false;
   scanBtn.textContent = 'SCAN';
 }
@@ -1751,14 +1790,15 @@ function csvCell(value) {
 }
 
 function buildCsvRows(subset) {
-  const header = 'Name,Category,Status,Confidence,Reasons,URL,Profile name,Bio,Picture,Location,Joined,Followers,Links';
+  const header = 'Name,Category,Status,Confidence,Reasons,URL,Profile name,Bio,Picture,Location,Joined,Followers,Links,Format rule,Method';
   const rows = subset.map(r => {
     const p = r.profile || {};
     return [r.name, r.category, r.status,
      typeof r.confidence === 'number' ? Math.round(r.confidence * 100) : '',
      Array.isArray(r.reasonCodes) ? r.reasonCodes.join('|') : '', r.url,
      p.name || '', p.bio || '', p.picture || '', p.location || '', p.joined || '',
-     p.followers ?? '', Array.isArray(p.links) ? p.links.join(' ') : '']
+     p.followers ?? '', Array.isArray(p.links) ? p.links.join(' ') : '',
+     r.formatReason || '', r.detectionMethod || '']
       .map(csvCell)
       .join(',');
   });
@@ -1794,6 +1834,7 @@ function exportJson() {
       found: results.filter(r => r.status === 'found').length,
       deleted: results.filter(r => r.status === 'deleted').length,
       notFound: results.filter(r => r.status === 'not_found').length,
+      skipped: results.filter(r => r.status === 'skipped').length,
       unknown: results.filter(r => r.status === 'unknown').length,
     },
     results,
@@ -2021,25 +2062,31 @@ function initEvents() {
     }
   });
 
-  // Navbar scroll shadow
-  window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 10);
-  }, { passive: true });
+  researchToggle.addEventListener('click', () => setResearchOpen(researchToggle.getAttribute('aria-expanded') !== 'true'));
 
-  // Hamburger
-  hamburger.addEventListener('click', () => {
-    hamburger.classList.toggle('open');
-    navMenu.classList.toggle('open');
-    hamburger.setAttribute('aria-expanded', String(navMenu.classList.contains('open')));
-  });
+  const mobileNavigation = window.matchMedia('(max-width: 900px)');
+  function setMenuOpen(open) {
+    hamburger.classList.toggle('open', open);
+    navMenu.classList.toggle('open', open);
+    hamburger.setAttribute('aria-expanded', String(open));
+    hamburger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    navMenu.inert = mobileNavigation.matches && !open;
+  }
+  setMenuOpen(false);
+  mobileNavigation.addEventListener('change', () => setMenuOpen(false));
+  hamburger.addEventListener('click', () => setMenuOpen(!navMenu.classList.contains('open')));
   navMenu.addEventListener('click', (event) => {
     if (!event.target.closest('a')) return;
-    hamburger.classList.remove('open');
-    navMenu.classList.remove('open');
-    hamburger.setAttribute('aria-expanded', 'false');
+    setMenuOpen(false);
   });
-  hamburger.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') hamburger.click();
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && navMenu.classList.contains('open')) {
+      setMenuOpen(false);
+      hamburger.focus();
+    }
+  });
+  document.addEventListener('click', (event) => {
+    if (navMenu.classList.contains('open') && !event.target.closest('.nav-container')) setMenuOpen(false);
   });
 
   initSidePanel();
