@@ -26,12 +26,16 @@ PROBE is intended for lawful research using publicly reachable information. A re
 - `skipped` means a verified site-specific username rule rejected the input before any request; it is not a network-confirmed missing account. Sources without proven rules are still checked.
 - Username preflight currently covers 33 catalog entries, including 22 single-subdomain lookups. Rules retain permissive legacy formats rather than copying stricter new-registration limits.
 - `blocked` and `unknown` mean the available response was insufficient for a reliable decision.
+- Ambiguous redirects, conflicting source evidence, and missing positive markers in incomplete responses abstain. Integrity abstentions cannot be promoted to current account matches using archived responses.
+- Reviewed source adapters can use GET, HEAD or POST and explicit JSON evidence without changing the public profile link; adapter configuration is validated at startup.
 - Manual-only links are useful investigation pivots but are not automatically classified.
 - Current functional coverage is 322 sources: 265 automatic checks and 57 manual-only links.
 - Result cards use colored status dots with accessible labels and hover descriptions; the scan totals and status filters retain their text labels.
+- Site names sit beside their status dots. HTTP and abbreviated category badges share fixed dimensions; full category names remain available to assistive technology and on hover.
+- Scan download, cancel and done controls use icons with accessible labels and hover descriptions. Download choices keep their format and result-scope labels.
 - Research tools stay collapsed before a scan and expand when scanning starts. They can be reopened or collapsed manually; this does not change which sources are checked.
 - Research result panels scroll internally instead of stretching the reference links. The paper-colored navbar scrolls away with the page; scan progress stays at the viewport top.
-- The dotted background pulses only during a scan. Motion preferences are respected throughout navigation and disclosures.
+- An outward-moving wave highlights the dotted background only during a scan. Motion preferences are respected throughout navigation and disclosures.
 
 ## Citation guidance
 

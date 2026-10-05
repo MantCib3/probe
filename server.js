@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const { URL } = require('url');
 const profileMetadata = require('./profile-metadata');
 const usernameRules = require('./username-rules');
+const sourceRequestAdapter = require('./source-request-adapter');
 
 // Stealth browser — lazy-loaded; absent gracefully if not installed
 let chromiumStealth = null;
@@ -22,11 +23,39 @@ const SITES_PATH = path.join(__dirname, 'sites.json');
 const SITES_SOURCE = fs.readFileSync(SITES_PATH, 'utf8');
 const SITES      = JSON.parse(SITES_SOURCE).filter(s => !s.defunct);
 usernameRules.validateCatalog(SITES);
+sourceRequestAdapter.validateCatalog(SITES);
 const NAME_SITES = JSON.parse(fs.readFileSync(path.join(__dirname, 'name-sites.json'), 'utf8'));
 const PORT       = process.env.PORT || process.argv[2] || 3737;
 const CONCURRENCY = 20;
 const TIMEOUT_MS  = 10000;
 const MAX_BODY    = 32768;
+// These signals mean the observed response is materially ambiguous, not merely
+// incomplete; browser rendering or archive history must not turn them into found.
+const INTEGRITY_ABSTENTION_REASONS = new Set([
+  'redirect_location_missing',
+  'redirect_location_invalid',
+  'redirect_hop_limit',
+  'redirect_requires_follow',
+  'redirect_auth_login',
+  'redirect_bot_challenge',
+  'cloudflare_or_challenge_detected',
+  'title_blocked_pattern',
+  'body_blocked_pattern',
+  'body_authentication_required',
+  'body_rate_limited',
+  'site_marker_conflict',
+  'site_positive_message_missing',
+  'site_positive_message_missing_incomplete_body',
+  'adapter_predicate_conflict',
+  'adapter_json_inconclusive',
+  'adapter_json_invalid',
+  'adapter_head_status_unexpected',
+]);
+
+function hasIntegrityAbstention(result) {
+  return Array.isArray(result && result.reasonCodes) &&
+    result.reasonCodes.some(reason => INTEGRITY_ABSTENTION_REASONS.has(reason));
+}
 const SITE_PROBE_TIMEOUT_MS = 45000;
 const PROBE_DEADLINE_MS = 15000;
 
@@ -36,6 +65,7 @@ const ENABLE_USERNAME_BROWSER_FALLBACK = false;
 const ENABLE_UNDETECTABLE_STEALTH = false;
 const LAB_RUNTIME_FINGERPRINT = Object.freeze({
   classifierSha256: crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex'),
+  sourceRequestAdapterSha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, 'source-request-adapter.js'))).digest('hex'),
   catalogSha256: crypto.createHash('sha256').update(SITES_SOURCE).digest('hex'),
   usernameRulesSha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, 'username-rules.js'))).digest('hex'),
   nodeVersion: process.version,
@@ -524,7 +554,7 @@ function fetchText(url, timeoutMs = 20000, maxRedirects = 5, headers = null) {
 // pre-existing single-arg fetchStatus(targetUrl) used by the legacy probe*
 // functions further down this file — function declarations hoist and the
 // later one wins, which silently broke /api/verify during initial testing.
-function fetchStatusV(url, timeoutMs = 10000, maxRedirects = 4) {
+function fetchStatusV(url, timeoutMs = 10000, maxRedirects = 4, redirects = [], initialRedirectLimit = maxRedirects) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const transport = parsed.protocol === 'https:' ? https : http;
@@ -544,15 +574,65 @@ function fetchStatusV(url, timeoutMs = 10000, maxRedirects = 4) {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
       lookup: publicLookup,
     }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && maxRedirects > 0) {
+      if (res.statusCode >= 301 && res.statusCode <= 308) {
+        const redirect = {
+          status: res.statusCode,
+          location: res.headers.location,
+          fromUrl: parsed.href,
+        };
+        const nextRedirects = [...redirects, redirect];
+        const inspected = sourceRequestAdapter.inspectRedirectLocation(redirect.location, parsed.href);
+        if (!inspected.valid || maxRedirects === 0) {
+          res.resume();
+          finish(resolve, {
+            status: res.statusCode,
+            body: '',
+            redirects: nextRedirects,
+            redirectError: inspected.valid ? null : inspected.reason,
+            redirectHopLimitReached: inspected.valid && initialRedirectLimit > 0,
+            complete: true,
+          });
+          return;
+        }
         res.resume(); // discard body, follow redirect
-        finish(resolve, fetchStatusV(new URL(res.headers.location, parsed).toString(), timeoutMs, maxRedirects - 1));
+        finish(resolve, fetchStatusV(
+          inspected.url,
+          timeoutMs,
+          maxRedirects - 1,
+          nextRedirects,
+          initialRedirectLimit
+        ));
         return;
       }
       let body = '';
       res.setEncoding('utf8');
-      res.on('data', chunk => { if (body.length < 200000) body += chunk; });
-      res.on('end', () => finish(resolve, { status: res.statusCode, body }));
+      let truncated = false;
+      res.on('data', chunk => {
+        if (body.length + chunk.length <= 200000) body += chunk;
+        else {
+          body += chunk.slice(0, 200000 - body.length);
+          truncated = true;
+          res.destroy();
+        }
+      });
+      res.on('end', () => finish(resolve, {
+        status: res.statusCode,
+        body,
+        redirects,
+        redirectError: null,
+        redirectHopLimitReached: false,
+        complete: res.complete && !truncated,
+      }));
+      res.on('close', () => {
+        if (!settled && (truncated || !res.complete)) finish(resolve, {
+          status: res.statusCode || 0,
+          body,
+          redirects,
+          redirectError: null,
+          redirectHopLimitReached: false,
+          complete: false,
+        });
+      });
       res.on('error', err => finish(reject, err));
     });
     req.on('error', err => finish(reject, err));
@@ -609,7 +689,7 @@ function isPrivateHost(hostname) {
   );
 }
 
-// Auth/login redirect patterns — if a 3xx points here, account doesn't exist
+// Known authentication/login redirect path fragments; redirects are ambiguous by default.
 const AUTH_REDIRECT_PATTERNS = [
   '/login', '/signin', '/sign-in', '/signup', '/sign-up', '/register',
   '/auth', 'accounts/login', 'account/login', 'users/sign_in',
@@ -638,7 +718,23 @@ const BLOCKED_BODY_PATTERNS = [
   'please enable javascript and cookies to continue',
   'this process is automatic',
   'checking if the site connection is secure',
-  'ray id',  // Cloudflare footer
+  'cf-challenge-running',
+  'cf-chl-',
+];
+
+const AUTH_BODY_PATTERNS = [
+  'authorization required',
+  'authentication required',
+  'sign in to continue',
+  'log in to continue',
+  'please sign in to view this profile',
+  'you must be logged in to view this page',
+];
+
+const RATE_LIMIT_BODY_PATTERNS = [
+  'rate limit exceeded',
+  'too many requests',
+  'you are being rate limited',
 ];
 
 // Body-text substrings that reliably indicate a missing profile (case-insensitive)
@@ -762,7 +858,7 @@ function normalizeResult(result) {
   };
 }
 
-function classify(site, username, url, sc, headers, body, detectionMethod = 'http') {
+function classify(site, username, url, sc, headers, body, detectionMethod = 'http', bodyIncomplete = false, expectedStatus = 0) {
   const base = {
     name: site.name,
     category: site.category,
@@ -772,27 +868,31 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
     bodyHash: hashBodySample(body),
   };
 
+  if (site.notFoundStatus !== undefined && sc === site.notFoundStatus) {
+    return makeClassifiedResult(base, 'not_found', ['site_specific_not_found_status'], 0.94);
+  }
+
   if (sc >= 301 && sc <= 308) {
-    const loc = (headers['location'] || '').toLowerCase();
-    if (loc) {
-      if (AUTH_REDIRECT_PATTERNS.some(p => loc.includes(p))) {
-        return makeClassifiedResult(base, 'not_found', ['redirect_auth_login'], 0.95);
-      }
-      if (loc.includes('.within.website') || loc.includes('/_/') ||
-          loc.includes('/cdn-cgi/') || loc.includes('challenge') ||
-          body.toLowerCase().includes('authorization required')) {
-        return makeClassifiedResult(base, 'blocked', ['redirect_bot_challenge'], 0.9);
-      }
+    const rawLocation = headers && headers.location;
+    const redirect = sourceRequestAdapter.inspectRedirectLocation(rawLocation, url);
+    if (!redirect.valid) return makeClassifiedResult(base, 'unknown', [redirect.reason], 0.3);
+    const loc = redirect.url.toLowerCase();
+    if (loc.includes('.within.website') || /\/cdn-cgi\/challenge(?:[/?#]|$)/.test(loc) ||
+        loc.includes('/_/challenge') || loc.includes('verify-browser') || loc.includes('bot-check')) {
+      return makeClassifiedResult(base, 'blocked', ['redirect_bot_challenge'], 0.9);
     }
-    return makeClassifiedResult(base, 'found', ['redirect_reachable'], 0.7);
+    if (AUTH_REDIRECT_PATTERNS.some(p => loc.includes(p))) {
+      const authStatus = site.authRedirectMeansFound === true ? 'found'
+        : site.authRedirectMeansNotFound === true ? 'not_found' : 'unknown';
+      const reason = authStatus === 'found' ? 'site_auth_redirect_found'
+        : authStatus === 'not_found' ? 'site_auth_redirect_not_found' : 'redirect_auth_login';
+      return makeClassifiedResult(base, authStatus, [reason], authStatus === 'unknown' ? 0.3 : 0.92);
+    }
+    return makeClassifiedResult(base, 'unknown', ['redirect_requires_follow'], 0.3);
   }
 
   if (sc === 404 || sc === 410) {
     return makeClassifiedResult(base, 'not_found', [sc === 404 ? 'http_404' : 'http_410'], 0.98);
-  }
-
-  if (site.notFoundStatus !== undefined && sc === site.notFoundStatus) {
-    return makeClassifiedResult(base, 'not_found', ['site_specific_not_found_status'], 0.94);
   }
 
   if (sc === 403 || sc === 401 || sc === 429 || sc === 999) {
@@ -807,6 +907,39 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
     return makeClassifiedResult(base, 'blocked', ['blocked_aws_waf_challenge'], 0.9);
   }
 
+  if (site.requestAdapter && site.requestAdapter.method === 'HEAD') {
+    const expected = site.requestAdapter.response.expectedStatus;
+    if (sc === expected) return makeClassifiedResult(base, 'found', ['adapter_head_expected_status'], 0.9);
+    return makeClassifiedResult(base, 'unknown', ['adapter_head_status_unexpected'], 0.3);
+  }
+
+  if (expectedStatus && sc === expectedStatus) {
+    const lowerBody = body.toLowerCase();
+    const titleMatch = body.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].replace(/&#039;/g, "'").replace(/&amp;/g, '&').toLowerCase().trim() : '';
+    if (BLOCKED_TITLE_PATTERNS.some(pattern => title.includes(pattern))) {
+      return makeClassifiedResult(base, 'blocked', ['title_blocked_pattern'], 0.9);
+    }
+    if (BLOCKED_BODY_PATTERNS.some(pattern => lowerBody.includes(pattern))) {
+      return makeClassifiedResult(base, 'blocked', ['body_blocked_pattern'], 0.9);
+    }
+    if (AUTH_BODY_PATTERNS.some(pattern => lowerBody.includes(pattern))) {
+      return makeClassifiedResult(base, 'unknown', ['body_authentication_required'], 0.3);
+    }
+    if (RATE_LIMIT_BODY_PATTERNS.some(pattern => lowerBody.includes(pattern))) {
+      return makeClassifiedResult(base, 'blocked', ['body_rate_limited'], 0.9);
+    }
+    const positive = site.positiveMsg ? body.includes(site.positiveMsg) : false;
+    const negative = site.errorMsg ? body.includes(site.errorMsg) : false;
+    if (positive && negative) return makeClassifiedResult(base, 'unknown', ['site_marker_conflict'], 0.3);
+    if (negative) return makeClassifiedResult(base, 'not_found', ['site_error_message'], 0.92);
+    if (site.positiveMsg && !positive) {
+      return makeClassifiedResult(base, 'unknown',
+        [bodyIncomplete ? 'site_positive_message_missing_incomplete_body' : 'site_positive_message_missing'], 0.3);
+    }
+    return makeClassifiedResult(base, 'found', ['site_expected_status'], 0.9);
+  }
+
   if (sc === 200) {
     const lbody = body.toLowerCase();
     const tm = body.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -816,12 +949,44 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
       return makeClassifiedResult(base, 'blocked', ['title_blocked_pattern'], 0.9);
     }
 
+    if (BLOCKED_BODY_PATTERNS.some(p => lbody.includes(p))) {
+      return makeClassifiedResult(base, 'blocked', ['body_blocked_pattern'], 0.9);
+    }
+
+    if (AUTH_BODY_PATTERNS.some(p => lbody.includes(p))) {
+      return makeClassifiedResult(base, 'unknown', ['body_authentication_required'], 0.3);
+    }
+
+    if (RATE_LIMIT_BODY_PATTERNS.some(p => lbody.includes(p))) {
+      return makeClassifiedResult(base, 'blocked', ['body_rate_limited'], 0.9);
+    }
+
+    const jsonVerdict = sourceRequestAdapter.classifyJsonResponse(site.requestAdapter, body);
+    if (jsonVerdict) {
+      const confidence = jsonVerdict.status === 'found' ? 0.9
+        : jsonVerdict.status === 'not_found' ? 0.92 : 0.3;
+      return makeClassifiedResult(base, jsonVerdict.status, [jsonVerdict.reason], confidence);
+    }
+
+    if (site.requestAdapter && site.requestAdapter.method === 'HEAD') {
+      return makeClassifiedResult(base, 'unknown', ['adapter_head_without_body_evidence'], 0.3);
+    }
+
     if (site.positiveMsg) {
       const found = body.includes(site.positiveMsg);
+      const negative = site.errorMsg ? body.includes(site.errorMsg) : false;
+      if (found && negative) {
+        return makeClassifiedResult(base, 'unknown', ['site_marker_conflict'], 0.3);
+      }
+      if (found) return makeClassifiedResult(base, 'found', ['site_positive_message'], 0.9);
+      if (negative) return makeClassifiedResult(base, 'not_found', ['site_error_message'], 0.92);
+      if (bodyIncomplete) {
+        return makeClassifiedResult(base, 'unknown', ['site_positive_message_missing_incomplete_body'], 0.3);
+      }
       const missingStatus = site.positiveMissingStatus === 'unknown' ? 'unknown' : 'not_found';
-      return makeClassifiedResult(base, found ? 'found' : missingStatus,
-        [found || missingStatus === 'not_found' ? 'site_positive_message' : 'site_positive_message_missing'],
-        found || missingStatus === 'not_found' ? 0.9 : 0.3);
+      return makeClassifiedResult(base, missingStatus,
+        [missingStatus === 'unknown' ? 'site_positive_message_missing' : 'site_positive_message'],
+        missingStatus === 'unknown' ? 0.3 : 0.9);
     }
 
     if (site.errorMsg && body.includes(site.errorMsg)) {
@@ -830,10 +995,6 @@ function classify(site, username, url, sc, headers, body, detectionMethod = 'htt
 
     if (NOT_FOUND_TITLE_PATTERNS.some(p => title.includes(p))) {
       return makeClassifiedResult(base, 'not_found', ['title_not_found_pattern'], 0.9);
-    }
-
-    if (BLOCKED_BODY_PATTERNS.some(p => lbody.includes(p))) {
-      return makeClassifiedResult(base, 'blocked', ['body_blocked_pattern'], 0.9);
     }
 
     if (DELETED_BODY_PATTERNS.some(p => lbody.includes(p))) {
@@ -1009,6 +1170,62 @@ function fetchStatus(targetUrl) {
     req.on('error', () => resolve({ statusCode: 0, body: '' }));
     req.end();
   });
+}
+
+function classifyVerifyResponse({
+  url,
+  checkMethod,
+  positiveMsg,
+  errorMsg,
+  notFoundStatus,
+  expectedStatus,
+  status,
+  body,
+  redirects = [],
+  redirectError = null,
+  redirectHopLimitReached = false,
+  complete = true,
+}) {
+  const site = {
+    name: 'Verification target',
+    category: 'verify',
+    positiveMsg,
+    errorMsg,
+    positiveMissingStatus: 'unknown',
+    ...(notFoundStatus ? { notFoundStatus } : {}),
+  };
+  const unknown = reason => ({ status: 'unknown', reasonCodes: [reason] });
+
+  if (notFoundStatus && (status === notFoundStatus ||
+      redirects.some(redirect => redirect.status === notFoundStatus))) {
+    return { status: 'not_found', reasonCodes: ['site_specific_not_found_status'] };
+  }
+  if (redirectError) return unknown(redirectError);
+
+  for (const redirect of redirects) {
+    const inspected = sourceRequestAdapter.inspectRedirectLocation(redirect.location, redirect.fromUrl || url);
+    if (!inspected.valid) return unknown(inspected.reason);
+    const verdict = classify(site, '', url, redirect.status, { location: redirect.location }, '', 'http');
+    if (verdict.status === 'not_found' || verdict.status === 'blocked' ||
+        (verdict.status === 'unknown' &&
+         (verdict.reasonCodes[0] !== 'redirect_requires_follow' || status === redirect.status))) {
+      return { status: verdict.status, reasonCodes: verdict.reasonCodes };
+    }
+  }
+  if (redirectHopLimitReached) return unknown('redirect_hop_limit');
+
+  if (expectedStatus > 0 && status !== expectedStatus) {
+    if (status === 404 || status === 410 || status === 401 || status === 403 || status === 429 ||
+        (notFoundStatus && status === notFoundStatus)) {
+      const verdict = classify(site, '', url, status, {}, body, 'http', !complete);
+      return { status: verdict.status, reasonCodes: verdict.reasonCodes };
+    }
+    return unknown('site_expected_status_missing');
+  }
+
+  const statusEvidence = expectedStatus || (checkMethod === 'status_code' ? 200 : 0);
+  const verdict = classify(site, '', url, status, {}, body, 'http', !complete, statusEvidence);
+  return { status: verdict.status, reasonCodes: verdict.reasonCodes };
 }
 
 async function probeGravatar(email) {
@@ -1897,37 +2114,51 @@ function cookieJarFor(cookieJars, hostname) {
   return cookieJars.get(hostname);
 }
 
-function makeReqOptions(parsed, overrideUA, cookieJars, signal) {
+function makeReqOptions(parsed, overrideUA, cookieJars, signal, requestConfig) {
   const ua = overrideUA || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
   const cookies = [...cookieJarFor(cookieJars, parsed.hostname)].map(([name, value]) => `${name}=${value}`).join('; ');
+  const headers = {
+    'User-Agent'               : ua,
+    'Accept'                   : 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language'          : 'en-US,en;q=0.9',
+    'Referer'                  : `${parsed.protocol}//${parsed.host}/`,
+    'Cache-Control'            : 'max-age=0',
+    'Connection'               : 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest'           : 'document',
+    'Sec-Fetch-Mode'           : 'navigate',
+    'Sec-Fetch-Site'           : 'same-origin',
+    'Sec-Fetch-User'           : '?1',
+    'sec-ch-ua'                : '"Chromium";v="126", "Google Chrome";v="126", "Not-A.Brand";v="8"',
+    'sec-ch-ua-mobile'         : '?0',
+    'sec-ch-ua-platform'       : '"Windows"',
+    ...(cookies ? { 'Cookie': cookies } : {}),
+  };
+  for (const [name, value] of Object.entries(requestConfig.headers)) {
+    for (const existingName of Object.keys(headers)) {
+      if (existingName.toLowerCase() === name) delete headers[existingName];
+    }
+    headers[name] = value;
+  }
   return {
     hostname: parsed.hostname,
     port    : parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
     path    : parsed.pathname + parsed.search,
-    method  : 'GET',
-    headers : {
-      'User-Agent'               : ua,
-      'Accept'                   : 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'Accept-Language'          : 'en-US,en;q=0.9',
-      'Referer'                  : `${parsed.protocol}//${parsed.host}/`,
-      'Cache-Control'            : 'max-age=0',
-      'Connection'               : 'keep-alive',
-      'Upgrade-Insecure-Requests': '1',
-      'Sec-Fetch-Dest'           : 'document',
-      'Sec-Fetch-Mode'           : 'navigate',
-      'Sec-Fetch-Site'           : 'same-origin',
-      'Sec-Fetch-User'           : '?1',
-      'sec-ch-ua'                : '"Chromium";v="126", "Google Chrome";v="126", "Not-A.Brand";v="8"',
-      'sec-ch-ua-mobile'         : '?0',
-      'sec-ch-ua-platform'       : '"Windows"',
-      ...(cookies ? { 'Cookie': cookies } : {}),
-    },
+    method  : requestConfig.method,
+    headers,
     timeout: TIMEOUT_MS,
     ...(signal ? { signal } : {}),
   };
 }
 
-function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cookieJars = new Map(), signal) {
+function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cookieJars = new Map(), signal, requestState = null) {
+  const deliver = finish;
+  let completed = false;
+  finish = result => {
+    if (completed) return;
+    completed = true;
+    deliver(result);
+  };
   if (signal?.aborted) {
     return finish({ name: site.name, category: site.category, url: origUrl, status: 'timeout', statusCode: 0 });
   }
@@ -1937,6 +2168,13 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
 
   const mod  = parsed.protocol === 'https:' ? https : http;
   const base = { name: site.name, category: site.category, url: origUrl };
+  let requestConfig;
+  try {
+    requestConfig = requestState || sourceRequestAdapter.buildRequest(site, username);
+  } catch (error) {
+    console.error(`[source-request] Invalid request configuration for "${site.name}": ${error.message}`);
+    return finish({ ...base, status: 'error', statusCode: 0, reasonCodes: ['invalid_source_request'] });
+  }
   const crawlerUA = site.crawlerUA === 'googlebot'
     ? 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
     : site.crawlerUA === 'twitterbot'
@@ -1944,18 +2182,25 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     : site.crawlerUA === 'facebookbot'
     ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
     : null;
+  let responseState = null;
 
   const startRequest = () => {
   if (signal?.aborted) return finish({ ...base, status: 'timeout', statusCode: 0 });
-  const req = mod.request(makeReqOptions(parsed, crawlerUA, cookieJars, signal), (res) => {
+  const req = mod.request(makeReqOptions(parsed, crawlerUA, cookieJars, signal, requestConfig), (res) => {
     const sc      = res.statusCode;
     const headers = res.headers;
+    responseState = { statusCode: sc, headers, body: '' };
     updateCookieJar(cookieJarFor(cookieJars, parsed.hostname), headers['set-cookie']);
+
+    if (sc >= 301 && sc <= 308 && site.notFoundStatus !== undefined && sc === site.notFoundStatus) {
+      res.resume();
+      return finish({ ...base, status: 'not_found', statusCode: sc, reasonCodes: ['site_specific_not_found_status'] });
+    }
 
     if ((sc === 429 || sc === 502 || sc === 503 || sc === 504) && attempt < MAX_TRANSIENT_RETRIES) {
       res.resume();
       return setTimeout(
-        () => doRequest(site, username, origUrl, url, hops, finish, attempt + 1, cookieJars, signal),
+        () => doRequest(site, username, origUrl, url, hops, finish, attempt + 1, cookieJars, signal, requestConfig),
         retryDelayMs(headers, attempt)
       );
     }
@@ -1964,39 +2209,31 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     if (sc >= 301 && sc <= 308) {
       res.resume(); // drain to free socket
 
-      // WMN-derived sites carry a "missing profile" status code (m_code,
-      // stored as site.notFoundStatus) that is OFTEN this exact redirect
-      // code — the redirect itself IS the not-found signal. Check this
-      // BEFORE any of the location-sniffing heuristics below, or we'd
-      // follow the redirect away and lose the signal (this caused a real
-      // false "found" on 247CTF, whose m_code is 302).
-      if (site.notFoundStatus && sc === site.notFoundStatus) {
-        return finish({ ...base, status: 'not_found', statusCode: sc });
+      const locRaw = headers['location'];
+      const redirect = sourceRequestAdapter.inspectRedirectLocation(locRaw, url);
+      if (!redirect.valid) {
+        return finish({ ...base, status: 'unknown', statusCode: sc, reasonCodes: [redirect.reason] });
+      }
+      const absLoc = redirect.url;
+      const loc = absLoc.toLowerCase();
+
+      // A challenge destination is explicit blocking evidence, not evidence that the profile exists.
+      if (loc.includes('.within.website') || /\/cdn-cgi\/challenge(?:[/?#]|$)/.test(loc) ||
+          loc.includes('/_/challenge') || loc.includes('verify-browser') || loc.includes('bot-check')) {
+        return finish({ ...base, status: 'blocked', statusCode: sc, reasonCodes: ['redirect_bot_challenge'] });
       }
 
-      const locRaw = headers['location'] || '';
-      if (!locRaw) return finish({ ...base, status: 'found', statusCode: sc });
-      const loc = locRaw.toLowerCase();
-
-      let absLoc;
-      try { absLoc = new URL(locRaw, url).href; }
-      catch (_) { return finish({ ...base, status: 'found', statusCode: sc }); }
-
-      // Auth/login redirect → not_found
       if (AUTH_REDIRECT_PATTERNS.some(p => loc.includes(p))) {
+        const authStatus = site.authRedirectMeansFound === true ? 'found'
+          : site.authRedirectMeansNotFound === true ? 'not_found' : 'unknown';
+        const reasonCode = authStatus === 'found' ? 'site_auth_redirect_found'
+          : authStatus === 'not_found' ? 'site_auth_redirect_not_found' : 'redirect_auth_login';
         return finish({
           ...base,
-          status: site.authRedirectMeansFound ? 'found' : 'not_found',
+          status: authStatus,
           statusCode: sc,
-          reasonCodes: [site.authRedirectMeansFound ? 'site_auth_redirect_found' : 'redirect_auth_login'],
+          reasonCodes: [reasonCode],
         });
-      }
-      // Bot-protection redirect → unknown (can't determine)
-      if (loc.includes('.within.website') || loc.includes('/_/') ||
-          loc.includes('/cdn-cgi/') || loc.includes('challenge') ||
-          loc.includes('/captcha') || loc.includes('splashui') ||
-          loc.includes('verify-browser') || loc.includes('bot-check')) {
-        return finish({ ...base, status: 'unknown', statusCode: sc });
       }
       // Redirect to domain root (no sub-path) → user doesn't exist, unless
       // the username is encoded in the hostname and only the protocol changed.
@@ -2014,10 +2251,16 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
 
       // Follow redirect if within hop limit
       if (hops < MAX_REDIRECT_HOPS) {
-        return doRequest(site, username, origUrl, absLoc, hops + 1, finish, attempt, cookieJars, signal);
+        let nextRequest = requestConfig;
+        if (((sc === 301 || sc === 302) && requestConfig.method === 'POST') ||
+            (sc === 303 && requestConfig.method !== 'HEAD')) {
+          const headers = { ...requestConfig.headers };
+          delete headers['content-type'];
+          nextRequest = { method: 'GET', headers, body: null };
+        }
+        return doRequest(site, username, origUrl, absLoc, hops + 1, finish, attempt, cookieJars, signal, nextRequest);
       }
-      // Gave up following — treat as found
-      return finish({ ...base, status: 'found', statusCode: sc });
+      return finish({ ...base, status: 'unknown', statusCode: sc, reasonCodes: ['redirect_hop_limit'] });
     }
 
     // ── Non-redirect: read body and classify ──────────────────────────
@@ -2033,10 +2276,11 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     res.on('data', chunk => {
       if (stopped) return;
       body += chunk;
+      responseState.body = body;
       if (classifyBody === null && body.length >= MAX_BODY) {
         classifyBody = body;
         if (!readPlan) { stopped = true; return res.destroy(); }
-        early = classify(site, username, origUrl, sc, headers, classifyBody);
+        early = classify(site, username, origUrl, sc, headers, classifyBody, 'http', true);
         if (early.status !== 'found') { stopped = true; return res.destroy(); }
       }
       if (classifyBody !== null && readPlan && (
@@ -2048,22 +2292,31 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
       }
     });
     res.on('close', () => {
-      const result = early || classify(site, username, origUrl, sc, headers, classifyBody ?? body);
+      const bodyIncomplete = stopped || body.length >= MAX_BODY || !res.complete;
+      const result = early || classify(site, username, origUrl, sc, headers, classifyBody ?? body, 'http', bodyIncomplete);
       finish(withProfile(result, site, username, body, headers['content-type'], url));
     });
-    res.on('error', () => finish({ ...base, status: 'error', statusCode: 0 }));
+    res.on('error', () => {
+      const partial = classify(site, username, origUrl, sc, headers, body, 'http', true);
+      finish(withProfile(partial, site, username, body, headers['content-type'], url));
+    });
   });
 
   req.on('timeout', () => { req.destroy(new Error('timeout')); });
   req.on('error', (err) => {
     if (err.message === 'timeout' || err.code === 'ABORT_ERR') {
       finish({ ...base, status: 'timeout', statusCode: 0 });
+    } else if (responseState && responseState.statusCode) {
+      const partial = classify(site, username, origUrl, responseState.statusCode,
+        responseState.headers, responseState.body, 'http', true);
+      finish(withProfile(partial, site, username, responseState.body,
+        responseState.headers['content-type'], url));
     } else {
       finish({ ...base, status: 'error', statusCode: 0 });
     }
   });
 
-  req.end();
+  req.end(requestConfig.body === null ? undefined : requestConfig.body);
   };
 
   scheduleHostRequest(parsed.hostname, startRequest);
@@ -2226,6 +2479,7 @@ async function probeWithBrowserFallback(site, username, signal) {
 
   // Keep fast-path result when already conclusive.
   if (first.status !== 'unknown') return first;
+  if (hasIntegrityAbstention(first)) return first;
 
   let result = first;
   if ((ENABLE_USERNAME_BROWSER_FALLBACK || site.allowBrowserFallback) && chromiumStealth && !site.noBrowserFallback) {
@@ -2246,7 +2500,7 @@ async function probeWithBrowserFallback(site, username, signal) {
   // a separate client-side pass; folding it in here means the frontend gets
   // one single, already-final verdict per site instead of needing its own
   // follow-up network round.
-  if (result.status === 'unknown' && !site.noArchiveFallback) {
+  if (result.status === 'unknown' && !site.noArchiveFallback && !hasIntegrityAbstention(result)) {
     const archived = await probeArchiveOrgFallback(result.url, signal).catch(() => false);
     if (archived) {
       const reasons = Array.isArray(result.reasonCodes) ? result.reasonCodes : [];
@@ -3306,49 +3560,23 @@ const server = http.createServer((req, res) => {
     const maxRedirects = useWmnAlgorithm ? 0 : 4;
 
     fetchStatusV(rawUrl, 10000, maxRedirects)
-      .then(({ status, body }) => {
-        let verdict = 'unknown';
-        const lbody = body.toLowerCase();
-        const isBlockedPage = BLOCKED_BODY_PATTERNS.some(p => lbody.includes(p)) || BLOCKED_TITLE_PATTERNS.some(p => lbody.includes(p));
-
-        if (useWmnAlgorithm) {
-          // WMN-style dual signal: status code decides found/not_found;
-          // e_string (positiveMsg) / m_string (errorMsg), if present, must
-          // also agree, otherwise the result is inconclusive. Explicit
-          // codes are checked BEFORE the generic 403/401/429→blocked
-          // shortcut below, since a handful of sites use one of those
-          // codes as their normal "not found" signal (e.g. m_code: 401).
-          if (notFoundStatus && status === notFoundStatus) {
-            verdict = 'not_found';
-          } else if (status === expectedStatus) {
-            if (positiveMsg && !body.includes(positiveMsg)) verdict = 'unknown';
-            else if (errorMsg && body.includes(errorMsg)) verdict = 'not_found';
-            else verdict = 'found';
-          } else if (status === 403 || status === 401 || status === 429) {
-            verdict = 'blocked';
-          } else if (isBlockedPage) {
-            verdict = 'blocked';
-          } else {
-            verdict = 'unknown';
-          }
-        } else if (status === 403 || status === 401 || status === 429) {
-          verdict = 'blocked';
-        } else if (isBlockedPage) {
-          verdict = 'blocked';
-        } else if (status === 404 || status === 410) {
-          verdict = 'not_found';
-        } else if (notFoundStatus && status === notFoundStatus) {
-          verdict = 'not_found';
-        } else if (checkMethod === 'message' && positiveMsg && body.includes(positiveMsg)) {
-          verdict = 'found';
-        } else if (checkMethod === 'message' && errorMsg && body.includes(errorMsg)) {
-          verdict = 'not_found';
-        } else {
-          verdict = status === 200 ? 'found' : 'unknown';
-        }
-
+      .then(response => {
+        const result = classifyVerifyResponse({
+          url: rawUrl,
+          checkMethod,
+          positiveMsg,
+          errorMsg,
+          notFoundStatus,
+          expectedStatus: useWmnAlgorithm ? expectedStatus : 0,
+          ...response,
+        });
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: true, verdict, status }));
+        res.end(JSON.stringify({
+          ok: true,
+          verdict: result.status,
+          reasonCodes: result.reasonCodes,
+          status: response.status,
+        }));
       })
       .catch(err => {
         if (res.writableEnded) return;
@@ -3701,4 +3929,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { classify, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan };
+module.exports = { classify, classifyVerifyResponse, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan, hasIntegrityAbstention, LAB_RUNTIME_FINGERPRINT };

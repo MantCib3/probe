@@ -11,16 +11,16 @@ function site(overrides = {}) {
   return { name: 'Example', category: 'social', ...overrides };
 }
 
-function classifyCase({ source = site(), statusCode = 200, headers = {}, body = '', method = 'http' }) {
-  return classify(source, username, url, statusCode, headers, body, method);
+function classifyCase({ source = site(), statusCode = 200, headers = {}, body = '', method = 'http', bodyIncomplete = false }) {
+  return classify(source, username, url, statusCode, headers, body, method, bodyIncomplete);
 }
 
 describe('classify', () => {
   const cases = [
     {
-      name: 'treats an authentication redirect as not found',
+      name: 'abstains on a generic authentication redirect',
       input: { statusCode: 302, headers: { location: '/login?next=/alice' } },
-      expected: ['not_found', 'redirect_auth_login', 0.95],
+      expected: ['unknown', 'redirect_auth_login', 0.3],
     },
     {
       name: 'treats a challenge redirect as blocked',
@@ -28,9 +28,29 @@ describe('classify', () => {
       expected: ['blocked', 'redirect_bot_challenge', 0.9],
     },
     {
-      name: 'treats another reachable redirect as found',
+      name: 'abstains on an unresolved redirect',
       input: { statusCode: 301, headers: { location: '/users/alice' } },
-      expected: ['found', 'redirect_reachable', 0.7],
+      expected: ['unknown', 'redirect_requires_follow', 0.3],
+    },
+    {
+      name: 'abstains on a redirect with no Location',
+      input: { statusCode: 302 },
+      expected: ['unknown', 'redirect_location_missing', 0.3],
+    },
+    {
+      name: 'allows validated source-specific auth redirects to mean found',
+      input: { source: site({ authRedirectMeansFound: true }), statusCode: 302, headers: { location: '/login' } },
+      expected: ['found', 'site_auth_redirect_found', 0.92],
+    },
+    {
+      name: 'allows explicit source-specific auth redirect absence semantics',
+      input: { source: site({ authRedirectMeansNotFound: true }), statusCode: 302, headers: { location: '/login' } },
+      expected: ['not_found', 'site_auth_redirect_not_found', 0.92],
+    },
+    {
+      name: 'preserves configured not-found evidence before redirect classification',
+      input: { source: site({ notFoundStatus: 302 }), statusCode: 302, headers: { location: '/login' } },
+      expected: ['not_found', 'site_specific_not_found_status', 0.94],
     },
     {
       name: 'treats 404 as not found',
@@ -78,14 +98,72 @@ describe('classify', () => {
       expected: ['not_found', 'site_positive_message', 0.9],
     },
     {
+      name: 'honors explicit unknown semantics for a missing positive message',
+      input: { source: site({ positiveMsg: 'Profile owner', positiveMissingStatus: 'unknown' }), body: '<p>Directory</p>' },
+      expected: ['unknown', 'site_positive_message_missing', 0.3],
+    },
+    {
+      name: 'abstains when a truncated detection body lacks its positive marker',
+      input: { source: site({ positiveMsg: 'Profile owner' }), body: '<p>Directory</p>', bodyIncomplete: true },
+      expected: ['unknown', 'site_positive_message_missing_incomplete_body', 0.3],
+    },
+    {
       name: 'recognizes a configured error message',
       input: { source: site({ errorMsg: 'No such member' }), body: '<p>No such member</p>' },
       expected: ['not_found', 'site_error_message', 0.92],
     },
     {
+      name: 'abstains when positive and negative source markers conflict',
+      input: { source: site({ positiveMsg: 'Profile owner', errorMsg: 'No such member' }), body: 'Profile owner; No such member' },
+      expected: ['unknown', 'site_marker_conflict', 0.3],
+    },
+    {
       name: 'recognizes a blocked title',
       input: { body: '<title>Just a moment</title>' },
       expected: ['blocked', 'title_blocked_pattern', 0.9],
+    },
+    {
+      name: 'challenge interstitial evidence takes precedence over a positive marker',
+      input: { source: site({ positiveMsg: 'Profile owner' }), body: '<title>Just a moment</title><p>Profile owner</p>' },
+      expected: ['blocked', 'title_blocked_pattern', 0.9],
+    },
+    {
+      name: 'challenge body evidence takes precedence over a positive marker',
+      input: { source: site({ positiveMsg: 'Profile owner' }), body: '<p>Checking if the site connection is secure. Profile owner</p>' },
+      expected: ['blocked', 'body_blocked_pattern', 0.9],
+    },
+    {
+      name: 'authentication interstitial evidence takes precedence over a positive marker',
+      input: { source: site({ positiveMsg: 'Profile owner' }), body: '<p>Authentication required. Profile owner</p>' },
+      expected: ['unknown', 'body_authentication_required', 0.3],
+    },
+    {
+      name: 'rate-limit evidence takes precedence over a positive marker',
+      input: { source: site({ positiveMsg: 'Profile owner' }), body: '<p>Too many requests. Profile owner</p>' },
+      expected: ['blocked', 'body_rate_limited', 0.9],
+    },
+    {
+      name: 'uses only configured JSON evidence for adapter responses',
+      input: {
+        source: site({
+          requestAdapter: {
+            method: 'GET',
+            response: { json: { positive: { path: '/id', op: 'exists' } } },
+          },
+        }),
+        body: '{"username":"alice"}',
+      },
+      expected: ['unknown', 'adapter_json_inconclusive', 0.3],
+    },
+    {
+      name: 'does not treat an embedded captcha widget as a challenge interstitial',
+      input: { body: '<script src="https://www.google.com/recaptcha/api.js"></script><h1>alice</h1>' },
+      expected: ['found', 'body_guard_username_match', 0.74],
+    },
+    {
+      name: 'does not treat a Cloudflare Ray ID footer alone as a challenge interstitial',
+      input: { body: '<p>alice</p><footer>Ray ID: 12345</footer>' },
+      expected: ['found', 'body_guard_username_match', 0.74],
     },
     {
       name: 'recognizes a deleted account body',

@@ -13,6 +13,12 @@ const STATUS_LABEL = {
   link        : 'OPEN',
 };
 
+const CATEGORY_SHORT = {
+  social: 'SOC', developer: 'DEV', gaming: 'GAME', content: 'CONT',
+  forum: 'FOR', professional: 'PRO', shopping: 'SHOP', misc: 'MISC',
+  intel: 'INT', 'people-finder': 'PPL',
+};
+
 const REASON_LABEL = {
   requires_authentication: 'Requires login — manual check needed',
   datacenter_ip_blocked: 'IP blocked by platform — check via CF Worker',
@@ -27,6 +33,26 @@ const REASON_LABEL = {
   body_guard_no_username_match: 'Profile loaded but username was not confirmed',
   site_positive_message: 'Site-specific positive signal matched',
   site_positive_message_missing: 'Required profile signal absent - cannot confirm account',
+  site_positive_message_missing_incomplete_body: 'Response ended before the profile signal could be confirmed',
+  site_marker_conflict: 'Conflicting account-present and account-missing signals',
+  redirect_location_missing: 'Redirect had no destination - account could not be confirmed',
+  redirect_location_invalid: 'Redirect destination was invalid',
+  redirect_hop_limit: 'Redirect chain exceeded the check limit',
+  redirect_requires_follow: 'Redirect alone does not confirm an account',
+  redirect_bot_challenge: 'Redirected to a bot-check page',
+  body_authentication_required: 'Page requires authentication - account existence is unclear',
+  body_rate_limited: 'Page reports rate limiting',
+  site_auth_redirect_found: 'Source-specific login redirect confirms the account',
+  site_auth_redirect_not_found: 'Source-specific login redirect confirms the account is missing',
+  adapter_json_positive: 'Source-specific JSON account-present evidence matched',
+  adapter_json_negative: 'Source-specific JSON account-missing evidence matched',
+  adapter_predicate_conflict: 'Conflicting JSON account evidence',
+  adapter_json_inconclusive: 'JSON response did not establish whether the account exists',
+  adapter_json_invalid: 'Source returned incomplete or invalid JSON',
+  adapter_head_without_body_evidence: 'Header-only response did not provide account evidence',
+  adapter_head_expected_status: 'Header-only response matched the verified source status',
+  adapter_head_status_unexpected: 'Header-only response did not match the verified source status',
+  invalid_source_request: 'Source request configuration could not be used',
   skip_body_check_enabled: 'Direct profile response accepted',
   username_present_in_body: 'Username explicitly present in page content',
   archive_org_fallback_found: 'Found archived in the Wayback Machine',
@@ -216,6 +242,24 @@ function setResearchOpen(open) {
 function statusBadgeHtml(status) {
   const label = STATUS_LABEL[status] || String(status || 'unknown').toUpperCase();
   return `<span class="status-badge ${escHtml(status || 'unknown')}" role="img" aria-label="${escHtml(label)}" title="${escHtml(label)}">${escHtml(label)}</span>`;
+}
+
+function categoryBadgeHtml(category = 'misc') {
+  const label = String(category);
+  const short = CATEGORY_SHORT[label] || label.slice(0, 4).toUpperCase();
+  return `<span class="category-badge" title="${escHtml(label)}" aria-label="${escHtml(label)}">${escHtml(short)}</span>`;
+}
+
+function cardHeadingHtml(result) {
+  return `<div class="card-heading">${statusBadgeHtml(result.status)}<div class="site-name" title="${escHtml(result.name)}">${escHtml(result.name)}</div></div>`;
+}
+
+function setScanAction(done) {
+  cancelBtn.textContent = done ? '✓' : '✕';
+  const label = done ? 'Done - return to search' : 'Cancel scan';
+  cancelBtn.setAttribute('aria-label', label);
+  cancelBtn.title = label;
+  cancelBtn.classList.toggle('btn-done', done);
 }
 const dorkTabs          = $('dorkTabs');
 const dorkResultsList   = $('dorkResultsList');
@@ -1186,7 +1230,7 @@ function makeCard(r, animDelay = 0) {
   const urlDisplay = escHtml(r.url || '');
   const scBadge    = r.statusCode ? `<span class="sc-badge" title="HTTP status code">${r.statusCode}</span>` : '';
   const browserBadge = r.resolvedBy === 'browser'
-    ? '<span class="sc-badge" title="Resolved by browser rendering">BROWSER</span>'
+    ? '<span class="sc-badge" title="Resolved by browser rendering" aria-label="Resolved by browser rendering">WEB</span>'
     : '';
 
   const badgeHtml = (r.status === 'found' || r.status === 'deleted')
@@ -1215,10 +1259,9 @@ function makeCard(r, animDelay = 0) {
   const isPinned = pinnedItems.some(p => p.name === r.name);
   card.innerHTML = `
     <div class="card-top">
-      ${statusBadgeHtml(r.status)}
-      <div class="card-top-right">${browserBadge}${scBadge}<span class="category-badge" title="${escHtml(r.category)}">${escHtml(r.category)}</span><button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button><button class="report-btn" data-report-site="${escHtml(r.name)}" title="Report incorrect result">⚑</button></div>
+      ${cardHeadingHtml(r)}
+      <div class="card-top-right">${browserBadge}${scBadge}${categoryBadgeHtml(r.category)}<button class="pin-btn${isPinned ? ' pinned' : ''}" data-pin-name="${escHtml(r.name)}" title="Pin to case notepad">📌</button><button class="report-btn" data-report-site="${escHtml(r.name)}" title="Report incorrect result">⚑</button></div>
     </div>
-    <div class="site-name">${escHtml(r.name)}</div>
     ${displayNameHtml}
     ${profileHtml}
     ${reasonHtml}
@@ -1263,10 +1306,9 @@ function makeIntelCard(r, animDelay = 0) {
 
   card.innerHTML = `
     <div class="card-top">
-      ${statusBadgeHtml(r.status)}
-      <div class="card-top-right"><span class="category-badge">${escHtml(r.category || 'intel')}</span></div>
+      ${cardHeadingHtml(r)}
+      <div class="card-top-right">${categoryBadgeHtml(r.category || 'intel')}</div>
     </div>
-    <div class="site-name">${escHtml(r.name)}</div>
     ${summaryHtml}
     ${detailHtml}
     ${linkHtml}
@@ -1290,10 +1332,9 @@ function makeNameCard(r, animDelay = 0) {
 
   card.innerHTML = `
     <div class="card-top">
-      ${statusBadgeHtml(r.status)}
-      <span class="category-badge">people-finder</span>
+      ${cardHeadingHtml(r)}
+      <div class="card-top-right">${categoryBadgeHtml('people-finder')}</div>
     </div>
-    <div class="site-name">${escHtml(r.name)}</div>
     ${summaryHtml}
     ${detailHtml}
     <a href="${escHtml(urlAttr)}" target="_blank" rel="noopener noreferrer" class="site-url name-search-url">${linkLabel}</a>
@@ -1478,8 +1519,7 @@ function resetScanState() {
   progressBarFill.style.width = '0%';
   progressBarFill.parentElement.classList.add('scanning');
   // Restore cancel button
-  cancelBtn.textContent = '✕ Cancel';
-  cancelBtn.classList.remove('btn-done');
+  setScanAction(false);
   // Clear status filter
   activeStatusFilter = null;
   document.querySelectorAll('.stat-pill.active').forEach(el => el.classList.remove('active'));
@@ -1537,8 +1577,7 @@ function startScan(username, cfToken) {
       scanBtn.disabled = false;
       scanBtn.textContent = 'SCAN';
       progressBarFill.parentElement.classList.remove('scanning');
-      cancelBtn.textContent = '\u2715 Cancel';
-      cancelBtn.classList.remove('btn-done');
+      setScanAction(false);
       scanProgressSec.style.display = 'none';
       resultsSec.style.display = 'none';
       searchError.textContent = msg.error || 'Scan failed. Please try again.';
@@ -1639,8 +1678,7 @@ function finishScan(username, done, total) {
   const found = results.filter(r => r.status === 'found').length;
   progressStatus.innerHTML = `Scan complete — <strong>${escHtml(username)}</strong>`;
   pushCaseEvent(`Username investigation complete: ${found} found across ${total} sources`, 'done');
-  cancelBtn.textContent = '✓ Done';
-  cancelBtn.classList.add('btn-done');
+  setScanAction(true);
   renderPivotSources();
   runDorkSearch();
   resetScanControls();
@@ -1687,8 +1725,7 @@ function finishNameScan(name, done, total) {
 
   progressStatus.innerHTML = `Ready — <strong>${escHtml(name)}</strong>`;
   pushCaseEvent(`Name investigation complete: ${total} sources processed`, 'done');
-  cancelBtn.textContent = '✓ Done';
-  cancelBtn.classList.add('btn-done');
+  setScanAction(true);
 
   resetNameScanControls();
 }
@@ -1700,8 +1737,7 @@ function finishEmailScan(email, done, total) {
 
   progressStatus.innerHTML = `Email investigation ready — <strong>${escHtml(email)}</strong>`;
   pushCaseEvent(`Email investigation complete: ${total} sources processed`, 'done');
-  cancelBtn.textContent = '✓ Done';
-  cancelBtn.classList.add('btn-done');
+  setScanAction(true);
 
   resetEmailScanControls();
 }
@@ -1713,8 +1749,7 @@ function finishPhoneScan(phone, done, total) {
 
   progressStatus.innerHTML = `Phone investigation ready — <strong>${escHtml(phone)}</strong>`;
   pushCaseEvent(`Phone investigation complete: ${total} sources processed`, 'done');
-  cancelBtn.textContent = '✓ Done';
-  cancelBtn.classList.add('btn-done');
+  setScanAction(true);
 
   resetPhoneScanControls();
 }
@@ -1726,8 +1761,7 @@ function finishDomainScan(domain, done, total) {
 
   progressStatus.innerHTML = `Domain investigation ready — <strong>${escHtml(domain)}</strong>`;
   pushCaseEvent(`Domain investigation complete: ${total} sources processed`, 'done');
-  cancelBtn.textContent = '✓ Done';
-  cancelBtn.classList.add('btn-done');
+  setScanAction(true);
 
   resetDomainScanControls();
 }
@@ -1737,8 +1771,7 @@ function cancelScan() {
   progressBarFill.parentElement.classList.remove('scanning');
   progressStatus.textContent = 'Scan cancelled.';
   pushCaseEvent('Investigation cancelled by user', 'warn');
-  cancelBtn.textContent = '✓ Done';
-  cancelBtn.classList.add('btn-done');
+  setScanAction(true);
   if (currentMode === 'name') resetNameScanControls();
   else if (currentMode === 'email') resetEmailScanControls();
   else if (currentMode === 'phone') resetPhoneScanControls();
@@ -2008,12 +2041,17 @@ function initEvents() {
   const dlBtn  = $('dlBtn');
   const dlMenu = $('dlMenu');
   if (dlBtn && dlMenu) {
+    const closeDownloadMenu = () => {
+      dlMenu.classList.remove('open');
+      dlBtn.setAttribute('aria-expanded', 'false');
+    };
     dlBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const open = dlMenu.classList.toggle('open');
-      if (open) document.addEventListener('click', () => dlMenu.classList.remove('open'), { once: true });
+      dlBtn.setAttribute('aria-expanded', String(open));
+      if (open) document.addEventListener('click', closeDownloadMenu, { once: true });
     });
-    const wire = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', () => { fn(); dlMenu.classList.remove('open'); }); };
+    const wire = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', () => { fn(); closeDownloadMenu(); }); };
     wire('dlFoundCsv',  exportCsvFound);
     wire('dlAllCsv',    exportCsv);
     wire('dlFoundJson', exportJsonFound);

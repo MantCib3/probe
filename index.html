@@ -50,7 +50,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="styles.min.css?v=17">
+  <link rel="stylesheet" href="styles.min.css?v=19">
   <!-- Cloudflare Turnstile — replace data-sitekey with your own key from dash.cloudflare.com -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </head>
@@ -109,7 +109,7 @@
         </div>
         <div class="progress-actions">
           <div class="dl-wrap" id="dlWrap">
-            <button class="btn-dl" id="dlBtn" title="Download results">↓ Download ▾</button>
+            <button class="btn-dl" id="dlBtn" title="Download results" aria-label="Download results" aria-controls="dlMenu" aria-expanded="false">↓ ▾</button>
             <div class="dl-menu" id="dlMenu">
               <button id="dlFoundCsv">↓ Found links (.csv)</button>
               <button id="dlAllCsv">↓ All results (.csv)</button>
@@ -117,7 +117,7 @@
               <button id="dlAllJson">↓ All results (.json)</button>
             </div>
           </div>
-          <button class="btn-cancel" id="cancelBtn">✕ Cancel</button>
+          <button class="btn-cancel" id="cancelBtn" title="Cancel scan" aria-label="Cancel scan">✕</button>
         </div>
       </div>
       <div class="progress-bar-container">
@@ -377,6 +377,6 @@
     </div>
   </div>
 
-  <script src="script.min.js?v=14" defer></script>
+  <script src="script.min.js?v=16" defer></script>
 </body>
 </html>
