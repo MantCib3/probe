@@ -459,11 +459,11 @@ function updateDorkPanel(target) {
   if (target) {
     if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = false);
     dorkStatus.textContent = `Ready to search ${target}`;
-    renderPivotSources();
   } else {
     if (tabs) tabs.querySelectorAll('.dork-tab').forEach(b => b.disabled = true);
     dorkStatus.textContent = 'Awaiting scan…';
   }
+  renderPivotSources();
 }
 
 function togglePin(r, btn) {
@@ -767,28 +767,30 @@ const PIVOT_SOURCES = {
     { name: 'HIBP',        note: 'Check breach exposure for this email', home: 'https://haveibeenpwned.com/', url: t => `https://haveibeenpwned.com/account/${encodeURIComponent(t)}` },
     { name: 'Epieos',      note: 'Reverse email lookup across linked services', home: 'https://epieos.com/', url: t => `https://epieos.com/?q=${encodeURIComponent(t)}&t=email` },
     { name: 'IntelX',      note: 'Deep-index search for leaked and indexed references', home: 'https://intelx.io/', url: t => `https://intelx.io/?s=${encodeURIComponent(t)}` },
-    { name: 'Google',      note: 'Web search pivot for this email address', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
     { name: 'GitHub Code', note: 'Search commits/code for this email', home: 'https://github.com/', url: t => `https://github.com/search?q=${encodeURIComponent('"' + t + '"')}&type=code` },
   ],
   phone: [
     { name: 'ThatsThem',   note: 'Reverse phone directory lookup', home: 'https://thatsthem.com/', url: t => `https://thatsthem.com/phone/${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
     { name: 'Sync.me',     note: 'Caller ID / reverse phone lookup', home: 'https://sync.me/', url: t => `https://sync.me/search/?number=${encodeURIComponent(t)}` },
-    { name: 'TruePeople',  note: 'Reverse phone number search', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?phoneno=${encodeURIComponent(t.replace(/[^0-9]/g, ''))}` },
     { name: 'NumLookup',   note: 'Carrier and line-type lookup', home: 'https://www.numlookup.com/', url: t => `https://www.numlookup.com/${encodeURIComponent(t.replace(/[^0-9+]/g, ''))}` },
-    { name: 'Google',      note: 'Web search pivot for this phone number', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
   ],
   name: [
     { name: 'FastPeople',  note: 'Public records and people search', home: 'https://www.fastpeoplesearch.com/', url: t => `https://www.fastpeoplesearch.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-').toLowerCase())}` },
     { name: 'Whitepages',  note: 'Contact and address lookup', home: 'https://www.whitepages.com/', url: t => `https://www.whitepages.com/name/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'TruePeople',  note: 'Public records search by name', home: 'https://www.truepeoplesearch.com/', url: t => `https://www.truepeoplesearch.com/results?name=${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
     { name: 'Spokeo',      note: 'People search aggregator', home: 'https://www.spokeo.com/', url: t => `https://www.spokeo.com/${encodeURIComponent(t.trim().replace(/\s+/g, '-'))}` },
-    { name: 'Google',      note: 'Web search pivot for this name', home: 'https://www.google.com/', url: t => `https://www.google.com/search?q=${encodeURIComponent('"' + t + '"')}` },
   ],
 };
 
+function pivotTarget(mode) {
+  const target = String(lastScannedTarget || '').trim();
+  if (mode === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target) ? target : '';
+  if (mode === 'phone') return /^\+?[\d\s().-]+$/.test(target) && target.replace(/\D/g, '').length >= 7 ? target : '';
+  return currentMode === 'name' ? target : '';
+}
+
 function renderPivotSources() {
-  const target = lastScannedTarget || '';
   ['email', 'phone', 'name'].forEach(mode => {
+    const target = pivotTarget(mode);
     const listEl = $(`pivot${mode.charAt(0).toUpperCase() + mode.slice(1)}List`);
     if (!listEl) return;
     const sources = PIVOT_SOURCES[mode] || [];
@@ -798,12 +800,26 @@ function renderPivotSources() {
         <div class="wmn-source-card">
           <div class="wmn-source-row">
             <span class="wmn-source-name" title="${escHtml(source.note)}">${escHtml(source.name)}</span>
-            <a class="wmn-source-link" href="${href}" target="_blank" rel="noopener noreferrer" title="${escHtml(source.note)}">↗</a>
+            <a class="wmn-source-link" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escHtml(target ? source.note : `Open ${source.name} to enter a ${mode}`)}" aria-label="${escHtml(`Open ${source.name}: ${target ? source.note : `enter a ${mode} manually`}`)}">↗</a>
           </div>
         </div>
       `;
     }).join('');
   });
+  const shared = $('pivotSharedList');
+  if (shared) {
+    const phone = pivotTarget('phone');
+    const name = pivotTarget('name');
+    const home = 'https://www.truepeoplesearch.com/';
+    const href = phone ? `${home}results?phoneno=${encodeURIComponent(phone.replace(/\D/g, ''))}`
+      : name ? `${home}results?name=${encodeURIComponent(name)}` : home;
+    shared.innerHTML = `<div class="wmn-source-card"><div class="wmn-source-row">
+      <span class="wmn-source-name">TruePeopleSearch</span>
+      <span class="pivot-shared-modes">Phone / Name</span>
+      <a class="wmn-source-link" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer"
+        title="Open TruePeopleSearch for phone or name lookup" aria-label="Open TruePeopleSearch for phone or name lookup">↗</a>
+    </div></div>`;
+  }
 }
 
 /* ── Dork results — rendered as a search-engine results page (SERP):
@@ -813,6 +829,7 @@ function renderPivotSources() {
 function renderDorkResults(searched) {
   if (!dorkResultsList || !dorkStatus) return;
   if (!dorkResults.length) {
+    dorkStatus.textContent = searched ? 'No indexed references found for this engine.' : 'Awaiting scan…';
     dorkResultsList.innerHTML = searched
       ? '<div class="wmn-empty">No results found for this engine.</div>'
       : '<div class="wmn-empty">Run a scan to populate dork results.</div>';
