@@ -33,6 +33,7 @@ PROBE is intended for lawful research using publicly reachable information. A re
 - Result cards use colored status dots with accessible labels and hover descriptions; the scan totals and status filters retain their text labels.
 - Site names sit beside their status dots. HTTP and abbreviated category badges share fixed dimensions; full category names remain available to assistive technology and on hover.
 - Scan download, cancel and done controls use icons with accessible labels and hover descriptions. Download choices keep their format and result-scope labels.
+- Static JavaScript delivery is limited to the required minified frontend bundles. Unminified scripts and source maps return 404; browser-delivered code remains publicly inspectable.
 - Research tools stay collapsed before a scan and expand when scanning starts. They can be reopened or collapsed manually; this does not change which sources are checked.
 - Manual pivots exclude duplicate general search engines and list TruePeopleSearch once for phone/name lookups. Only compatible targets are prefilled; unrelated scan inputs open the service homepage for manual entry.
 - Research result panels scroll internally instead of stretching the reference links. The paper-colored navbar scrolls away with the page; scan progress stays at the viewport top.

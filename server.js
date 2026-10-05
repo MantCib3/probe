@@ -2841,6 +2841,13 @@ function setSecurityHeaders(res) {
 // intentionally excluded so edits are picked up without a restart.
 const _staticCache = new Map(); // filePath → Buffer
 const CACHEABLE_EXT = new Set(['.css', '.js']);
+const PUBLIC_SCRIPT_FILES = new Set(['script.min.js', 'roadmap.min.js']
+  .map(filename => path.join(__dirname, filename).toLowerCase()));
+
+function isPrivateScript(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  return (ext === '.js' && !PUBLIC_SCRIPT_FILES.has(path.resolve(filePath).toLowerCase())) || ext === '.map';
+}
 
 const CLEAN_PAGE_ROUTES = new Map([
   ['/roadmap', 'roadmap.html'],
@@ -2861,6 +2868,10 @@ const LEGACY_PAGE_REDIRECTS = new Map([
 
 function serveStatic(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
+  if (isPrivateScript(filePath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end('Not found');
+  }
   const ct  = MIME[ext] || 'application/octet-stream';
   try {
     let data = CACHEABLE_EXT.has(ext) ? _staticCache.get(filePath) : undefined;
@@ -2938,11 +2949,18 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'HEAD') {
+    let decodedHeadPath;
+    try { decodedHeadPath = decodeURIComponent(pathname); }
+    catch (_) { res.writeHead(400); return res.end(); }
     const headPath = pathname === '/'
       ? 'index.html'
-      : CLEAN_PAGE_ROUTES.get(pathname) || pathname.replace(/^\//, '');
+      : CLEAN_PAGE_ROUTES.get(pathname) || decodedHeadPath.replace(/^\//, '');
     const safeHeadPath = path.normalize(headPath).replace(/^(\.\.[\\/])+/, '');
     const fullHeadPath = path.join(__dirname, safeHeadPath);
+    if (isPrivateScript(fullHeadPath)) {
+      res.writeHead(404, { 'Cache-Control': 'no-store' });
+      return res.end();
+    }
     if (!fullHeadPath.startsWith(__dirname + path.sep) || !fs.existsSync(fullHeadPath)) {
       res.writeHead(404);
       return res.end();
