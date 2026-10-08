@@ -274,6 +274,11 @@
     },
     "Carbonmade": {
       "fields": {
+        "name": [
+          {
+            "schema": "html_title"
+          }
+        ],
         "bio": [
           {
             "schema": "open_graph"

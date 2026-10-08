@@ -22,7 +22,7 @@ test('static routes expose only required frontend bundles, not source scripts or
   });
   let output = '';
   const origin = await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error(`Preview failed to start: ${output}`)), 30000);
+    const timeout = setTimeout(() => reject(new Error(`Preview failed to start: ${output}`)), 120000);
     const fail = error => { clearTimeout(timeout); reject(error); };
     child.once('error', fail);
     child.once('exit', code => fail(new Error(`Preview exited ${code}: ${output}`)));

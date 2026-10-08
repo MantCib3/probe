@@ -30,6 +30,28 @@
 
 # Preserve legacy links while presenting one extensionless canonical URL.
 [[redirects]]
+  from = "/blog/when-a-profile-field-stays-empty.html"
+  to = "/blog/when-a-profile-field-stays-empty"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/reading-an-accuracy-snapshot.html"
+  to = "/blog/reading-an-accuracy-snapshot"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/when-a-profile-field-stays-empty"
+  to = "/blog/when-a-profile-field-stays-empty.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/reading-an-accuracy-snapshot"
+  to = "/blog/reading-an-accuracy-snapshot.html"
+  status = 200
+
+[[redirects]]
   from = "/index.html"
   to = "/"
   status = 301

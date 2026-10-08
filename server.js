@@ -2852,6 +2852,8 @@ function isPrivateScript(filePath) {
 const CLEAN_PAGE_ROUTES = new Map([
   ['/roadmap', 'roadmap.html'],
   ['/privacy', 'privacy.html'],
+  ['/blog/when-a-profile-field-stays-empty', 'blog/when-a-profile-field-stays-empty.html'],
+  ['/blog/reading-an-accuracy-snapshot', 'blog/reading-an-accuracy-snapshot.html'],
   ['/blog/profile-details-pilot', 'blog/profile-details-pilot.html'],
   ['/blog/checking-the-checks', 'blog/checking-the-checks.html'],
   ['/blog/what-your-username-doesnt-hide', 'blog/what-your-username-doesnt-hide.html'],

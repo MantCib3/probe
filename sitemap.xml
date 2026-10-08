@@ -12,13 +12,23 @@
   </url>
   <url>
     <loc>https://usernameprobe.com/roadmap</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://usernameprobe.com/blog/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://usernameprobe.com/blog/when-a-profile-field-stays-empty</loc>
+    <lastmod>2026-10-07</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://usernameprobe.com/blog/reading-an-accuracy-snapshot</loc>
+    <lastmod>2026-10-07</lastmod>
+    <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://usernameprobe.com/blog/profile-details-pilot</loc>

@@ -43,6 +43,16 @@ test('template, brand suffix, placeholders and entities are cleaned', t => {
   }
 });
 
+test('Carbonmade uses reviewed personal page-title metadata', t => {
+  const hints = JSON.parse(require('node:fs').readFileSync(require.resolve('../metadata-hints.json'), 'utf8'));
+  withHints(t, hints.sites);
+  const site = { name: 'Carbonmade', category: 'art', url: 'https://carbonmade.com/{}' };
+  const page = '<html><head><title>Dan Reeves /// Graphic Designer</title></head><body>danreeves</body></html>';
+  assert.deepEqual(metadata.extractProfile(site, 'danreeves', page, 'text/html', 'https://carbonmade.com/danreeves'), {
+    name: 'Dan Reeves /// Graphic Designer',
+  });
+});
+
 test('template mismatch drops the value instead of guessing', t => {
   withHints(t, { Example: { fields: { name: [{ schema: 'open_graph', prefix: 'Profile of ', suffix: '' }] } } });
   const page = ogPage('<meta property="og:title" content="Sign up to see more">');

@@ -1,0 +1,95 @@
+PROBE EDITORIAL PUBLISHING — 7 OCTOBER 2026
+
+New articles
+  /blog/when-a-profile-field-stays-empty
+  /blog/reading-an-accuracy-snapshot
+Both reuse the existing article markup, navigation, shared styles, SEO fields,
+BlogPosting JSON-LD, and 1200 x 630 social-image convention.
+
+Art
+  probe-roadmap.png: unnumbered connected milestones, no numbered boxes.
+  when-a-profile-field-stays-empty.png
+  reading-an-accuracy-snapshot.png
+All 11 cards now share one visual system and reproducible render source:
+  social\render-cards.js
+All nine original PNGs and both new article cards are included. The shared
+system uses 1200 x 630 dimensions, a 10px black frame, 32px paper grid,
+72px/700 headlines, 29px decks, consistent 300px side panels, fixed-position
+lower-stat rules, and the original topic accent palette.
+The roadmap keeps its unnumbered connected milestone layout.
+The detection card's two-line metric label now fits the same panel as the
+other cards. Historical metric values are preserved and dated in footers.
+Dated article bodies and publication dates are unchanged; only social image
+cache URLs and directly related image descriptions were updated.
+
+Exact original PROBE brand
+  social\assets\original-brand.png
+This is the original checking-the-checks.png region at x=1000, y=50,
+width=130, height=40, preserved before regenerating the original cards.
+It includes the original raster glyphs, spacing, antialiasing, background
+and 10px marker at x=1120, y=65. The marker alone takes each card's accent.
+No CSS font approximation is used. Final PNGs receive the raster verbatim,
+and tests compare the entire region pixel-for-pixel against the reference
+with only the marker color changed.
+Original decoded RGBA SHA256:
+  e5012788289fe44b196b1b56b4100125ca5dc03017026c892285459bcdd3f3ed
+Additional direct verification against git HEAD's original checking-the-checks:
+the reusable crop has exactly 0 differing RGBA bytes. Each of the 11 final cards
+has exactly 0 differing bytes outside the accent square versus that original,
+and 0 differing bytes across the entire region versus the original with its
+topic marker recolored. Original dark glyph bounds are x1012..1110,
+y59..79 (vertical center 69); square bounds x1120..1129, y65..74
+(vertical center 69.5). These original pixel coordinates are retained exactly,
+not aligned using a CSS line box. Headlines use weight700, never weight900.
+PNG pixel operations use node:zlib; no image-processing dependency was added.
+
+Visual review
+  social\previews\contact-sheet.png
+  social\previews\layout-checks.json
+The contact sheet contains all 11 cards, reviewed together for scale,
+alignment, layout and brand consistency. The layout manifest records computed
+typography, brand/stat positions, zero overflow/overlap results, and source/
+output hashes. Tests reject stale PNGs or stale layout-check results.
+
+Regeneration
+  npm run social:render
+Requires the existing local Playwright module and its installed Chromium.
+Playwright 1.60.0 (the version used here) is declared as a development dependency.
+On a clean checkout, install the project dependencies and use
+  npx playwright install chromium
+if the local browser is not already available.
+No source websites are visited: the renderer uses static inline HTML and blocks
+all network requests. Browser work files stay under .social-render-work in the
+project and are removed after rendering. No proxy or source-probing work is run.
+  npm run build:assets
+  node --test --test-concurrency=1 test\social-cards.test.js test\editorial-publishing.test.js test\source-count.test.js
+The earlier publishing pass built generated assets and passed 13 targeted tests.
+The final uniform-card pass regenerated all 11 cards and passed all 17 tests
+across social-cards, editorial-publishing and source-count. Pixel equality,
+shared geometry, current render hashes, metadata cache versions and live local
+article/PNG delivery are covered. All final cards were visually reviewed on
+the contact sheet, with a full-size historical card and brand crop also checked.
+All 11 PNGs are reviewed on the generated contact sheet after rendering.
+Local cold server startup took 45-75 seconds in this Windows/OneDrive workspace;
+the routing tests allow 120 seconds. The first 30-second startup attempt timed
+out, and the first redirect assertion needed Windows line-ending normalization.
+
+Preview
+  npm start
+Open the two extensionless article URLs and /roadmap on the printed local origin.
+Open /social/<slug>.png for the full-size social cards.
+Use captions.txt for copy-ready posts; publishing remains a manual step.
+Social crawlers may retain cached images: all card owners now use ?v=7
+consistently in Open Graph, Twitter, and JSON-LD where applicable.
+
+Evidence and limits
+Saved report (not rerun for publication):
+  ..\source-accuracy-lab\artifacts\reports\campaign-2026-10-07T00-33-50-364Z.json
+772 reviewed; 620 decided; 152 abstained; TP 186; TN 426; FP 0; FN 8.
+98.71% decision accuracy = 612/620; 80.31% coverage = 620/772.
+265 automatic sources. Only 129 calibration-eligible rows: 99 calibration,
+30 test; 643 diagnostic rows excluded from calibration.
+Metadata boundaries checked against profile-metadata.js and server.js.
+This is not a fresh campaign, definitive held-out estimate, metadata accuracy
+audit, benchmark-superiority claim, or future-search guarantee.
+Earlier articles retain their dated historical measurements.

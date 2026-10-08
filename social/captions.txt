@@ -1,0 +1,40 @@
+COPY-READY SOCIAL CAPTIONS — 7 OCTOBER 2026
+Use each caption with its matching PNG. Publication is manual; nothing has been posted.
+
+WHEN A PROFILE FIELD STAYS EMPTY
+Image: when-a-profile-field-stays-empty.png
+
+A blank bio is not a missing account.
+
+PROBE keeps account evidence separate from public profile detail. An unavailable name, location, or follower count is not proof of absence—and a displayed value is not proof of identity.
+
+How to read the gaps without guessing:
+https://usernameprobe.com/blog/when-a-profile-field-stays-empty
+
+Short version:
+A blank bio is not a missing account. Public profile fields are context, not identity proof. Read the gaps without guessing: https://usernameprobe.com/blog/when-a-profile-field-stays-empty
+
+READING AN ACCURACY SNAPSHOT
+Image: reading-an-accuracy-snapshot.png
+
+Before quoting a percentage, check its denominator.
+
+The saved 7 October PROBE campaign recorded 772 checks across 265 automatic sources: 98.71% decision accuracy at 80.31% coverage, with zero observed false positives. Only 129 rows were calibration-eligible.
+
+These are campaign diagnostics, not a new benchmark, a definitive held-out estimate, or a guarantee about the next search.
+
+The arithmetic and limitations:
+https://usernameprobe.com/blog/reading-an-accuracy-snapshot
+
+Short version:
+772 checks. 620 decisions. Only 129 calibration-eligible rows. A saved campaign is diagnostic evidence, not a future-search guarantee. Read the denominators: https://usernameprobe.com/blog/reading-an-accuracy-snapshot
+
+THE ROAD AHEAD
+Image: probe-roadmap.png
+
+Shipped: core search and live evidence.
+Pilot: public profile details.
+Next: source health and reliability.
+
+PROBE's roadmap separates what works now from what is still being tested or planned. No numbered promise of delivery dates.
+https://usernameprobe.com/roadmap

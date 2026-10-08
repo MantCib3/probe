@@ -2,6 +2,7 @@ node_modules/
 server.out.log
 server.err.log
 scan-result.txt
+.social-render-work/
 
 # PII collected via /api/contact and /api/report — never commit
 reports/

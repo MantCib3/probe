@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "build:assets": "node build-assets.js",
+    "social:render": "node social/render-cards.js",
     "check": "node --check server.js && node --check script.js && node --check worker.js && node --check build-assets.js && node --check username-rules.js && node --check source-request-adapter.js",
     "test": "node --test test/*.test.js"
   },
@@ -14,6 +15,7 @@
   },
   "devDependencies": {
     "clean-css": "^5.3.3",
+    "playwright": "1.60.0",
     "terser": "^5.51.2"
   },
   "dependencies": {
