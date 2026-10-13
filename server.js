@@ -2114,7 +2114,8 @@ function cookieJarFor(cookieJars, hostname) {
   return cookieJars.get(hostname);
 }
 
-function makeReqOptions(parsed, overrideUA, cookieJars, signal, requestConfig) {
+function makeReqOptions(parsed, overrideUA, cookieJars, signal, requestConfig = { method: 'GET', headers: {} }) {
+  const reqConfig = requestConfig || { method: 'GET', headers: {} };
   const ua = overrideUA || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
   const cookies = [...cookieJarFor(cookieJars, parsed.hostname)].map(([name, value]) => `${name}=${value}`).join('; ');
   const headers = {
@@ -2134,7 +2135,7 @@ function makeReqOptions(parsed, overrideUA, cookieJars, signal, requestConfig) {
     'sec-ch-ua-platform'       : '"Windows"',
     ...(cookies ? { 'Cookie': cookies } : {}),
   };
-  for (const [name, value] of Object.entries(requestConfig.headers)) {
+  for (const [name, value] of Object.entries(reqConfig.headers || {})) {
     for (const existingName of Object.keys(headers)) {
       if (existingName.toLowerCase() === name) delete headers[existingName];
     }
@@ -2144,7 +2145,7 @@ function makeReqOptions(parsed, overrideUA, cookieJars, signal, requestConfig) {
     hostname: parsed.hostname,
     port    : parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
     path    : parsed.pathname + parsed.search,
-    method  : requestConfig.method,
+    method  : reqConfig.method || 'GET',
     headers,
     timeout: TIMEOUT_MS,
     ...(signal ? { signal } : {}),
