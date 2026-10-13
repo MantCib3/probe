@@ -30,6 +30,28 @@
 
 # Preserve legacy links while presenting one extensionless canonical URL.
 [[redirects]]
+  from = "/blog/the-soft-404-epidemic.html"
+  to = "/blog/the-soft-404-epidemic"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/decay-of-the-open-web.html"
+  to = "/blog/decay-of-the-open-web"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/the-soft-404-epidemic"
+  to = "/blog/the-soft-404-epidemic.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/decay-of-the-open-web"
+  to = "/blog/decay-of-the-open-web.html"
+  status = 200
+
+[[redirects]]
   from = "/blog/when-a-profile-field-stays-empty.html"
   to = "/blog/when-a-profile-field-stays-empty"
   status = 301

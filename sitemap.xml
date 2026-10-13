@@ -17,8 +17,18 @@
   </url>
   <url>
     <loc>https://usernameprobe.com/blog/</loc>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://usernameprobe.com/blog/the-soft-404-epidemic</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://usernameprobe.com/blog/decay-of-the-open-web</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://usernameprobe.com/blog/when-a-profile-field-stays-empty</loc>

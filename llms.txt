@@ -7,6 +7,8 @@ PROBE is intended for lawful research using publicly reachable information. A re
 ## Primary pages
 
 - [Username search](https://usernameprobe.com/): The interactive PROBE application and its current source coverage.
+- [The soft 404 epidemic](https://usernameprobe.com/blog/the-soft-404-epidemic): Why modern single-page applications return HTTP 200 OK for every path, and how PROBE requires corroborating evidence before claiming a match.
+- [Decay of the open web](https://usernameprobe.com/blog/decay-of-the-open-web): Over half of historical OSINT targets are defunct. Why catalog size is a vanity metric and ruthless source pruning protects scan integrity.
 - [When a profile field stays empty](https://usernameprobe.com/blog/when-a-profile-field-stays-empty): Why unavailable metadata is not a missing account, a zero count, or proof of identity.
 - [Reading an accuracy snapshot](https://usernameprobe.com/blog/reading-an-accuracy-snapshot): Saved 7 October campaign diagnostics: 772 checks across 265 automatic sources, 98.71% decision accuracy at 80.31% coverage, zero observed false positives, and only 129 calibration-eligible rows. Not a fresh campaign, definitive held-out estimate, or future-search guarantee.
 - [Profile details pilot](https://usernameprobe.com/blog/profile-details-pilot): How PROBE shows public profile details (picture, name, bio) on found results, proving each value against two real accounts and a made-up control before showing it, without storing anything.

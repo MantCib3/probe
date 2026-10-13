@@ -1,5 +1,31 @@
-COPY-READY SOCIAL CAPTIONS — 7 OCTOBER 2026
+COPY-READY SOCIAL CAPTIONS — 12 OCTOBER 2026
 Use each caption with its matching PNG. Publication is manual; nothing has been posted.
+
+THE SOFT 404 EPIDEMIC
+Image: the-soft-404-epidemic.png
+
+When every URL returns 200 OK, status codes stop meaning anything.
+
+Modern single-page applications return an HTTP 200 and a generic JavaScript shell whether a username exists or not. A naive scanner looking only at status codes finds phantom profiles on every SPA platform.
+
+Why presence detection requires positive proof, and why PROBE abstains when evidence is missing:
+https://usernameprobe.com/blog/the-soft-404-epidemic
+
+Short version:
+HTTP 200 is not account proof. Modern web apps return 200 for missing users. Read how PROBE prevents soft-404 phantom matches: https://usernameprobe.com/blog/the-soft-404-epidemic
+
+DECAY OF THE OPEN WEB
+Image: decay-of-the-open-web.png
+
+Over half of historical username targets no longer exist.
+
+In PROBE's source archive, 341 catalog entries are now defunct, while 322 active sources remain functional. Public tools often boast "500+ sites," but hundreds are dead domains, wildcard ad farms, or DNS timeouts.
+
+Why source pruning beats catalog inflation:
+https://usernameprobe.com/blog/decay-of-the-open-web
+
+Short version:
+341 defunct sources vs 322 active. Catalog size is a vanity metric; ruthless pruning protects scan speed and accuracy: https://usernameprobe.com/blog/decay-of-the-open-web
 
 WHEN A PROFILE FIELD STAYS EMPTY
 Image: when-a-profile-field-stays-empty.png

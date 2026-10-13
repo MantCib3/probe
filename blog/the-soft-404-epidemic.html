@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Soft 404 Epidemic | PROBE</title>
+  <meta name="description" content="Why single-page applications and client-side routers break naive status-code scanners, and how PROBE requires positive proof before claiming a match.">
+  <link rel="canonical" href="https://usernameprobe.com/blog/the-soft-404-epidemic">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Soft 404 Epidemic">
+  <meta property="og:description" content="When every URL returns 200 OK, status codes stop meaning anything. How modern web architecture creates phantom profiles.">
+  <meta property="og:url" content="https://usernameprobe.com/blog/the-soft-404-epidemic">
+  <meta property="og:image" content="https://usernameprobe.com/social/the-soft-404-epidemic.png?v=7">
+  <meta property="og:image:secure_url" content="https://usernameprobe.com/social/the-soft-404-epidemic.png?v=7">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Soft 404 Epidemic: HTTP 200 is not account proof when client-side apps return empty shells.">
+  <meta property="article:published_time" content="2026-10-12">
+  <meta property="article:modified_time" content="2026-10-12">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Soft 404 Epidemic">
+  <meta name="twitter:description" content="When every URL returns 200 OK, status codes stop meaning anything. How modern web architecture creates phantom profiles.">
+  <meta name="twitter:image" content="https://usernameprobe.com/social/the-soft-404-epidemic.png?v=7">
+  <meta name="twitter:image:alt" content="The Soft 404 Epidemic: HTTP 200 is not account proof when client-side apps return empty shells.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "The Soft 404 Epidemic",
+    "description": "Why single-page applications and client-side routers break naive status-code scanners, and how PROBE requires positive proof before claiming a match.",
+    "url": "https://usernameprobe.com/blog/the-soft-404-epidemic",
+    "mainEntityOfPage": "https://usernameprobe.com/blog/the-soft-404-epidemic",
+    "image": "https://usernameprobe.com/social/the-soft-404-epidemic.png?v=7",
+    "datePublished": "2026-10-12",
+    "dateModified": "2026-10-12",
+    "author": { "@type": "Organization", "name": "PROBE", "url": "https://usernameprobe.com/" },
+    "publisher": { "@type": "Organization", "name": "PROBE", "url": "https://usernameprobe.com/", "logo": { "@type": "ImageObject", "url": "https://usernameprobe.com/favicon.svg" } }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
+  <link rel="stylesheet" href="/styles.min.css?v=20">
+  <link rel="stylesheet" href="/editorial.min.css?v=4">
+</head>
+<body class="editorial-body">
+  <nav class="navbar editorial-nav"><div class="nav-container"><a href="/" class="nav-logo">PROBE</a><a class="editorial-nav-back" href="/blog/">All posts</a></div></nav>
+  <main class="editorial-main article-main">
+    <article>
+      <header class="article-header">
+        <p class="editorial-kicker">Web architecture</p>
+        <h1 class="editorial-title article-title">The Soft 404 Epidemic</h1>
+        <p class="editorial-deck">When modern single-page applications return HTTP 200 OK for every path, naive scanners find phantom profiles everywhere.</p>
+        <div class="article-meta"><time datetime="2026-10-12">12 October 2026</time><span>4 min read</span></div>
+      </header>
+      <div class="article-copy">
+        <p>In the early web, determining whether an account existed was relatively straightforward: an existing page returned <code>200 OK</code>, while an absent one returned <code>404 Not Found</code>. Many legacy open-source intelligence tools were built entirely on this assumption.</p>
+        <p>Today, that mental model is broken. Modern web applications built on client-side frameworks routinely return <code>200 OK</code> along with a generic HTML shell on every requested route, whether the username exists or not.</p>
+        <h2>Transport signal vs. resource signal</h2>
+        <p>Single-page applications (SPAs) shift routing from the web server to client-side JavaScript. When a request arrives at <code>/user/johndoe</code>, the edge server simply delivers <code>index.html</code> containing a skeleton layout and a script tag. The browser then executes the script, queries an API asynchronously, and decides whether to render a user profile or a "User not found" screen.</p>
+        <p>To an automated HTTP client, the HTTP status code is merely a transport signal confirming that the web server successfully delivered the application bundle. It tells you nothing about whether the profile itself exists. A scanner checking only HTTP response codes will report that every username exists on every SPA platform.</p>
+        <h2>The anatomy of positive proof</h2>
+        <p>Because response codes cannot be trusted in isolation, PROBE evaluates layers of evidence before classifying a result:</p>
+        <ul>
+          <li><strong>Paired negative baselines.</strong> A check rule is tested against random, synthetic handles known not to exist. If the site returns the exact same HTML structure and status code for a nonsense handle, status alone cannot serve as an existence marker.</li>
+          <li><strong>Body guards and negative patterns.</strong> When a platform returns an in-page 404 message within a 200 response (e.g., "Page not found", "User does not exist", or a redirect to an onboarding flow), PROBE matches source-specific absence patterns.</li>
+          <li><strong>Positive corroboration.</strong> For platforms prone to generic shells, PROBE requires verifiable positive markers—such as the username appearing in the page <code>&lt;title&gt;</code>, OpenGraph metadata tags, or specific server-rendered profile elements—before emitting a <code>found</code> verdict.</li>
+        </ul>
+        <h2>When evidence is missing: abstain</h2>
+        <p>What happens when a modern web app serves a minimal app shell without server-side rendering, and the client-side JavaScript refuses to render in a plain HTTP request? The response contains no positive profile markers, but also no clear error signal.</p>
+        <p>Many tools guess, or worse, mark it as positive based on the status code. PROBE classifies these responses as <code>unknown</code>. When web architecture obscures the presence of an account, an honest abstention is always better than a fabricated lead.</p>
+      </div>
+    </article>
+  </main>
+  <footer class="footer"><div class="container footer-inner"><div class="footer-brand"><span class="footer-logo">PROBE</span><p>Open-source username research with evidence-aware results.</p></div><nav class="footer-links" aria-label="Footer navigation"><div><span class="footer-label">Explore</span><a href="/#search">Search</a><a href="/#about">About</a><a href="/#sites">Platforms</a></div><div><span class="footer-label">Follow the work</span><a href="/blog/">Blog</a><a href="/roadmap">Roadmap</a></div><div><span class="footer-label">Use responsibly</span><a href="/privacy">Privacy &amp; acceptable use</a><a href="/#contact">Contact</a></div></nav></div><div class="container footer-bottom"><span>Public data is a lead, not proof. Verify before drawing conclusions.</span><span>&copy; 2026 PROBE</span></div></footer>
+</body>
+</html>

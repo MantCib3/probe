@@ -103,6 +103,22 @@ const cards = [
     foot: 'Campaign diagnostics, not a future-search guarantee.',
     stats: [['129', 'CALIBRATION-ELIGIBLE'], ['152', 'ABSTENTIONS']],
   },
+  {
+    slug: 'the-soft-404-epidemic', kicker: 'WEB ARCHITECTURE', accent: STYLE.red,
+    title: 'THE SOFT 404<br>EPIDEMIC',
+    deck: 'When every URL returns 200 OK,<br>status codes stop meaning anything.',
+    metric: '200 OK', metricLabel: 'NOT ACCOUNT PROOF',
+    foot: 'usernameprobe.com/blog/the-soft-404-epidemic',
+    stats: [['Transport', 'STATUS CODE'], ['Evidence', 'BODY GUARDS']],
+  },
+  {
+    slug: 'decay-of-the-open-web', kicker: 'CATALOG CHURN', accent: STYLE.yellow,
+    title: 'DECAY OF<br>THE OPEN WEB',
+    deck: 'Over half of historical targets<br>no longer exist. Why pruning matters.',
+    side: '<div class="panel"><strong class="ratio">341 / 322</strong><span>DEFUNCT / ACTIVE</span></div><p class="note">Source catalog analysis<br>265 automatic sources</p>',
+    foot: 'usernameprobe.com/blog/decay-of-the-open-web',
+    stats: [['341', 'DEFUNCT SOURCES'], ['322', 'ACTIVE SOURCES']],
+  },
 ];
 
 function template(card) {

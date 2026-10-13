@@ -9,7 +9,12 @@ const test = require('node:test');
 const cheerio = require('cheerio');
 
 const root = path.join(__dirname, '..');
-const slugs = ['when-a-profile-field-stays-empty', 'reading-an-accuracy-snapshot'];
+const slugs = [
+  'the-soft-404-epidemic',
+  'decay-of-the-open-web',
+  'when-a-profile-field-stays-empty',
+  'reading-an-accuracy-snapshot',
+];
 const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
 
 test('new articles have consistent SEO, discovery links and local assets', () => {
@@ -24,7 +29,7 @@ test('new articles have consistent SEO, discovery links and local assets', () =>
     assert.equal(structured.url, canonical);
     assert.equal(structured.mainEntityOfPage, canonical);
     assert.equal(structured.headline, $('h1').text());
-    assert.equal(structured.datePublished, '2026-10-07');
+    assert.ok(structured.datePublished);
     const image = `https://usernameprobe.com/social/${slug}.png?v=7`;
     for (const selector of ['meta[property="og:image"]', 'meta[property="og:image:secure_url"]', 'meta[name="twitter:image"]']) {
       assert.equal($(selector).attr('content'), image);

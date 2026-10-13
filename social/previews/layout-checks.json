@@ -339,5 +339,67 @@
     },
     "sourceSha256": "77bfc344484daa2cd8f6527541609ae64be5c1d7f14773f28121036454a9ab53",
     "imageSha256": "50c2fb9ec58e7dae0633121780f552f13cae10ad06b7dd68831f2dcad8a425a1"
+  },
+  {
+    "slug": "the-soft-404-epidemic",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "ca17c83b4cfb918c8d44c14671aae0e8caf7e6a304a983f448418a674b2a9fc8",
+    "imageSha256": "0183c300d293fa246396df105605c19c11086fa05e6d288d8e3de68dc14a1a1c"
+  },
+  {
+    "slug": "decay-of-the-open-web",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "327f591daa58d80eaa13952ddaca35de200a9c93a09ef9d41f45427209120693",
+    "imageSha256": "6d4f004cf12e1cc72d4e97074a6988d34c3b625f5944f3b38f840fee20ea67b9"
   }
 ]
