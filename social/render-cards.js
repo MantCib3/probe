@@ -119,6 +119,14 @@ const cards = [
     foot: 'usernameprobe.com/blog/decay-of-the-open-web',
     stats: [['341', 'DEFUNCT SOURCES'], ['322', 'ACTIVE SOURCES']],
   },
+  {
+    slug: 'the-internet-isnt-forever', kicker: 'DIGITAL MEMORY', accent: STYLE.purple,
+    title: 'THE INTERNET<br>ISN’T FOREVER',
+    deck: 'Digital footprints fade, links rot,<br>and historical profiles dissolve.',
+    side: '<div class="panel"><strong class="words">DIGITAL<br>DUST</strong><span>FLEETING TRACES</span></div>',
+    foot: 'usernameprobe.com/blog/the-internet-isnt-forever',
+    stats: [['Present', 'LIVE EVIDENCE'], ['Past', 'UNPROVEN ABSENCE']],
+  },
 ];
 
 function template(card) {

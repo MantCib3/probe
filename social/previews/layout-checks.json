@@ -401,5 +401,36 @@
     },
     "sourceSha256": "327f591daa58d80eaa13952ddaca35de200a9c93a09ef9d41f45427209120693",
     "imageSha256": "6d4f004cf12e1cc72d4e97074a6988d34c3b625f5944f3b38f840fee20ea67b9"
+  },
+  {
+    "slug": "the-internet-isnt-forever",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "4ddf9b4e79fc61cf4cc25a8f96c4d35c1c5b0d41a9c2d4eb9990635e115230a3",
+    "imageSha256": "6eaab883d9dea028b7f8f4b15c932033aeefae6de8b994e70060ad65726ea7a3"
   }
 ]

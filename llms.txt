@@ -7,6 +7,7 @@ PROBE is intended for lawful research using publicly reachable information. A re
 ## Primary pages
 
 - [Username search](https://usernameprobe.com/): The interactive PROBE application and its current source coverage.
+- [The internet isn't forever](https://usernameprobe.com/blog/the-internet-isnt-forever): Digital footprints fade, platforms shutter, and archives crumble. What link rot and ephemerality mean for username intelligence.
 - [The soft 404 epidemic](https://usernameprobe.com/blog/the-soft-404-epidemic): Why modern single-page applications return HTTP 200 OK for every path, and how PROBE requires corroborating evidence before claiming a match.
 - [Decay of the open web](https://usernameprobe.com/blog/decay-of-the-open-web): Over half of historical OSINT targets are defunct. Why catalog size is a vanity metric and ruthless source pruning protects scan integrity.
 - [When a profile field stays empty](https://usernameprobe.com/blog/when-a-profile-field-stays-empty): Why unavailable metadata is not a missing account, a zero count, or proof of identity.

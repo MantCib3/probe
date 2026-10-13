@@ -30,6 +30,12 @@
 
 # Preserve legacy links while presenting one extensionless canonical URL.
 [[redirects]]
+  from = "/blog/the-internet-isnt-forever.html"
+  to = "/blog/the-internet-isnt-forever"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/blog/the-soft-404-epidemic.html"
   to = "/blog/the-soft-404-epidemic"
   status = 301
@@ -40,6 +46,11 @@
   to = "/blog/decay-of-the-open-web"
   status = 301
   force = true
+
+[[redirects]]
+  from = "/blog/the-internet-isnt-forever"
+  to = "/blog/the-internet-isnt-forever.html"
+  status = 200
 
 [[redirects]]
   from = "/blog/the-soft-404-epidemic"

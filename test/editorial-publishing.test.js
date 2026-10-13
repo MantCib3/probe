@@ -10,6 +10,7 @@ const cheerio = require('cheerio');
 
 const root = path.join(__dirname, '..');
 const slugs = [
+  'the-internet-isnt-forever',
   'the-soft-404-epidemic',
   'decay-of-the-open-web',
   'when-a-profile-field-stays-empty',

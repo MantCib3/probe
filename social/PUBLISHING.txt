@@ -1,6 +1,7 @@
 PROBE EDITORIAL PUBLISHING — 12 OCTOBER 2026
 
 New articles
+  /blog/the-internet-isnt-forever
   /blog/the-soft-404-epidemic
   /blog/decay-of-the-open-web
   /blog/when-a-profile-field-stays-empty
@@ -9,12 +10,13 @@ All reuse the existing article markup, navigation, shared styles, SEO fields,
 BlogPosting JSON-LD, and 1200 x 630 social-image convention.
 
 Art
+  the-internet-isnt-forever.png
   the-soft-404-epidemic.png
   decay-of-the-open-web.png
   probe-roadmap.png: unnumbered connected milestones, no numbered boxes.
   when-a-profile-field-stays-empty.png
   reading-an-accuracy-snapshot.png
-All 13 cards now share one visual system and reproducible render source:
+All 14 cards now share one visual system and reproducible render source:
   social\render-cards.js
 All nine original PNGs and all four new article cards are included. The shared
 system uses 1200 x 630 dimensions, a 10px black frame, 32px paper grid,
