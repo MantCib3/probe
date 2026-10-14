@@ -62,6 +62,7 @@ can keep the existing generic underscore-to-space fallback:
 | `redirect_location_invalid` | Redirect destination was malformed or unsafe. |
 | `redirect_hop_limit` | Redirect chain exceeded the server hop budget. |
 | `redirect_requires_follow` | Redirect could not be treated as profile evidence. |
+| `redirect_profile_identity_lost` | Followed destination no longer identifies the requested profile. |
 | `redirect_auth_login` | Authentication redirect is ambiguous by default. |
 | `redirect_bot_challenge` | Redirect points to a challenge interstitial. |
 | `body_authentication_required` | Response body requires authentication. |
@@ -80,9 +81,16 @@ can keep the existing generic underscore-to-space fallback:
 | `adapter_head_status_unexpected` | HEAD response did not match its configured success status. |
 
 Redirect, challenge, auth, source-marker, and JSON-predicate ambiguity reasons
-are integrity abstentions: they do not enter browser or archive fallback, so
-archived HTTP 200 history cannot relabel the current result as `found`.
-Ordinary unknown reasons retain the existing fallback behavior.
+are integrity abstentions: they do not enter browser fallback. Followed
+positive responses must preserve the profile host and either the original
+path/query or an exact username path segment/query value. Protocol, `www`,
+and trailing-slash canonicalization remain supported. A renamed or unrelated
+destination without that evidence abstains.
+
+Automatic live checks no longer query the Wayback Machine or promote archived
+HTTP 200 responses to `found`. Historical captures do not verify current
+account existence. Ordinary unknown reasons remain eligible for configured
+browser fallback; manual archive research remains separate.
 
 The local accuracy-lab runtime fingerprint includes the SHA-256 of
 `source-request-adapter.js` as `sourceRequestAdapterSha256`.

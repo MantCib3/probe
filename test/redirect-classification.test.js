@@ -35,6 +35,22 @@ test('redirects without reliable direct evidence abstain instead of becoming fou
       res.flushHeaders();
       res.write('partial response');
       setTimeout(() => res.socket.destroy(), 250);
+    } else if (req.url === '/users/alice') {
+      res.writeHead(302, { location: '/users/bob' });
+      res.end();
+    } else if (req.url === '/users/bob') {
+      res.end('PROFILE_MARKER bob');
+    } else if (req.url === '/canonical/alice') {
+      res.writeHead(301, { location: '/canonical/alice/' });
+      res.end();
+    } else if (req.url === '/canonical/alice/') {
+      res.end('PROFILE_MARKER alice');
+    } else if (req.url === '/chain/alice') {
+      res.writeHead(302, { location: '/intermediate' });
+      res.end();
+    } else if (req.url === '/intermediate') {
+      res.writeHead(302, { location: '/canonical/alice/' });
+      res.end();
     } else {
       res.writeHead(404);
       res.end();
@@ -83,4 +99,18 @@ test('redirects without reliable direct evidence abstain instead of becoming fou
   const interrupted = await check('/interrupted-positive', { positiveMsg: 'PROFILE_MARKER' });
   assert.equal(interrupted.status, 'unknown');
   assert.deepEqual(interrupted.reasonCodes, ['site_positive_message_missing_incomplete_body']);
+
+  for (const overrides of [{ skipBodyCheck: true }, { positiveMsg: 'PROFILE_MARKER' }]) {
+    const unrelated = await check('/users/alice', overrides);
+    assert.equal(unrelated.status, 'unknown');
+    assert.deepEqual(unrelated.reasonCodes, ['redirect_profile_identity_lost']);
+    assert.equal(unrelated.profile, undefined);
+    assert.equal(unrelated.evidence.statusCode, 200);
+    assert.equal(unrelated.evidence.method, 'http');
+    assert.equal(typeof unrelated.evidence.bodyHash, 'string');
+  }
+  const canonical = await check('/canonical/alice', { positiveMsg: 'PROFILE_MARKER' });
+  assert.equal(canonical.status, 'found');
+  const chain = await check('/chain/alice', { positiveMsg: 'PROFILE_MARKER' });
+  assert.equal(chain.status, 'found');
 });

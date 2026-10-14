@@ -36,6 +36,7 @@ const INTEGRITY_ABSTENTION_REASONS = new Set([
   'redirect_location_invalid',
   'redirect_hop_limit',
   'redirect_requires_follow',
+  'redirect_profile_identity_lost',
   'redirect_auth_login',
   'redirect_bot_challenge',
   'cloudflare_or_challenge_detected',
@@ -1225,6 +1226,11 @@ function classifyVerifyResponse({
 
   const statusEvidence = expectedStatus || (checkMethod === 'status_code' ? 200 : 0);
   const verdict = classify(site, '', url, status, {}, body, 'http', !complete, statusEvidence);
+  if (verdict.status === 'found' && redirects.length) {
+    const last = redirects[redirects.length - 1];
+    const destination = sourceRequestAdapter.inspectRedirectLocation(last.location, last.fromUrl || url);
+    if (!redirectRetainsProfileIdentity(url, destination.url)) return unknown('redirect_profile_identity_lost');
+  }
   return { status: verdict.status, reasonCodes: verdict.reasonCodes };
 }
 
@@ -1802,7 +1808,6 @@ function fetchFollowUpPage(site, plan, signal) {
 
 async function withFollowUpProfile(result, site, username, signal) {
   if (!result || result.status !== 'found' || result.resolvedBy === 'browser') return result;
-  if ((result.reasonCodes || []).includes('archive_org_fallback_found')) return result;
   const plan = profileMetadata.followUpPlan(site, username, result.profile);
   if (!plan) return result;
   const page = await fetchFollowUpPage(site, plan, signal).catch(() => null);
@@ -2152,6 +2157,23 @@ function makeReqOptions(parsed, overrideUA, cookieJars, signal, requestConfig = 
   };
 }
 
+function redirectRetainsProfileIdentity(originalUrl, finalUrl, username = '') {
+  const original = new URL(originalUrl);
+  const final = new URL(finalUrl);
+  const host = url => url.hostname.toLowerCase().replace(/^www\./, '');
+  if (host(original) !== host(final)) return false;
+  const pathname = url => url.pathname.replace(/\/+$/, '');
+  if (pathname(original) === pathname(final) && original.search === final.search) return true;
+  if (!username) return false;
+  const target = username.toLowerCase();
+  const segments = final.pathname.split('/').map(segment => {
+    try { return decodeURIComponent(segment).replace(/^[@~]/, '').toLowerCase(); }
+    catch (_) { return ''; }
+  });
+  return segments.includes(target) ||
+    [...final.searchParams.values()].some(value => value.toLowerCase() === target);
+}
+
 function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cookieJars = new Map(), signal, requestState = null) {
   const deliver = finish;
   let completed = false;
@@ -2169,6 +2191,17 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
 
   const mod  = parsed.protocol === 'https:' ? https : http;
   const base = { name: site.name, category: site.category, url: origUrl };
+  const finishResponse = (result, body, contentType) => {
+    if (result.status === 'found' && hops > 0 && !redirectRetainsProfileIdentity(origUrl, url, username)) {
+      return finish(makeClassifiedResult({
+        ...base,
+        statusCode: result.statusCode,
+        detectionMethod: result.detectionMethod,
+        bodyHash: result.bodyHash,
+      }, 'unknown', ['redirect_profile_identity_lost'], 0.3));
+    }
+    finish(withProfile(result, site, username, body, contentType, url));
+  };
   let requestConfig;
   try {
     requestConfig = requestState || sourceRequestAdapter.buildRequest(site, username);
@@ -2295,11 +2328,11 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     res.on('close', () => {
       const bodyIncomplete = stopped || body.length >= MAX_BODY || !res.complete;
       const result = early || classify(site, username, origUrl, sc, headers, classifyBody ?? body, 'http', bodyIncomplete);
-      finish(withProfile(result, site, username, body, headers['content-type'], url));
+      finishResponse(result, body, headers['content-type']);
     });
     res.on('error', () => {
       const partial = classify(site, username, origUrl, sc, headers, body, 'http', true);
-      finish(withProfile(partial, site, username, body, headers['content-type'], url));
+      finishResponse(partial, body, headers['content-type']);
     });
   });
 
@@ -2310,8 +2343,7 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     } else if (responseState && responseState.statusCode) {
       const partial = classify(site, username, origUrl, responseState.statusCode,
         responseState.headers, responseState.body, 'http', true);
-      finish(withProfile(partial, site, username, responseState.body,
-        responseState.headers['content-type'], url));
+      finishResponse(partial, responseState.body, responseState.headers['content-type']);
     } else {
       finish({ ...base, status: 'error', statusCode: 0 });
     }
@@ -2494,21 +2526,6 @@ async function probeWithBrowserFallback(site, username, signal) {
     };
   }
 
-  // Last resort: any site still 'unknown' after the direct request (and
-  // browser fallback, if it ran) gets checked against the Wayback Machine's
-  // CDX API — if the profile URL was ever archived with a 200 response, the
-  // profile almost certainly existed at that point in time. This used to be
-  // a separate client-side pass; folding it in here means the frontend gets
-  // one single, already-final verdict per site instead of needing its own
-  // follow-up network round.
-  if (result.status === 'unknown' && !site.noArchiveFallback && !hasIntegrityAbstention(result)) {
-    const archived = await probeArchiveOrgFallback(result.url, signal).catch(() => false);
-    if (archived) {
-      const reasons = Array.isArray(result.reasonCodes) ? result.reasonCodes : [];
-      result = { ...result, status: 'found', confidence: 0.6, reasonCodes: [...reasons, 'archive_org_fallback_found'] };
-    }
-  }
-
   return result;
 }
 
@@ -2546,34 +2563,6 @@ function probeWithDeadline(site, username, deadlineMs = 15000) {
       controller.abort();
     },
   };
-}
-
-// Wayback Machine CDX lookup — open CORS-free API, no key needed. Returns
-// true if the given URL was archived with a 200 response since 2022.
-function probeArchiveOrgFallback(profileUrl, signal) {
-  return new Promise((resolve) => {
-    let cdxUrl;
-    try {
-      const cdxTarget = profileUrl.replace(/^https?:\/\//, '');
-      cdxUrl = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(cdxTarget)}&output=json&limit=2&filter=statuscode:200&from=20220101&fl=timestamp&matchType=prefix`;
-    } catch (_) { return resolve(false); }
-
-    const req = https.get(cdxUrl, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' }, ...(signal ? { signal } : {}) }, (res) => {
-      if (res.statusCode !== 200) { res.resume(); return resolve(false); }
-      let body = '';
-      res.setEncoding('utf8');
-      res.on('data', chunk => { if (body.length < 20000) body += chunk; });
-      res.on('end', () => {
-        try {
-          const rows = JSON.parse(body);
-          resolve(Array.isArray(rows) && rows.length > 1); // row[0] is the header
-        } catch (_) { resolve(false); }
-      });
-      res.on('error', () => resolve(false));
-    });
-    req.on('error', () => resolve(false));
-    req.on('timeout', () => { req.destroy(); resolve(false); });
-  });
 }
 
 

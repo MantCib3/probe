@@ -73,8 +73,17 @@ test('proxy verification preserves ordinary followed redirects and expected stat
   const redirected = verify({
     redirects: [{ status: 301, location: 'https://example.test/users/alice', fromUrl: 'http://example.test/users/alice' }],
   });
+
   assert.equal(redirected.status, 'found');
   assert.deepEqual(redirected.reasonCodes, ['site_expected_status']);
+});
+
+test('proxy verification rejects a successful response belonging to a different profile', () => {
+  const result = verify({
+    redirects: [{ status: 302, location: '/users/bob', fromUrl: url }],
+  });
+  assert.equal(result.status, 'unknown');
+  assert.deepEqual(result.reasonCodes, ['redirect_profile_identity_lost']);
 });
 
 test('lab runtime fingerprint includes the source request adapter implementation', () => {
