@@ -834,11 +834,6 @@
     },
     "Duolingo": {
       "fields": {
-        "picture": [
-          {
-            "schema": "json_api"
-          }
-        ],
         "joined": [
           {
             "schema": "json_api"
@@ -2982,7 +2977,6 @@
           "location": "profileUI.showLocation"
         },
         "fields": {
-          "picture": "picture",
           "name": "name",
           "bio": "about",
           "location": "location",
@@ -2996,11 +2990,6 @@
         }
       },
       "fields": {
-        "picture": [
-          {
-            "schema": "account_json"
-          }
-        ],
         "name": [
           {
             "schema": "account_json"

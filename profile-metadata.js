@@ -358,9 +358,9 @@ function finalise(field, raw, rule, ctx) {
     case 'picture': {
       const url = absoluteHttps(String(raw).trim(), ctx.pageUrl);
       if (!url || reject.has(url)) return null;
-      let pathname = '';
-      try { pathname = new URL(url).pathname; } catch (_) { return null; }
-      return DEFAULT_IMAGE_PATTERN.test(pathname) ? null : url;
+      let parsed;
+      try { parsed = new URL(url); } catch (_) { return null; }
+      return DEFAULT_IMAGE_PATTERN.test(parsed.pathname) ? null : url;
     }
     case 'links': {
       const list = String(raw).split(' | ')

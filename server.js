@@ -2270,6 +2270,9 @@ function redirectRetainsProfileIdentity(originalUrl, finalUrl, username = '') {
   if (pathname(original) === pathname(final) && original.search === final.search) return true;
   if (!username) return false;
   const target = username.toLowerCase();
+  // Hostname-label sources (alice.example.com): staying on that exact host
+  // keeps identity even when the path changes (e.g. to a featured page).
+  if (host(final).split('.')[0] === target && host(final).split('.').length > 2) return true;
   const segments = final.pathname.split('/').map(segment => {
     try { return decodeURIComponent(segment).replace(/^[@~]/, '').toLowerCase(); }
     catch (_) { return ''; }
@@ -4093,4 +4096,4 @@ if (require.main === module) {
 
 module.exports = { classify, classifyVerifyResponse, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan, hasIntegrityAbstention, LAB_RUNTIME_FINGERPRINT,
   reserveScanSlot, refundScanSlot, acquireScanCapacity, releaseScanCapacity, sourceCooldownResult, recordSourceHealth,
-  requestedRetryDelayMs, makeReqOptions, RATE_LIMIT_MAX, MAX_ACTIVE_SCANS, MAX_QUEUED_SCANS, SOURCE_COOLDOWN_THRESHOLD };
+  requestedRetryDelayMs, makeReqOptions, redirectRetainsProfileIdentity, RATE_LIMIT_MAX, MAX_ACTIVE_SCANS, MAX_QUEUED_SCANS, SOURCE_COOLDOWN_THRESHOLD };

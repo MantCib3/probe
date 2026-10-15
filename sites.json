@@ -699,15 +699,19 @@
     "urlMain": "https://bandcamp.com",
     "category": "content",
     "checkMethod": "status_code",
-    "needsBrowser": true,
-    "apiUrl": "https://{}.bandcamp.com/feed.rss",
-    "notFoundStatus": 404,
     "skipBodyCheck": true,
     "cors": true,
     "usernameRule": {
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    },
+    "authRedirectMeansNotFound": true,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
     }
   },
   {
@@ -1597,7 +1601,7 @@
   },
   {
     "name": "Fandom",
-    "url": "https://www.fandom.com/u/{}",
+    "url": "https://community.fandom.com/wiki/User:{}",
     "urlMain": "https://www.fandom.com",
     "category": "gaming",
     "checkMethod": "message",

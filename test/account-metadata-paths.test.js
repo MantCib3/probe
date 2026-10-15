@@ -6,9 +6,9 @@ const metadata = require('../profile-metadata');
 
 const restore = t => t.after(() => metadata.setHints(JSON.parse(require('node:fs').readFileSync(require.resolve('../metadata-hints.json'), 'utf8'))));
 const rules = fields => Object.fromEntries(Object.keys(fields).map(field => [field, [{ schema: 'account_json' }]]));
-const extract = (accountObject, username, value) => {
+const extract = (accountObject, username, value, pageUrl = 'https://x.example/u') => {
   metadata.setHints({ sites: { X: { accountObject, fields: rules(accountObject.fields) } } });
-  return metadata.extractProfile({ name: 'X', url: 'https://x.example/{}' }, username, JSON.stringify(value), 'application/json', 'https://x.example/u');
+  return metadata.extractProfile({ name: 'X', url: 'https://x.example/{}' }, username, JSON.stringify(value), 'application/json', pageUrl);
 };
 
 test('username-keyed maps resolve only one exact key and respect privacy flags', t => {
@@ -52,4 +52,11 @@ test('unsafe or malformed rules are rejected rather than partially applied', t =
     { path: [], identityKey: 'u', fields: { name: 'n' }, requireTrue: { name: 'constructor' } },
     { path: [], identityKey: 'u', fields: { name: 'n' }, identityNormalization: 'loose' },
   ]) assert.equal(extract(bad, 'alice', { u: 'alice', n: 'Alice' }), null);
+});
+
+test('reviewed-unreliable picture fields are not extracted for freeCodeCamp or Duolingo', () => {
+  const hints = JSON.parse(require('node:fs').readFileSync(require.resolve('../metadata-hints.json'), 'utf8')).sites;
+  assert.equal(hints.freeCodeCamp.fields.picture, undefined);
+  assert.equal(hints.freeCodeCamp.accountObject.fields.picture, undefined);
+  assert.equal(hints.Duolingo.fields.picture, undefined);
 });
