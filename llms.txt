@@ -18,7 +18,7 @@ PROBE is intended for lawful research using publicly reachable information. A re
 - [September 2026 accuracy update](https://usernameprobe.com/blog/improving-accuracy-without-guessing): How PROBE improved decision accuracy, coverage, and recall while preserving zero observed false matches.
 - [Methodology and accuracy](https://usernameprobe.com/blog/measuring-username-search-accuracy): How decision accuracy, coverage, uncertainty, and the 947-control evaluation are measured.
 - [Why results can be unknown](https://usernameprobe.com/blog/why-probe-abstains): Why blocked or ambiguous responses are not forced into found or not-found classifications.
-- [Maintaining 322 sources](https://usernameprobe.com/blog/maintaining-a-source-catalog): How the 265 automatic checks and 57 manual-only links are maintained.
+- [Maintaining 322 sources](https://usernameprobe.com/blog/maintaining-a-source-catalog): How the 272 automatic checks and 50 manual-only links are maintained.
 - [Roadmap](https://usernameprobe.com/roadmap): Shipped capabilities and planned reliability work.
 - [Privacy and acceptable use](https://usernameprobe.com/privacy): Data handling, local notes, submissions, and usage restrictions.
 - [Blog index](https://usernameprobe.com/blog/): All published PROBE technical articles.
@@ -34,7 +34,7 @@ PROBE is intended for lawful research using publicly reachable information. A re
 - Ambiguous redirects, conflicting source evidence, and missing positive markers in incomplete responses abstain. Integrity abstentions cannot be promoted to current account matches using archived responses.
 - Reviewed source adapters can use GET, HEAD or POST and explicit JSON evidence without changing the public profile link; adapter configuration is validated at startup.
 - Manual-only links are useful investigation pivots but are not automatically classified.
-- Current functional coverage is 322 sources: 265 automatic checks and 57 manual-only links.
+- Current functional coverage is 322 sources: 272 automatic checks and 50 manual-only links.
 - Result cards use colored status dots with accessible labels and hover descriptions; the scan totals and status filters retain their text labels.
 - Site names sit beside their status dots. HTTP and abbreviated category badges share fixed dimensions; full category names remain available to assistive technology and on hover.
 - Scan download, cancel and done controls use icons with accessible labels and hover descriptions. Download choices keep their format and result-scope labels.

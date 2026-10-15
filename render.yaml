@@ -28,3 +28,8 @@ services:
         sync: false
       - key: RESEND_TO
         sync: false
+      # Read-only GitHub token from a dedicated machine account; enables the
+      # authenticated users API (higher rate limit). Without it GitHub falls
+      # back to unauthenticated requests.
+      - key: GITHUB_TOKEN
+        sync: false

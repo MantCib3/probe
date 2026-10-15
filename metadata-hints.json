@@ -1024,44 +1024,75 @@
       }
     },
     "GitHub": {
+      "accountObject": {
+        "path": [],
+        "identityKey": "login",
+        "fields": {
+          "picture": "avatar_url",
+          "name": "name",
+          "bio": "bio",
+          "location": "location",
+          "links": "blog",
+          "joined": "created_at",
+          "followers": "followers"
+        }
+      },
       "fields": {
         "picture": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
           }
         ],
         "name": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
           }
         ],
         "location": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
           }
         ],
         "joined": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
           }
         ],
         "followers": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
+          }
+        ],
+        "bio": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "links": [
+          {
+            "schema": "account_json"
           }
         ]
       }
     },
     "GitLab": {
+      "accountObject": {
+        "path": [],
+        "identityKey": "username",
+        "fields": {
+          "picture": "avatar_url",
+          "name": "name"
+        }
+      },
       "fields": {
         "picture": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
           }
         ],
         "name": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
           }
         ]
       }
@@ -1153,15 +1184,30 @@
       }
     },
     "Hacker News": {
+      "accountObject": {
+        "path": [],
+        "identityKey": "id",
+        "caseSensitive": true,
+        "fields": {
+          "bio": "about",
+          "joined": "created"
+        },
+        "linksFromHtml": "about"
+      },
       "fields": {
         "bio": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
           }
         ],
         "joined": [
           {
-            "schema": "json_api"
+            "schema": "account_json"
+          }
+        ],
+        "links": [
+          {
+            "schema": "account_json"
           }
         ]
       }
@@ -2798,6 +2844,279 @@
       "rejectValues": {
         "name": [
           "404 | Zomato"
+        ]
+      }
+    },
+    "Codeberg": {
+      "accountObject": {
+        "path": [],
+        "identityKey": "login",
+        "fields": {
+          "picture": "avatar_url",
+          "name": "full_name",
+          "bio": "description",
+          "location": "location",
+          "links": "website",
+          "joined": "created",
+          "followers": "followers_count"
+        }
+      },
+      "fields": {
+        "picture": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "name": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "bio": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "location": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "links": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "joined": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "followers": [
+          {
+            "schema": "account_json"
+          }
+        ]
+      }
+    },
+    "Liberapay": {
+      "accountObject": {
+        "path": [],
+        "identityKey": "username",
+        "fields": {
+          "picture": "avatar",
+          "name": "display_name",
+          "bio": "summaries.0.content"
+        }
+      },
+      "fields": {
+        "picture": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "name": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "bio": [
+          {
+            "schema": "account_json"
+          }
+        ]
+      }
+    },
+    "Docker Hub": {
+      "accountObject": {
+        "path": [],
+        "identityKey": "username",
+        "fields": {
+          "picture": "gravatar_url",
+          "name": "full_name",
+          "location": "location",
+          "links": "profile_url",
+          "joined": "date_joined"
+        }
+      },
+      "fields": {
+        "picture": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "name": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "location": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "links": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "joined": [
+          {
+            "schema": "account_json"
+          }
+        ]
+      }
+    },
+    "freeCodeCamp": {
+      "accountObject": {
+        "path": [
+          "entities",
+          "user",
+          "{username}"
+        ],
+        "identityKey": "username",
+        "skipWhenTrue": "profileUI.isLocked",
+        "requireTrue": {
+          "name": "profileUI.showName",
+          "bio": "profileUI.showAbout",
+          "location": "profileUI.showLocation"
+        },
+        "fields": {
+          "picture": "picture",
+          "name": "name",
+          "bio": "about",
+          "location": "location",
+          "links": [
+            "website",
+            "githubProfile",
+            "linkedin",
+            "twitter"
+          ],
+          "joined": "joinDate"
+        }
+      },
+      "fields": {
+        "picture": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "name": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "bio": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "location": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "links": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "joined": [
+          {
+            "schema": "account_json"
+          }
+        ]
+      }
+    },
+    "AniList": {
+      "accountObject": {
+        "path": [
+          "data",
+          "User"
+        ],
+        "identityKey": "name",
+        "fields": {
+          "picture": "avatar.large",
+          "bio": "about",
+          "joined": "createdAt"
+        }
+      },
+      "fields": {
+        "picture": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "bio": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "joined": [
+          {
+            "schema": "account_json"
+          }
+        ]
+      }
+    },
+    "Fandom": {
+      "accountObject": {
+        "path": [
+          "query",
+          "users"
+        ],
+        "identityKey": "name",
+        "identityNormalization": "mediawiki",
+        "fields": {
+          "joined": "registration"
+        }
+      },
+      "fields": {
+        "joined": [
+          {
+            "schema": "account_json"
+          }
+        ]
+      }
+    },
+    "Last.fm": {
+      "accountObject": {
+        "path": [
+          "user"
+        ],
+        "identityKey": "name",
+        "fields": {
+          "picture": "image.3.#text",
+          "name": "realname",
+          "location": "country",
+          "joined": "registered.unixtime"
+        }
+      },
+      "fields": {
+        "picture": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "name": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "location": [
+          {
+            "schema": "account_json"
+          }
+        ],
+        "joined": [
+          {
+            "schema": "account_json"
+          }
+        ]
+      },
+      "rejectValues": {
+        "location": [
+          "None"
         ]
       }
     }

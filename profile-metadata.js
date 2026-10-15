@@ -422,10 +422,15 @@ function mergeFollowUp(site, username, profile, body, contentType, pageUrl) {
 
 function extractWith(hint, site, username, body, contentType, pageUrl) {
   if (!hint || !hint.fields || !Object.keys(hint.fields).length || !body) return null;
+  if (hint.accountObject) {
+    try { validateAccountObjectRule(hint.accountObject); } catch (_) { return null; }
+  }
   const source = hint.headOnly ? headSlice(body) : body;
   let schemas;
   try {
-    schemas = extractAll(source, contentType || '', username, hostOf(site)).schemas;
+    schemas = hint.accountObject
+      ? extractAccountObject(source, username, hint.accountObject)
+      : extractAll(source, contentType || '', username, hostOf(site)).schemas;
   } catch (_) {
     return null;
   }
@@ -445,8 +450,103 @@ function extractWith(hint, site, username, body, contentType, pageUrl) {
   return Object.keys(profile).length ? profile : null;
 }
 
+const safeAccountKey = key => typeof key === 'string' && key.length > 0 &&
+  !['__proto__', 'prototype', 'constructor'].includes(key);
+const safeKeyPath = value => typeof value === 'string' && value.length <= 120 && value.split('.').every(safeAccountKey);
+const USERNAME_SEGMENT = '{username}';
+
+function validateAccountObjectRule(rule) {
+  const fieldSpecOk = (field, spec) => FIELDS.includes(field) &&
+    (safeKeyPath(spec) || (field === 'links' && Array.isArray(spec) && spec.length > 0 && spec.length <= 6 && spec.every(safeKeyPath)));
+  const flagMapOk = map => map === undefined || (map && typeof map === 'object' && !Array.isArray(map) &&
+    Object.entries(map).every(([field, flag]) => FIELDS.includes(field) && safeKeyPath(flag)));
+  if (!Array.isArray(rule.path) || rule.path.length > 10 ||
+      !rule.path.every(safeAccountKey) || !safeAccountKey(rule.identityKey) ||
+      !rule.fields || typeof rule.fields !== 'object' || Array.isArray(rule.fields) ||
+      (rule.caseSensitive !== undefined && typeof rule.caseSensitive !== 'boolean') ||
+      (rule.identityNormalization !== undefined && rule.identityNormalization !== 'mediawiki') ||
+      Object.entries(rule.fields).some(([field, spec]) => !fieldSpecOk(field, spec)) ||
+      !flagMapOk(rule.requireTrue) ||
+      (rule.skipWhenTrue !== undefined && !safeKeyPath(rule.skipWhenTrue)) ||
+      (rule.linksFromHtml !== undefined && !safeAccountKey(rule.linksFromHtml))) {
+    throw new TypeError('Invalid reviewed account-object metadata rule.');
+  }
+}
+
+function readKeyPath(object, keyPath) {
+  let current = object;
+  for (const key of keyPath.split('.')) {
+    if (current === null || typeof current !== 'object' || !Object.hasOwn(current, key)) return undefined;
+    current = current[key];
+  }
+  return current;
+}
+
+function identityMatches(value, username, rule) {
+  if (typeof value !== 'string') return false;
+  if (rule.identityNormalization === 'mediawiki') {
+    // MediaWiki stores names with spaces and an upper-cased first character.
+    const norm = text => text.replace(/_/g, ' ').trim();
+    const a = norm(value);
+    const b = norm(username);
+    return a.length > 0 && a.charAt(0).toUpperCase() + a.slice(1) === b.charAt(0).toUpperCase() + b.slice(1);
+  }
+  return rule.caseSensitive ? value === username : value.toLowerCase() === username.toLowerCase();
+}
+
+function extractAccountObject(body, username, rule) {
+  let account = JSON.parse(body);
+  for (const key of rule.path) {
+    if (!account || typeof account !== 'object') { account = null; break; }
+    if (key === USERNAME_SEGMENT) {
+      // Keyed-by-username maps: accept only one exact (case-insensitive) key.
+      const keys = Object.keys(account).filter(candidate => candidate.toLowerCase() === username.toLowerCase());
+      account = keys.length === 1 ? account[keys[0]] : null;
+    } else {
+      account = Object.hasOwn(account, key) ? account[key] : null;
+    }
+  }
+  const matches = (Array.isArray(account) ? account : [account]).filter(candidate =>
+    candidate && typeof candidate === 'object' && !Array.isArray(candidate) &&
+    Object.hasOwn(candidate, rule.identityKey) &&
+    identityMatches(candidate[rule.identityKey], username, rule));
+  if (matches.length !== 1) return {};
+  const selected = matches[0];
+  if (rule.skipWhenTrue && readKeyPath(selected, rule.skipWhenTrue) === true) return {};
+  const fields = {};
+  for (const [field, spec] of Object.entries(rule.fields)) {
+    const flag = rule.requireTrue && rule.requireTrue[field];
+    if (flag && readKeyPath(selected, flag) !== true) continue;
+    const raw = Array.isArray(spec) ? spec.map(keyPath => readKeyPath(selected, keyPath)).filter(Boolean) : readKeyPath(selected, spec);
+    if (raw === undefined) continue;
+    let value = scalarFor(field, raw);
+    if (field === 'links' && value) {
+      value = value.split(' | ').filter(link => /^https?:\/\//i.test(link)).join(' | ') || null;
+    }
+    if (value) fields[field] = { value };
+  }
+  if (rule.linksFromHtml) {
+    const html = selected[rule.linksFromHtml];
+    if (typeof html === 'string') {
+      const $ = loadCheerio().load(html);
+      const links = [...new Set($('a[href]').map((_, el) => $(el).attr('href')).get()
+        .filter(link => /^https?:\/\//i.test(link)))].slice(0, 5);
+      if (links.length) fields.links = { value: links.join(' | ') };
+    }
+  }
+  return { account_json: fields };
+}
+
 function hostOf(site) {
   try { return new URL(String(site.url).replace(/\{\}/g, 'x')).hostname.replace(/^www\./, ''); } catch (_) { return ''; }
+}
+
+// Shipped hints must be valid: fail at startup, not silently during scans.
+for (const [name, hint] of Object.entries(hints.sites)) {
+  if (hint && hint.accountObject) {
+    try { validateAccountObjectRule(hint.accountObject); }
+    catch (_) { throw new TypeError(`Invalid accountObject metadata hint for "${name}".`); }
+  }
 }
 
 module.exports = {

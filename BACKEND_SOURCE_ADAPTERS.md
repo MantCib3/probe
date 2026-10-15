@@ -51,6 +51,59 @@ Authentication redirects are ambiguous by default and return `unknown`.
 Only a validated per-source `authRedirectMeansFound: true` or the explicit
 `authRedirectMeansNotFound: true` opts into a different interpretation.
 
+## Request identity
+
+Sources may set an honest `User-Agent` of `PROBE/1.0 (+https://usernameprobe.com)`
+through their adapter headers. A non-browser User-Agent automatically drops
+browser-only client hints (`sec-ch-ua*`, `Sec-Fetch-*`,
+`Upgrade-Insecure-Requests`) so the request is internally consistent. Crawler
+impersonation (`crawlerUA`, e.g. Googlebot) is no longer used by any active
+source; do not reintroduce it. Adopt honest headers per source only after a
+hosted A/B shows the change produces correct decisions on existing and missing
+controls (run from the private staging repository).
+
+## Environment credentials
+
+`credential` lets a source use an official keyed API without putting secrets in
+the catalog. It names an uppercase environment variable, the single HTTPS host
+allowed to receive it, and either a header (`authorization` or `x-api-key`,
+optional `Bearer`/`token` scheme) or a query parameter. `overrides` may swap in
+the keyed endpoint, adapter and markers, and its target must be HTTPS on that
+same host. The credential is attached only when the request host and scheme
+match, so redirects elsewhere and plain HTTP never receive it; it is not
+serialised into results. Without the variable, the source behaves exactly as
+its unkeyed definition. GitHub uses `GITHUB_TOKEN`; Last.fm uses
+`LASTFM_API_KEY` with `user.getInfo`.
+
+## Platform terms before automation
+
+Before making a source automatic, check its terms of use, API terms and
+`robots.txt` for the exact endpoint. Do not automate an endpoint whose terms
+prohibit programmatic access or whose path is disallowed for all user agents;
+keep it manual with a dated `caveat` instead. A 2026-10-15 review led to:
+
+- **Kept:** AniList (free under its commercial threshold; ~30 req/min limit),
+  Docker Hub (documented API within published limits), Codeberg/Forgejo,
+  Liberapay, Fandom (MediaWiki API), freeCodeCamp, Slideshare, Snapchat.
+- **Manual again:** Figma and Tellonym (terms prohibit automated access),
+  eToro (`/api/` disallowed), Pr0gramm (no public terms; anti-bot community),
+  HackerOne (no public lookup API; terms unclear), Spotify (web pages are for
+  personal non-commercial use; the official Web API would need credentials).
+- **Conditions:** GitHub tokens should belong to a dedicated machine account.
+  Last.fm's API is non-commercial and public use needs Last.fm's written
+  approval; do not set `LASTFM_API_KEY` in production until approved, and add
+  the required attribution when it is.
+
+## Public scan capacity and source cooldown
+
+Scan rate slots are reserved before Turnstile and refunded on failure.
+At most `MAX_ACTIVE_SCANS` (default 4) public scans run at once; up to 20 more
+wait in a FIFO queue and receive `queued` events, and further scans get a 503.
+A source with three consecutive `blocked` results is skipped for ten minutes in
+public scans and reported as `blocked` with `source_cooldown`; any decision
+clears it. Lab probes bypass cooldown so measurements stay real.
+A `Retry-After` longer than five seconds is honoured by not retrying in-scan.
+
 ## Frontend explanation reason codes
 
 The frontend may label these backend reasons directly; an unlisted reason

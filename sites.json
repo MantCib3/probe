@@ -88,7 +88,6 @@
     "category": "social",
     "checkMethod": "message",
     "undetectable": true,
-    "crawlerUA": "googlebot",
     "checkUrl": "https://www.threads.com/@{}",
     "positiveMsg": "\"username\":",
     "errorMsg": "Page Not Found",
@@ -143,9 +142,14 @@
     "urlMain": "https://www.flickr.com",
     "category": "social",
     "checkMethod": "status_code",
-    "crawlerUA": "googlebot",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Myspace",
@@ -180,7 +184,13 @@
     "checkMethod": "status_code",
     "apiUrl": "https://api.github.com/users/{}",
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "credential": {
+      "env": "GITHUB_TOKEN",
+      "host": "api.github.com",
+      "header": "authorization",
+      "scheme": "Bearer"
+    }
   },
   {
     "name": "GitLab",
@@ -244,7 +254,7 @@
     "urlMain": "https://news.ycombinator.com",
     "category": "developer",
     "checkMethod": "body",
-    "apiUrl": "https://hacker-news.firebaseio.com/v0/user/{}.json",
+    "apiUrl": "https://hacker-news.firebaseio.com/v0/user/{}.json?orderBy=%22%24key%22&startAt=%22about%22&endAt=%22id%22",
     "positiveMsg": "\"id\":",
     "cors": true,
     "expectedStatus": 200
@@ -318,7 +328,13 @@
     "errorMsg": "Kaggle: Your Home for Data Science</title>",
     "cfProxy": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Exercism",
@@ -344,6 +360,12 @@
     "category": "developer",
     "checkMethod": "status_code",
     "apiUrl": "https://codeberg.org/api/v1/users/{}",
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    },
     "allowBrowserFallback": false,
     "cors": true,
     "expectedStatus": 200,
@@ -386,7 +408,13 @@
     "errorMsg": "message-image-404",
     "cfProxy": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Steam",
@@ -585,7 +613,13 @@
     "errorMsg": "<title>Object moved</title>",
     "cfProxy": true,
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Behance",
@@ -594,7 +628,12 @@
     "category": "content",
     "checkMethod": "status_code",
     "skipBodyCheck": true,
-    "crawlerUA": "googlebot"
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Dribbble",
@@ -602,11 +641,16 @@
     "urlMain": "https://dribbble.com",
     "category": "content",
     "checkMethod": "message",
-    "crawlerUA": "googlebot",
     "positiveMsg": " | Dribbble",
     "errorMsg": "(404)</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "ArtStation",
@@ -614,7 +658,6 @@
     "urlMain": "https://www.artstation.com",
     "category": "content",
     "checkMethod": "message",
-    "crawlerUA": "googlebot",
     "positiveMsg": "Portfolio",
     "errorMsg": "Page not found",
     "cfProxy": true,
@@ -675,9 +718,35 @@
     "checkMethod": "message",
     "errorMsg": "There is no one here",
     "allowBrowserFallback": false,
-    "crawlerUA": "googlebot",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "credential": {
+      "env": "LASTFM_API_KEY",
+      "host": "ws.audioscrobbler.com",
+      "query": "api_key",
+      "overrides": {
+        "apiUrl": "https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user={}&format=json",
+        "requestAdapter": {
+          "method": "GET",
+          "headers": {
+            "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+          },
+          "response": {
+            "json": {
+              "positive": {
+                "path": "/user/name",
+                "op": "exists"
+              },
+              "negative": {
+                "path": "/error",
+                "op": "equals",
+                "value": 6
+              }
+            }
+          }
+        }
+      }
+    }
   },
   {
     "name": "Unsplash",
@@ -742,9 +811,9 @@
     "url": "https://open.spotify.com/user/{}",
     "urlMain": "https://open.spotify.com",
     "category": "content",
-    "checkMethod": "message",
+    "checkMethod": "status_code",
     "undetectable": true,
-    "caveat": "Existing and absent user URLs return the same client-rendered web-player shell to server-side requests."
+    "caveat": "Manual check only: Spotify web pages are for personal, non-commercial use; automation requires the official Web API with registered credentials (reviewed 2026-10-15)."
   },
   {
     "name": "Odysee",
@@ -788,7 +857,6 @@
     "category": "forum",
     "checkMethod": "message",
     "undetectable": true,
-    "crawlerUA": "googlebot",
     "cfProxy": true,
     "positiveMsg": "Credentials",
     "errorMsg": "Page Not Found",
@@ -1027,11 +1095,14 @@
     "urlMain": "https://www.slideshare.net",
     "category": "misc",
     "checkMethod": "message",
-    "undetectable": true,
-    "cfProxy": true,
-    "positiveMsg": "data-testid=\"report-button\"",
-    "errorMsg": "id=\"username-available\"",
-    "expectedStatus": 200
+    "errorMsg": ">Page no longer exists</title>",
+    "expectedStatus": 200,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Scribd",
@@ -1126,7 +1197,6 @@
     "undetectable": true,
     "notFoundStatus": 404,
     "allowBrowserFallback": false,
-    "crawlerUA": "googlebot",
     "cfProxy": true,
     "checkUrl": "https://genius.com/artists/{}",
     "checkMethod": "message",
@@ -1140,7 +1210,6 @@
     "category": "social",
     "checkMethod": "message",
     "undetectable": true,
-    "crawlerUA": "googlebot",
     "positiveMsg": "- Profile | Pinterest",
     "errorMsg": "id=\"home-main-title\"",
     "expectedStatus": 200,
@@ -1152,8 +1221,6 @@
     "urlMain": "https://www.snapchat.com",
     "category": "social",
     "checkMethod": "message",
-    "undetectable": true,
-    "crawlerUA": "googlebot",
     "checkUrl": "https://www.snapchat.com/@{}",
     "positiveMsg": "is on Snapchat!",
     "errorMsg": "NOT_FOUND",
@@ -1162,6 +1229,13 @@
       "pattern": "^[a-z0-9_.-]+$",
       "description": "Snapchat usernames use letters, digits, underscores, dots or hyphens; legacy lengths remain allowed.",
       "source": "https://help.snapchat.com/hc/en-us/articles/7012349845140-How-do-I-change-my-Snapchat-username"
+    },
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
     }
   },
   {
@@ -1170,8 +1244,16 @@
     "urlMain": "https://hub.docker.com",
     "category": "developer",
     "checkMethod": "status_code",
-    "undetectable": true,
-    "cors": true
+    "cors": true,
+    "apiUrl": "https://hub.docker.com/v2/users/{}/",
+    "expectedStatus": 200,
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Packagist",
@@ -1229,9 +1311,29 @@
     "url": "https://anilist.co/user/{}",
     "urlMain": "https://anilist.co",
     "category": "social",
-    "checkMethod": "status_code",
-    "undetectable": true,
-    "caveat": "Manual check only: AniList lookup requires a GraphQL POST request, which the current scanner does not issue"
+    "checkMethod": "message",
+    "apiUrl": "https://graphql.anilist.co",
+    "requestAdapter": {
+      "method": "POST",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)",
+        "Content-Type": "application/json"
+      },
+      "bodyTemplate": "{\"query\":\"query($n:String){User(name:$n){id name about avatar{large} createdAt}}\",\"variables\":{\"n\":\"{{username}}\"}}",
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/data/User/name",
+            "op": "exists"
+          },
+          "negative": {
+            "path": "/data/User",
+            "op": "equals",
+            "value": null
+          }
+        }
+      }
+    }
   },
   {
     "name": "MyAnimeList",
@@ -1307,15 +1409,13 @@
   },
   {
     "name": "Tellonym",
-    "url": "https://api.tellonym.me/profiles/name/{}",
+    "url": "https://tellonym.me/{}",
     "urlMain": "https://api.tellonym.me",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"code\":\"NOT_FOUND\"",
-    "undetectable": true,
     "cors": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "undetectable": true,
+    "caveat": "Manual check only: Tellonym terms prohibit automated access without prior permission (reviewed 2026-10-15)."
   },
   {
     "name": "Truth Social",
@@ -1497,12 +1597,27 @@
     "urlMain": "https://www.fandom.com",
     "category": "gaming",
     "checkMethod": "message",
-    "errorMsg": "Not Found",
     "allowBrowserFallback": false,
-    "cfProxy": true,
-    "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "apiUrl": "https://community.fandom.com/api.php?action=query&list=users&ususers={}&usprop=registration&format=json",
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      },
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/query/users/0/userid",
+            "op": "exists"
+          },
+          "negative": {
+            "path": "/query/users/0/missing",
+            "op": "exists"
+          }
+        }
+      }
+    }
   },
   {
     "name": "Fortnite Tracker",
@@ -1590,7 +1705,13 @@
     "errorMsg": "\"available\":true",
     "allowBrowserFallback": false,
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "OPGG",
@@ -1609,7 +1730,13 @@
     "checkMethod": "message",
     "errorMsg": "User not found! ;_;",
     "expectedStatus": 302,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Playstation Network",
@@ -1686,7 +1813,13 @@
     "checkMethod": "message",
     "errorMsg": "Gamertag doesn't exist",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "ArmorGames",
@@ -1747,7 +1880,13 @@
     "errorMsg": "Error - Wowhead",
     "allowBrowserFallback": false,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "lichess.org",
@@ -1976,9 +2115,9 @@
     "url": "https://hackerone.com/{}",
     "urlMain": "https://hackerone.com",
     "category": "developer",
-    "checkMethod": "status_code",
+    "checkMethod": "message",
     "undetectable": true,
-    "caveat": "Manual check only: the previous static GraphQL URL never included the username"
+    "caveat": "Manual check only: HackerOne publishes no public API for username lookups; its platform terms do not clearly permit this use (reviewed 2026-10-15)."
   },
   {
     "name": "TryHackMe",
@@ -2642,7 +2781,13 @@
     "positiveMsg": "\"username\":",
     "errorMsg": "\"message\":\"We could not find the user:",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Carbonmade",
@@ -3225,14 +3370,12 @@
   },
   {
     "name": "Etoro",
-    "url": "https://www.etoro.com/api/logininfo/v1.1/users/{}",
+    "url": "https://www.etoro.com/people/{}",
     "urlMain": "https://etoro.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"ErrorCode\":\"NotFound\"",
     "undetectable": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "caveat": "Manual check only: eToro disallows /api/ in robots.txt and publishes no developer terms (reviewed 2026-10-15)."
   },
   {
     "name": "Evolution CMS",
@@ -3351,14 +3494,12 @@
   },
   {
     "name": "Figma",
-    "url": "https://www.figma.com/api/profile/handle/{}",
+    "url": "https://www.figma.com/@{}",
     "urlMain": "https://figma.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"status\":404",
     "undetectable": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "caveat": "Manual check only: Figma prohibits programmatic access and disallows /api/ in robots.txt (terms reviewed 2026-10-15)."
   },
   {
     "name": "Filmot Channel Search",
@@ -3489,14 +3630,20 @@
   },
   {
     "name": "freeCodeCamp",
-    "url": "https://api.freecodecamp.org/users/get-public-profile?username={}",
+    "url": "https://www.freecodecamp.org/{}",
     "urlMain": "https://api.freecodecamp.org",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "{}",
-    "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.freecodecamp.org/users/get-public-profile?username={}",
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Freelance.ua",
@@ -4400,9 +4547,15 @@
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Response code: 404",
-    "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://liberapay.com/{}/public.json",
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Libretooth.gr (Mastodon Instance)",
@@ -5553,14 +5706,12 @@
   },
   {
     "name": "Pr0gramm",
-    "url": "https://pr0gramm.com/api/profile/info?name={}",
+    "url": "https://pr0gramm.com/user/{}",
     "urlMain": "https://pr0gramm.com",
     "category": "social",
     "checkMethod": "message",
-    "errorMsg": "\"code\":404",
     "undetectable": true,
-    "expectedStatus": 200,
-    "notFoundStatus": 404
+    "caveat": "Manual check only: no public terms permit automated access and the community prohibits bots (reviewed 2026-10-15)."
   },
   {
     "name": "Pravda.me",
@@ -6005,6 +6156,12 @@
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    },
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
     }
   },
   {
@@ -6459,7 +6616,13 @@
     "checkMethod": "message",
     "errorMsg": "We can't find that page!",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "tradingview",

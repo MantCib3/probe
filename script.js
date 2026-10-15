@@ -24,6 +24,7 @@ const REASON_LABEL = {
   datacenter_ip_blocked: 'IP blocked by platform — check via CF Worker',
   blocked_http_403: 'HTTP 403 — access denied from server IP',
   blocked_http_429: 'Rate-limited from server IP',
+  source_cooldown: 'Recently blocked from server IP — skipped briefly to avoid repeated requests',
   title_blocked_pattern: 'CF/bot protection page detected',
   body_blocked_pattern: 'CF/bot protection content detected',
   client_side_check_pending: 'Server skipped — browser will verify directly',
@@ -1602,6 +1603,16 @@ function startScan(username, cfToken) {
       if (window.turnstile && _ts.scan.widgetId !== null) {
         try { window.turnstile.reset(_ts.scan.widgetId); } catch (_) {}
       }
+      return;
+    }
+
+    if (msg.type === 'queued') {
+      progressStatus.textContent = `Waiting for a free scan slot — position ${Number(msg.position) || 1}…`;
+      return;
+    }
+
+    if (msg.type === 'start') {
+      progressStatus.innerHTML = `Scanning <strong>${escHtml(username)}</strong>…`;
       return;
     }
 

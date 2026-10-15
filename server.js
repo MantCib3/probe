@@ -19,7 +19,10 @@ try {
   chromiumStealth.use(require('puppeteer-extra-plugin-stealth')());
 } catch (_) { /* run: npm install playwright-extra puppeteer-extra-plugin-stealth */ }
 
-const SITES_PATH = path.join(__dirname, 'sites.json');
+// Test seam: a fixture catalog for integration tests; ignored in production.
+const SITES_PATH = process.env.PROBE_SITES_PATH && process.env.NODE_ENV !== 'production' && !process.env.RENDER
+  ? path.resolve(process.env.PROBE_SITES_PATH)
+  : path.join(__dirname, 'sites.json');
 const SITES_SOURCE = fs.readFileSync(SITES_PATH, 'utf8');
 const SITES      = JSON.parse(SITES_SOURCE).filter(s => !s.defunct);
 usernameRules.validateCatalog(SITES);
@@ -140,19 +143,96 @@ function boundedSet(map, key, value) {
 const _scanRates = new Map(); // ip → { count: number, resetAt: timestamp }
 const _auxRates = new Map(); // ip → { count: number, resetAt: timestamp }
 
-function checkRateLimit(ip) {
+// Reserve synchronously so parallel requests from one IP cannot all pass the
+// check while Turnstile verification is still pending.
+function reserveScanSlot(ip) {
   const now = Date.now();
   let entry = _scanRates.get(ip);
   if (!entry || now > entry.resetAt) {
     entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
     boundedSet(_scanRates, ip, entry);
   }
-  return entry.count < RATE_LIMIT_MAX;
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
 }
 
-function consumeRateLimit(ip) {
+function refundScanSlot(ip) {
   const entry = _scanRates.get(ip);
-  if (entry) entry.count++;
+  if (entry && entry.count > 0) entry.count--;
+}
+
+/* ── Global scan capacity ──────────────────────────────────────────────
+ * Each scan fans out to every automatic source. Without a global ceiling,
+ * concurrent users multiply outbound load and the shared per-host spacing
+ * pushes requests past the probe deadline. Excess scans wait in a bounded
+ * FIFO queue and see their position. */
+const MAX_ACTIVE_SCANS = Math.max(1, Number(process.env.MAX_ACTIVE_SCANS) || 4);
+const MAX_QUEUED_SCANS = 20;
+let activeScanCount = 0;
+const scanWaiters = [];
+
+function acquireScanCapacity(onQueued) {
+  if (activeScanCount < MAX_ACTIVE_SCANS) {
+    activeScanCount++;
+    return { ready: Promise.resolve(true), cancel() {} };
+  }
+  if (scanWaiters.length >= MAX_QUEUED_SCANS) return null;
+  let waiter;
+  const ready = new Promise(resolve => { waiter = { resolve }; });
+  scanWaiters.push(waiter);
+  onQueued(scanWaiters.length);
+  return {
+    ready,
+    cancel() {
+      const index = scanWaiters.indexOf(waiter);
+      if (index !== -1) { scanWaiters.splice(index, 1); waiter.resolve(false); }
+    },
+  };
+}
+
+function releaseScanCapacity() {
+  const next = scanWaiters.shift();
+  if (next) next.resolve(true);
+  else activeScanCount = Math.max(0, activeScanCount - 1);
+}
+
+/* ── Source cooldown for public scans ───────────────────────────────────
+ * A source that keeps blocking this server is not re-requested on every
+ * scan: that wastes requests and degrades the shared IP's reputation. After
+ * consecutive blocks it is skipped for a cooldown and reported as blocked
+ * with an explicit reason; the first scan after the cooldown re-probes it.
+ * Lab and staging probes bypass this so measurements stay real. */
+const SOURCE_COOLDOWN_THRESHOLD = 3;
+const SOURCE_COOLDOWN_MS = 10 * 60 * 1000;
+const sourceHealth = new Map();
+
+function sourceCooldownResult(site, username) {
+  const health = sourceHealth.get(site.name);
+  if (!health || health.until <= Date.now()) return null;
+  return {
+    name: site.name,
+    category: site.category,
+    url: site.url.replace(/\{\}/g, encodeURIComponent(username)),
+    status: 'blocked',
+    statusCode: 0,
+    confidence: 0.9,
+    reasonCodes: ['source_cooldown'],
+    detectionMethod: 'http',
+    bodyHash: null,
+  };
+}
+
+function recordSourceHealth(site, result) {
+  if (!result) return;
+  if (result.status === 'found' || result.status === 'not_found') {
+    sourceHealth.delete(site.name);
+  } else if (result.status === 'blocked') {
+    const health = sourceHealth.get(site.name) || { blocks: 0, until: 0 };
+    health.blocks++;
+    if (health.blocks >= SOURCE_COOLDOWN_THRESHOLD) health.until = Date.now() + SOURCE_COOLDOWN_MS;
+    sourceHealth.set(site.name, health);
+  }
 }
 
 function consumeAuxRateLimit(ip) {
@@ -2095,6 +2175,16 @@ function scheduleHostRequest(hostname, task) {
   else setTimeout(task, runAt - now);
 }
 
+// A source asking for a longer pause gets one: no early retry inside this
+// scan (the source cooldown then avoids hammering it across scans).
+function requestedRetryDelayMs(headers) {
+  const retryAfter = headers['retry-after'];
+  if (!retryAfter) return 0;
+  const seconds = Number(retryAfter);
+  const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(retryAfter) - Date.now();
+  return Number.isFinite(delay) && delay > 0 ? delay : 0;
+}
+
 function retryDelayMs(headers, attempt) {
   const retryAfter = headers['retry-after'];
   if (retryAfter) {
@@ -2145,6 +2235,20 @@ function makeReqOptions(parsed, overrideUA, cookieJars, signal, requestConfig = 
       if (existingName.toLowerCase() === name) delete headers[existingName];
     }
     headers[name] = value;
+  }
+  // A non-browser User-Agent must not carry browser-only client hints:
+  // that combination is incoherent and itself a bot signal.
+  const finalUA = Object.entries(headers).find(([name]) => name.toLowerCase() === 'user-agent')?.[1] || '';
+  if (!/^Mozilla\//.test(finalUA)) {
+    for (const name of Object.keys(headers)) {
+      if (/^(sec-ch-ua|sec-fetch-|upgrade-insecure-requests$)/i.test(name)) delete headers[name];
+    }
+  }
+  // Credentials attach only to their reviewed HTTPS host, so a redirect to
+  // any other host can never receive them.
+  const credential = reqConfig.credential;
+  if (credential && credential.header && parsed.protocol === 'https:' && parsed.hostname === credential.host) {
+    headers[credential.header] = credential.scheme ? `${credential.scheme} ${credential.value}` : credential.value;
   }
   return {
     hostname: parsed.hostname,
@@ -2205,6 +2309,9 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
   let requestConfig;
   try {
     requestConfig = requestState || sourceRequestAdapter.buildRequest(site, username);
+    if (!requestState && site.resolvedCredential) {
+      Object.defineProperty(requestConfig, 'credential', { value: site.resolvedCredential, enumerable: false });
+    }
   } catch (error) {
     console.error(`[source-request] Invalid request configuration for "${site.name}": ${error.message}`);
     return finish({ ...base, status: 'error', statusCode: 0, reasonCodes: ['invalid_source_request'] });
@@ -2231,7 +2338,8 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
       return finish({ ...base, status: 'not_found', statusCode: sc, reasonCodes: ['site_specific_not_found_status'] });
     }
 
-    if ((sc === 429 || sc === 502 || sc === 503 || sc === 504) && attempt < MAX_TRANSIENT_RETRIES) {
+    if ((sc === 429 || sc === 502 || sc === 503 || sc === 504) && attempt < MAX_TRANSIENT_RETRIES &&
+        requestedRetryDelayMs(headers) <= 5000) {
       res.resume();
       return setTimeout(
         () => doRequest(site, username, origUrl, url, hops, finish, attempt + 1, cookieJars, signal, requestConfig),
@@ -2491,12 +2599,21 @@ function probe(site, username, signal) {
 
   if (site.undetectable) return probeStealth(site, username, signal);
 
+  site = sourceRequestAdapter.withCredential(site, process.env);
   return new Promise((resolve) => {
     // Sites with a calibrated internal API endpoint — hit that directly
     const targetTemplate = site.apiUrl || site.checkUrl || site.url;
     let url;
     try {
       url = targetTemplate.replace(/\{\}/g, encodeURIComponent(username));
+      const credential = site.resolvedCredential;
+      if (credential && credential.query) {
+        const target = new URL(url);
+        if (target.protocol === 'https:' && target.hostname === credential.host) {
+          target.searchParams.set(credential.query, credential.value);
+          url = target.href;
+        }
+      }
     } catch (_) {
       return resolve({ name: site.name, category: site.category, url: site.url, status: 'error', statusCode: 0 });
     }
@@ -3051,21 +3168,41 @@ const server = http.createServer((req, res) => {
       }
     };
 
-    // Rate limit check (sync — before async Turnstile call)
-    if (!checkRateLimit(ip)) {
+    if (!reserveScanSlot(ip)) {
       send({ type: 'error', error: `Scan limit reached — ${RATE_LIMIT_MAX} free scans per hour. Try again later.`, code: 429 });
       return res.end();
     }
 
-    // Turnstile verification then scan
-    verifyTurnstile(cfToken, ip, TURNSTILE_ACTIONS.scan).then(tsOk => {
-      if (cancelled) return;
+    let capacity = null;
+    let holdsCapacity = false;
+    const releaseCapacity = () => {
+      if (holdsCapacity) { holdsCapacity = false; releaseScanCapacity(); }
+    };
+    req.on('close', () => {
+      if (capacity) capacity.cancel();
+      releaseCapacity();
+    });
+
+    verifyTurnstile(cfToken, ip, TURNSTILE_ACTIONS.scan).then(async tsOk => {
+      if (cancelled) { refundScanSlot(ip); return; }
       if (!tsOk) {
+        refundScanSlot(ip);
         send({ type: 'error', error: 'Security check failed. Please refresh and try again.', code: 403 });
         return res.end();
       }
 
-      consumeRateLimit(ip);
+      capacity = acquireScanCapacity(position => send({ type: 'queued', position }));
+      if (!capacity) {
+        refundScanSlot(ip);
+        send({ type: 'error', error: 'PROBE is busy right now. Please try again in a minute.', code: 503 });
+        return res.end();
+      }
+      const granted = await capacity.ready;
+      if (!granted || cancelled) {
+        if (granted) releaseScanCapacity();
+        return;
+      }
+      holdsCapacity = true;
 
       const { total, queue, skipped } = planUsernameScan(SITES, username);
       let idx = 0, active = 0, done = 0;
@@ -3079,10 +3216,17 @@ const server = http.createServer((req, res) => {
       function tick() {
         while (!cancelled && active < CONCURRENCY && idx < queue.length) {
           const site = queue[idx++];
+          const cooled = sourceCooldownResult(site, username);
+          if (cooled) {
+            done++;
+            send({ type: 'result', ...normalizeResult(cooled), done, total });
+            continue;
+          }
           active++;
           const activeProbe = probeWithDeadline(site, username, PROBE_DEADLINE_MS);
           activeProbes.add(activeProbe);
           activeProbe.promise.then(result => {
+            recordSourceHealth(site, result);
             activeProbes.delete(activeProbe);
             active--;
             done++;
@@ -3118,6 +3262,7 @@ const server = http.createServer((req, res) => {
           });
         }
         if (idx >= queue.length && active === 0 && !res.writableEnded) {
+          releaseCapacity();
           send({ type: 'done', done, total });
           res.end();
         }
@@ -3125,6 +3270,7 @@ const server = http.createServer((req, res) => {
 
       tick();
     }).catch(() => {
+      releaseCapacity();
       if (!cancelled) {
         send({ type: 'error', error: 'Server error. Please try again.' });
         res.end();
@@ -3942,4 +4088,6 @@ if (require.main === module) {
   });
 }
 
-module.exports = { classify, classifyVerifyResponse, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan, hasIntegrityAbstention, LAB_RUNTIME_FINGERPRINT };
+module.exports = { classify, classifyVerifyResponse, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan, hasIntegrityAbstention, LAB_RUNTIME_FINGERPRINT,
+  reserveScanSlot, refundScanSlot, acquireScanCapacity, releaseScanCapacity, sourceCooldownResult, recordSourceHealth,
+  requestedRetryDelayMs, makeReqOptions, RATE_LIMIT_MAX, MAX_ACTIVE_SCANS, MAX_QUEUED_SCANS, SOURCE_COOLDOWN_THRESHOLD };

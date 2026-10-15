@@ -150,7 +150,62 @@ function validateCatalog(sites) {
       fail(site, 'auth redirect cannot mean both found and not found');
     }
     if (site.requestAdapter !== undefined) validateAdapter(site);
+    if (site.credential !== undefined) validateCredential(site);
   }
+}
+
+const HONEST_USER_AGENT = 'PROBE/1.0 (+https://usernameprobe.com)';
+const CREDENTIAL_KEYS = new Set(['env', 'host', 'header', 'scheme', 'query', 'overrides']);
+const CREDENTIAL_OVERRIDES = new Set(['apiUrl', 'checkMethod', 'positiveMsg', 'errorMsg', 'notFoundStatus', 'expectedStatus', 'requestAdapter', 'skipBodyCheck']);
+
+// Credentials come only from the environment; the catalog names the variable,
+// the single HTTPS host allowed to receive it, and how it is attached.
+function validateCredential(site) {
+  const credential = site.credential;
+  if (!isPlainObject(credential)) fail(site, 'credential must be an object');
+  assertKeys(credential, CREDENTIAL_KEYS, site, 'credential');
+  if (typeof credential.env !== 'string' || !/^[A-Z][A-Z0-9_]{2,63}$/.test(credential.env)) {
+    fail(site, 'credential.env must name an uppercase environment variable');
+  }
+  if (typeof credential.host !== 'string' || !/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(credential.host)) {
+    fail(site, 'credential.host must be a lowercase hostname');
+  }
+  if ((credential.header === undefined) === (credential.query === undefined)) {
+    fail(site, 'credential needs exactly one of header or query');
+  }
+  if (credential.header !== undefined && !['authorization', 'x-api-key'].includes(credential.header)) {
+    fail(site, 'credential.header must be authorization or x-api-key');
+  }
+  if (credential.scheme !== undefined && (credential.header === undefined || !['Bearer', 'token'].includes(credential.scheme))) {
+    fail(site, 'credential.scheme must be Bearer or token and requires a header');
+  }
+  if (credential.query !== undefined && (typeof credential.query !== 'string' || !/^[a-z_]{1,32}$/.test(credential.query))) {
+    fail(site, 'credential.query must be a simple parameter name');
+  }
+  const overrides = credential.overrides || {};
+  if (!isPlainObject(overrides)) fail(site, 'credential.overrides must be an object');
+  assertKeys(overrides, CREDENTIAL_OVERRIDES, site, 'credential.overrides');
+  const target = overrides.apiUrl || site.apiUrl || site.checkUrl || site.url;
+  let parsed;
+  try { parsed = new URL(String(target).replace(/\{\}/g, 'x')); } catch (_) { fail(site, 'credential target URL is invalid'); }
+  if (parsed.protocol !== 'https:' || parsed.hostname !== credential.host) {
+    fail(site, 'credential target must be HTTPS on credential.host');
+  }
+  if (overrides.requestAdapter !== undefined) validateAdapter({ ...site, requestAdapter: overrides.requestAdapter });
+}
+
+function withCredential(site, env) {
+  const credential = site.credential;
+  if (!credential) return site;
+  const value = String(env[credential.env] || '').trim();
+  if (!value || /[\r\n\0]/.test(value)) return site;
+  return {
+    ...site,
+    ...(credential.overrides || {}),
+    resolvedCredential: Object.freeze({
+      host: credential.host, header: credential.header, scheme: credential.scheme, query: credential.query, value,
+    }),
+  };
 }
 
 function buildRequest(site, username) {
@@ -235,4 +290,4 @@ function classifyJsonResponse(adapter, body) {
   return { status: 'unknown', reason: 'adapter_json_inconclusive' };
 }
 
-module.exports = { buildRequest, classifyJsonResponse, inspectRedirectLocation, validateCatalog };
+module.exports = { HONEST_USER_AGENT, buildRequest, classifyJsonResponse, inspectRedirectLocation, validateCatalog, withCredential };
