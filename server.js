@@ -2383,6 +2383,11 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
           reasonCodes: [reasonCode],
         });
       }
+      // Reviewed exception: on this source only existing accounts redirect
+      // (e.g. a publication moving to its custom domain); missing names 404.
+      if (site.redirectMeansFound === true && hops === 0) {
+        return finish({ ...base, status: 'found', statusCode: sc, reasonCodes: ['site_redirect_found'], confidence: 0.9 });
+      }
       // Redirect to domain root (no sub-path) → user doesn't exist, unless
       // the username is encoded in the hostname and only the protocol changed.
       try {

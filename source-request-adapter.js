@@ -141,7 +141,7 @@ function validateCatalog(sites) {
     if (!isPlainObject(site) || typeof site.name !== 'string') {
       throw new TypeError('Backend source entries must be objects with a name');
     }
-    for (const field of ['authRedirectMeansFound', 'authRedirectMeansNotFound']) {
+    for (const field of ['authRedirectMeansFound', 'authRedirectMeansNotFound', 'redirectMeansFound']) {
       if (site[field] !== undefined && typeof site[field] !== 'boolean') {
         fail(site, `${field} must be a boolean when configured`);
       }

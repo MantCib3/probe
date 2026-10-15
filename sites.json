@@ -214,7 +214,7 @@
     "urlMain": "https://bitbucket.org",
     "category": "developer",
     "checkMethod": "status_code",
-    "apiUrl": "https://api.bitbucket.org/2.0/repositories/{}?pagelen=1",
+    "apiUrl": "https://api.bitbucket.org/2.0/workspaces/{}",
     "skipBodyCheck": true,
     "cors": true,
     "expectedStatus": 200,
@@ -301,12 +301,33 @@
     "urlMain": "https://keybase.io",
     "category": "developer",
     "checkMethod": "message",
-    "apiUrl": "https://keybase.io/_/api/1.0/user/lookup.json?username={}",
-    "positiveMsg": "\"status\":{\"code\":0",
-    "errorMsg": "\"status\":{\"code\":404",
+    "apiUrl": "https://keybase.io/_/api/1.0/user/lookup.json?usernames={}&fields=basics",
     "skipBodyCheck": true,
     "cors": true,
-    "expectedStatus": 200
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      },
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/them/0/basics/username",
+            "op": "exists"
+          },
+          "negative": {
+            "path": "/them/0",
+            "op": "equals",
+            "value": null
+          }
+        }
+      }
+    },
+    "usernameRule": {
+      "pattern": "^[A-Za-z0-9_]{1,16}$",
+      "description": "Keybase usernames are at most 16 letters, digits or underscores; the lookup API rejects longer names as invalid input.",
+      "source": "https://keybase.io/docs/api/1.0/call/user/lookup"
+    }
   },
   {
     "name": "HuggingFace",
@@ -454,9 +475,29 @@
     "url": "https://www.speedrun.com/users/{}",
     "urlMain": "https://www.speedrun.com",
     "category": "gaming",
-    "checkMethod": "status_code",
+    "checkMethod": "message",
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "apiUrl": "https://www.speedrun.com/api/v1/users?lookup={}",
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      },
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/data/0/id",
+            "op": "exists"
+          },
+          "negative": {
+            "path": "/pagination/size",
+            "op": "equals",
+            "value": 0
+          }
+        }
+      }
+    }
   },
   {
     "name": "Kongregate",
@@ -474,16 +515,20 @@
     "url": "https://{}.newgrounds.com/",
     "urlMain": "https://www.newgrounds.com",
     "category": "gaming",
-    "checkMethod": "message",
-    "positiveMsg": "Newgrounds Profile",
+    "checkMethod": "status_code",
     "errorMsg": "Account Not Found",
-    "cfProxy": true,
     "expectedStatus": 200,
     "notFoundStatus": 404,
     "usernameRule": {
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    },
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
     }
   },
   {
@@ -586,6 +631,13 @@
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    },
+    "redirectMeansFound": true,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
     }
   },
   {
@@ -1146,12 +1198,16 @@
     "url": "https://letterboxd.com/{}",
     "urlMain": "https://letterboxd.com",
     "category": "misc",
-    "checkMethod": "message",
-    "positiveMsg": "'s profile on Letterboxd",
-    "errorMsg": "Sorry, we can't find the page you've requested.",
-    "cfProxy": true,
+    "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://letterboxd.com/{}/rss/",
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Carrd",
@@ -1738,7 +1794,7 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "User not found! ;_;",
-    "expectedStatus": 302,
+    "expectedStatus": 200,
     "notFoundStatus": 404,
     "requestAdapter": {
       "method": "GET",
@@ -6520,11 +6576,15 @@
     "url": "https://{}.creator-spring.com/",
     "urlMain": "https://commerce.teespring.com",
     "category": "professional",
-    "checkMethod": "message",
-    "errorMsg": "{\"errors\":{\"store\":[\"not found\"]}}",
+    "checkMethod": "status_code",
     "expectedStatus": 200,
     "notFoundStatus": 404,
-    "apiUrl": "https://commerce.teespring.com/v1/stores?slug={}"
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Teknik",
