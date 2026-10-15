@@ -1357,13 +1357,14 @@
   },
   {
     "name": "Gettr",
-    "url": "https://gettr.com/api/s/uinf/{}",
+    "url": "https://gettr.com/user/{}",
     "urlMain": "https://gettr.com",
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"rc\":\"ERR\"",
     "notFoundStatus": 400,
-    "cors": true
+    "cors": true,
+    "apiUrl": "https://gettr.com/api/s/uinf/{}"
   },
   {
     "name": "KnowYourMeme",
@@ -1419,14 +1420,15 @@
   },
   {
     "name": "Truth Social",
-    "url": "https://truthsocial.com/api/v1/accounts/lookup?acct={}",
+    "url": "https://truthsocial.com/@{}",
     "urlMain": "https://truthsocial.com",
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Record not found\"",
     "notFoundStatus": 404,
     "allowBrowserFallback": false,
-    "cors": true
+    "cors": true,
+    "apiUrl": "https://truthsocial.com/api/v1/accounts/lookup?acct={}"
   },
   {
     "name": "Twitcasting",
@@ -1459,14 +1461,15 @@
   },
   {
     "name": "YouNow",
-    "url": "https://api.younow.com/php/api/broadcast/info/user={}",
+    "url": "https://www.younow.com/{}",
     "urlMain": "https://api.younow.com",
     "category": "social",
     "checkMethod": "message",
     "positiveMsg": "\"userId\":",
     "errorMsg": "\"errorMsg\":\"No users found\"",
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://api.younow.com/php/api/broadcast/info/user={}"
   },
   {
     "name": "Zomato",
@@ -1563,13 +1566,14 @@
   },
   {
     "name": "zhihu",
-    "url": "https://api.zhihu.com/books/people/{}/publications?offset=0&limit=5",
+    "url": "https://www.zhihu.com/people/{}",
     "urlMain": "https://api.zhihu.com",
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"name\": \"NotFoundException\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.zhihu.com/books/people/{}/publications?offset=0&limit=5"
   },
   {
     "name": "Parler",
@@ -1666,14 +1670,15 @@
   },
   {
     "name": "Habbo.com",
-    "url": "https://www.habbo.com/api/public/users?name={}",
+    "url": "https://www.habbo.com/profile/{}",
     "urlMain": "https://www.habbo.com",
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "error\": \"not-found",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://www.habbo.com/api/public/users?name={}"
   },
   {
     "name": "MCUUID (Minecraft)",
@@ -1762,13 +1767,14 @@
   },
   {
     "name": "BoardGameGeek",
-    "url": "https://api.geekdo.com/api/accounts/validate/username?username={}",
+    "url": "https://boardgamegeek.com/user/{}",
     "urlMain": "https://api.geekdo.com",
     "category": "gaming",
     "checkMethod": "message",
     "positiveMsg": "\"message\":\"Sorry, this username is already taken.\"",
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://api.geekdo.com/api/accounts/validate/username?username={}"
   },
   {
     "name": "BIGO Live",
@@ -1795,7 +1801,7 @@
   },
   {
     "name": "Apex Legends",
-    "url": "https://api.tracker.gg/api/v2/apex/standard/profile/origin/{}",
+    "url": "https://apex.tracker.gg/apex/profile/origin/{}/overview",
     "urlMain": "https://api.tracker.gg",
     "category": "gaming",
     "checkMethod": "message",
@@ -1803,7 +1809,8 @@
     "allowBrowserFallback": false,
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.tracker.gg/api/v2/apex/standard/profile/origin/{}"
   },
   {
     "name": "Xbox Gamertag",
@@ -1849,14 +1856,15 @@
   },
   {
     "name": "TETR.IO",
-    "url": "https://ch.tetr.io/api/users/{}",
+    "url": "https://ch.tetr.io/u/{}",
     "urlMain": "https://ch.tetr.io",
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://ch.tetr.io/api/users/{}"
   },
   {
     "name": "SteamGifts",
@@ -1922,14 +1930,15 @@
   },
   {
     "name": "Wakatime",
-    "url": "https://wakatime.com/api/v1/users/{}",
+    "url": "https://wakatime.com/@{}",
     "urlMain": "https://wakatime.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"error\": \"Not found.\"",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://wakatime.com/api/v1/users/{}"
   },
   {
     "name": "HackerRank",
@@ -1974,17 +1983,18 @@
   },
   {
     "name": "Codeforces",
-    "url": "https://codeforces.com/api/user.info?handles={}",
+    "url": "https://codeforces.com/profile/{}",
     "urlMain": "https://codeforces.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"status\":\"FAILED\"",
     "notFoundStatus": 400,
-    "cors": true
+    "cors": true,
+    "apiUrl": "https://codeforces.com/api/user.info?handles={}"
   },
   {
     "name": "CodeSandbox",
-    "url": "https://codesandbox.io/api/v1/users/{}",
+    "url": "https://codesandbox.io/u/{}",
     "urlMain": "https://codesandbox.io",
     "category": "developer",
     "checkMethod": "message",
@@ -1992,18 +2002,20 @@
     "undetectable": true,
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 422
+    "notFoundStatus": 422,
+    "apiUrl": "https://codesandbox.io/api/v1/users/{}"
   },
   {
     "name": "devRant",
-    "url": "https://devrant.com/api/get-user-id?app=3&username={}",
+    "url": "https://devrant.com/users/{}",
     "urlMain": "https://devrant.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "notFoundStatus": 400,
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "apiUrl": "https://devrant.com/api/get-user-id?app=3&username={}"
   },
   {
     "name": "Docker Hub (User)",
@@ -2020,14 +2032,15 @@
   },
   {
     "name": "GeeksForGeeks",
-    "url": "https://authapi.geeksforgeeks.org/api-get/user-profile-info/?handle={}",
+    "url": "https://www.geeksforgeeks.org/user/{}/",
     "urlMain": "https://authapi.geeksforgeeks.org",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User not found!\"",
     "notFoundStatus": 400,
     "skipBodyCheck": true,
-    "cors": true
+    "cors": true,
+    "apiUrl": "https://authapi.geeksforgeeks.org/api-get/user-profile-info/?handle={}"
   },
   {
     "name": "Hackster",
@@ -2052,18 +2065,19 @@
   },
   {
     "name": "Monkeytype",
-    "url": "https://api.monkeytype.com/users/{}/profile",
+    "url": "https://monkeytype.com/profile/{}",
     "urlMain": "https://api.monkeytype.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User not found\"",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.monkeytype.com/users/{}/profile"
   },
   {
     "name": "RubyGems.org",
-    "url": "https://rubygems.org/api/v1/profiles/{}.json",
+    "url": "https://rubygems.org/profiles/{}",
     "urlMain": "https://rubygems.org",
     "category": "developer",
     "checkMethod": "message",
@@ -2075,18 +2089,20 @@
       "pattern": "^[a-z0-9_-]+$",
       "description": "RubyGems account handles use letters, digits, underscores or hyphens; package-name rules do not apply.",
       "source": "https://github.com/rubygems/rubygems.org/blob/master/lib/patterns.rb"
-    }
+    },
+    "apiUrl": "https://rubygems.org/api/v1/profiles/{}.json"
   },
   {
     "name": "Scratch",
-    "url": "https://api.scratch.mit.edu/accounts/checkusername/{}/",
+    "url": "https://scratch.mit.edu/users/{}/",
     "urlMain": "https://api.scratch.mit.edu",
     "category": "developer",
     "checkMethod": "message",
     "positiveMsg": "\"msg\":\"username exists\"",
     "errorMsg": "\"msg\":\"valid username\"",
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://api.scratch.mit.edu/accounts/checkusername/{}/"
   },
   {
     "name": "Topcoder",
@@ -2101,14 +2117,15 @@
   },
   {
     "name": "Bugcrowd",
-    "url": "https://bugcrowd.com/profile-service/v1/profiles/{}",
+    "url": "https://bugcrowd.com/h/{}",
     "urlMain": "https://bugcrowd.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Not Found\"",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://bugcrowd.com/profile-service/v1/profiles/{}"
   },
   {
     "name": "HackerOne",
@@ -2121,14 +2138,15 @@
   },
   {
     "name": "TryHackMe",
-    "url": "https://tryhackme.com/api/user/exist/{}",
+    "url": "https://tryhackme.com/p/{}",
     "urlMain": "https://tryhackme.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "allowBrowserFallback": false,
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://tryhackme.com/api/user/exist/{}"
   },
   {
     "name": "Udemy",
@@ -2211,14 +2229,15 @@
   },
   {
     "name": "Mixcloud",
-    "url": "https://api.mixcloud.com/{}/",
+    "url": "https://www.mixcloud.com/{}/",
     "urlMain": "https://api.mixcloud.com",
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"error\":",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.mixcloud.com/{}/"
   },
   {
     "name": "Audiojungle",
@@ -2232,24 +2251,26 @@
   },
   {
     "name": "Discogs",
-    "url": "https://api.discogs.com/users/{}",
+    "url": "https://www.discogs.com/user/{}",
     "urlMain": "https://api.discogs.com",
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"message\": \"User does not exist or may have been deleted.\"",
     "cors": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.discogs.com/users/{}"
   },
   {
     "name": "Bandlab",
-    "url": "https://www.bandlab.com/api/v1.3/users/{}",
+    "url": "https://www.bandlab.com/{}",
     "urlMain": "https://www.bandlab.com",
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "CouldnÃ¢â‚¬â„¢t find any matching element, it might be deleted",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://www.bandlab.com/api/v1.3/users/{}"
   },
   {
     "name": "Blogspot",
@@ -2269,7 +2290,7 @@
   },
   {
     "name": "WordPress.com (Public)",
-    "url": "https://public-api.wordpress.com/rest/v1.1/sites/{}.wordpress.com",
+    "url": "https://{}.wordpress.com/",
     "urlMain": "https://public-api.wordpress.com",
     "category": "content",
     "checkMethod": "message",
@@ -2280,7 +2301,8 @@
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
-    }
+    },
+    "apiUrl": "https://public-api.wordpress.com/rest/v1.1/sites/{}.wordpress.com"
   },
   {
     "name": "Houzz",
@@ -2295,7 +2317,7 @@
   },
   {
     "name": "Quizlet",
-    "url": "https://quizlet.com/webapi/3.2/users/check-username?username={}",
+    "url": "https://quizlet.com/user/{}/sets",
     "urlMain": "https://quizlet.com",
     "category": "misc",
     "checkMethod": "message",
@@ -2303,7 +2325,8 @@
     "undetectable": true,
     "positiveMsg": "\"success\":false",
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://quizlet.com/webapi/3.2/users/check-username?username={}"
   },
   {
     "name": "carrd.co",
@@ -2506,13 +2529,14 @@
   },
   {
     "name": "Arduino (Forum)",
-    "url": "https://forum.arduino.cc/u/{}.json",
+    "url": "https://forum.arduino.cc/u/{}",
     "urlMain": "https://forum.arduino.cc",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"error_type\":\"not_found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://forum.arduino.cc/u/{}.json"
   },
   {
     "name": "Arduino (Project Hub)",
@@ -2739,13 +2763,14 @@
   },
   {
     "name": "Bunpro",
-    "url": "https://community.bunpro.jp/u/{}.json",
+    "url": "https://community.bunpro.jp/u/{}",
     "urlMain": "https://community.bunpro.jp",
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "The requested URL or resource could not be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://community.bunpro.jp/u/{}.json"
   },
   {
     "name": "cafecito",
@@ -2836,13 +2861,14 @@
   },
   {
     "name": "cfx.re",
-    "url": "https://forum.cfx.re/u/{}.json",
+    "url": "https://forum.cfx.re/u/{}",
     "urlMain": "https://forum.cfx.re",
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "The requested URL or resource could not be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://forum.cfx.re/u/{}.json"
   },
   {
     "name": "championat",
@@ -2921,13 +2947,14 @@
   },
   {
     "name": "Cloudflare",
-    "url": "https://community.cloudflare.com/u/{}/card.json",
+    "url": "https://community.cloudflare.com/u/{}",
     "urlMain": "https://community.cloudflare.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "The requested URL or resource could not be found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://community.cloudflare.com/u/{}/card.json"
   },
   {
     "name": "cnet",
@@ -3188,22 +3215,24 @@
   },
   {
     "name": "diigo",
-    "url": "https://www.diigo.com/interact_api/load_profile_info?name={}",
+    "url": "https://www.diigo.com/profile/{}",
     "urlMain": "https://diigo.com",
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "{}",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://www.diigo.com/interact_api/load_profile_info?name={}"
   },
   {
     "name": "Discourse",
-    "url": "https://meta.discourse.org/u/{}/summary.json",
+    "url": "https://meta.discourse.org/u/{}",
     "urlMain": "https://meta.discourse.org",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "The requested URL or resource could not be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://meta.discourse.org/u/{}/summary.json"
   },
   {
     "name": "discuss.elastic.co",
@@ -4060,13 +4089,14 @@
   },
   {
     "name": "HackAdvisor",
-    "url": "https://hackadvisor.io/api/v2/profile/{}/",
+    "url": "https://hackadvisor.io/hacker/{}",
     "urlMain": "https://hackadvisor.io",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "{\"detail\":\"Username not found\"}",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://hackadvisor.io/api/v2/profile/{}/"
   },
   {
     "name": "hamaha",
@@ -4291,13 +4321,14 @@
   },
   {
     "name": "inaturalist",
-    "url": "https://api.inaturalist.org/v1/users/{}",
+    "url": "https://www.inaturalist.org/people/{}",
     "urlMain": "https://api.inaturalist.org",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.inaturalist.org/v1/users/{}"
   },
   {
     "name": "InkBunny",
@@ -4334,13 +4365,14 @@
   },
   {
     "name": "Intigriti",
-    "url": "https://app.intigriti.com/api/user/public/profile/{}",
+    "url": "https://app.intigriti.com/profile/{}",
     "urlMain": "https://app.intigriti.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "class=\"error-page-container\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://app.intigriti.com/api/user/public/profile/{}"
   },
   {
     "name": "Issuu",
@@ -4889,13 +4921,14 @@
   },
   {
     "name": "Microsoft Learn",
-    "url": "https://learn.microsoft.com/api/profiles/{}",
+    "url": "https://learn.microsoft.com/en-us/users/{}/",
     "urlMain": "https://learn.microsoft.com",
     "category": "developer",
     "checkMethod": "message",
     "positiveMsg": "\"userId\":",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://learn.microsoft.com/api/profiles/{}"
   },
   {
     "name": "mintme",
@@ -4941,13 +4974,14 @@
   },
   {
     "name": "Mixlr",
-    "url": "https://api.mixlr.com/users/{}",
+    "url": "https://mixlr.com/{}",
     "urlMain": "https://api.mixlr.com",
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"Resource not found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.mixlr.com/users/{}"
   },
   {
     "name": "Mmorpg",
@@ -5203,23 +5237,25 @@
   },
   {
     "name": "Nifty Gateway",
-    "url": "https://api.niftygateway.com/user/profile-and-offchain-nifties-by-url/?profile_url={}",
+    "url": "https://www.niftygateway.com/profile/{}",
     "urlMain": "https://api.niftygateway.com",
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "&quot;didSucceed&quot;: false",
     "expectedStatus": 200,
-    "notFoundStatus": 400
+    "notFoundStatus": 400,
+    "apiUrl": "https://api.niftygateway.com/user/profile-and-offchain-nifties-by-url/?profile_url={}"
   },
   {
     "name": "Nightbot",
-    "url": "https://api.nightbot.tv/1/channels/t/{}",
+    "url": "https://nightbot.tv/t/{}/commands",
     "urlMain": "https://api.nightbot.tv",
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "\"status\":404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.nightbot.tv/1/channels/t/{}"
   },
   {
     "name": "nihbuatjajan",
@@ -5370,13 +5406,14 @@
   },
   {
     "name": "Origins.Habbo.com",
-    "url": "https://origins.habbo.com/api/public/users?name={}",
+    "url": "https://origins.habbo.com/profile/{}",
     "urlMain": "https://origins.habbo.com",
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "not-found",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://origins.habbo.com/api/public/users?name={}"
   },
   {
     "name": "Origins.Habbo.com.br",
@@ -5498,14 +5535,15 @@
   },
   {
     "name": "Peerlist",
-    "url": "https://peerlist.io/api/v1/users/profile/tldr?handle={}",
+    "url": "https://peerlist.io/{}",
     "urlMain": "https://peerlist.io",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"message\":\"User Not found\"",
     "undetectable": true,
     "expectedStatus": 200,
-    "notFoundStatus": 500
+    "notFoundStatus": 500,
+    "apiUrl": "https://peerlist.io/api/v1/users/profile/tldr?handle={}"
   },
   {
     "name": "peoople (Creator)",
@@ -5541,12 +5579,13 @@
   },
   {
     "name": "Picsart",
-    "url": "https://api.picsart.com/users/show/{}.json",
+    "url": "https://picsart.com/u/{}",
     "urlMain": "https://api.picsart.com",
     "category": "content",
     "checkMethod": "message",
     "errorMsg": "\"status\":\"error\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://api.picsart.com/users/show/{}.json"
   },
   {
     "name": "Piekielni",
@@ -5653,13 +5692,14 @@
   },
   {
     "name": "Poll Everywhere",
-    "url": "https://pollev.com/proxy/api/users/{}",
+    "url": "https://pollev.com/{}",
     "urlMain": "https://pollev.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "ResourceNotFound",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://pollev.com/proxy/api/users/{}"
   },
   {
     "name": "polygon",
@@ -5725,13 +5765,14 @@
   },
   {
     "name": "Privacy Guides",
-    "url": "https://discuss.privacyguides.net/u/{}.json",
+    "url": "https://discuss.privacyguides.net/u/{}",
     "urlMain": "https://discuss.privacyguides.net",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "The requested URL or resource could not be found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://discuss.privacyguides.net/u/{}.json"
   },
   {
     "name": "Pronouns.Page",
@@ -5807,13 +5848,14 @@
   },
   {
     "name": "Rarible",
-    "url": "https://rarible.com/marketplace/api/v4/urls/{}",
+    "url": "https://rarible.com/{}",
     "urlMain": "https://rarible.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"success\":false",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://rarible.com/marketplace/api/v4/urls/{}"
   },
   {
     "name": "RedGIFs",
@@ -5849,13 +5891,14 @@
   },
   {
     "name": "Revolut",
-    "url": "https://revolut.me/api/web-profile/{}",
+    "url": "https://revolut.me/{}",
     "urlMain": "https://revolut.me",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"User not found\"",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://revolut.me/api/web-profile/{}"
   },
   {
     "name": "risk.ru",
@@ -5901,12 +5944,13 @@
   },
   {
     "name": "RuneScape",
-    "url": "https://apps.runescape.com/runemetrics/profile/profile?user={}",
+    "url": "https://secure.runescape.com/m=hiscore/compare?user1={}",
     "urlMain": "https://apps.runescape.com",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "\"error\":\"NO_PROFILE\"",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "apiUrl": "https://apps.runescape.com/runemetrics/profile/profile?user={}"
   },
   {
     "name": "RuTracker.org",
@@ -6276,7 +6320,7 @@
   },
   {
     "name": "Statuspage",
-    "url": "https://{}.statuspage.io/api/v2/status.json",
+    "url": "https://{}.statuspage.io/",
     "urlMain": "https://{}.statuspage.io",
     "category": "developer",
     "checkMethod": "message",
@@ -6287,7 +6331,8 @@
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
-    }
+    },
+    "apiUrl": "https://{}.statuspage.io/api/v2/status.json"
   },
   {
     "name": "steller",
@@ -6302,23 +6347,25 @@
   },
   {
     "name": "StreamElements",
-    "url": "https://api.streamelements.com/kappa/v2/channels/{}",
+    "url": "https://streamelements.com/{}/tip",
     "urlMain": "https://api.streamelements.com",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "error",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.streamelements.com/kappa/v2/channels/{}"
   },
   {
     "name": "StreamLabs",
-    "url": "https://streamlabs.com/api/v6/user/{}",
+    "url": "https://streamlabs.com/{}/tip",
     "urlMain": "https://streamlabs.com",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "<title>Unauthorized</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 401
+    "notFoundStatus": 401,
+    "apiUrl": "https://streamlabs.com/api/v6/user/{}"
   },
   {
     "name": "Stripchat",
@@ -6466,13 +6513,14 @@
   },
   {
     "name": "Teespring",
-    "url": "https://commerce.teespring.com/v1/stores?slug={}",
+    "url": "https://{}.creator-spring.com/",
     "urlMain": "https://commerce.teespring.com",
     "category": "professional",
     "checkMethod": "message",
     "errorMsg": "{\"errors\":{\"store\":[\"not found\"]}}",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://commerce.teespring.com/v1/stores?slug={}"
   },
   {
     "name": "Teknik",
@@ -7245,13 +7293,14 @@
   },
   {
     "name": "YesWeHack",
-    "url": "https://api.yeswehack.com/hunters/{}",
+    "url": "https://yeswehack.com/hunters/{}",
     "urlMain": "https://api.yeswehack.com",
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "\"code\":404",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "apiUrl": "https://api.yeswehack.com/hunters/{}"
   },
   {
     "name": "youpic",

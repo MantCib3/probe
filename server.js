@@ -2296,7 +2296,10 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
   const mod  = parsed.protocol === 'https:' ? https : http;
   const base = { name: site.name, category: site.category, url: origUrl };
   const finishResponse = (result, body, contentType) => {
-    if (result.status === 'found' && hops > 0 && !redirectRetainsProfileIdentity(origUrl, url, username)) {
+    // Identity is judged against the URL PROBE actually requested (an API
+    // endpoint when configured), not the profile link shown to users.
+    const requestedUrl = (site.apiUrl || site.checkUrl || site.url).replace(/\{\}/g, encodeURIComponent(username));
+    if (result.status === 'found' && hops > 0 && !redirectRetainsProfileIdentity(requestedUrl, url, username)) {
       return finish(makeClassifiedResult({
         ...base,
         statusCode: result.statusCode,
