@@ -50,16 +50,19 @@ function validateJsonValue(value, depth = 0) {
 function validatePredicate(predicate, site, label) {
   if (!isPlainObject(predicate)) fail(site, `${label} must be an object`);
   assertKeys(predicate, new Set(['path', 'op', 'value']), site, label);
-  if (typeof predicate.path !== 'string' || !predicate.path.startsWith('/')) {
+  // The whole document ('') may only be tested for emptiness, e.g. an API
+  // that answers a missing user with [] — never for existence or equality.
+  const rootEmpty = predicate.path === '' && predicate.op === 'empty';
+  if (typeof predicate.path !== 'string' || (!predicate.path.startsWith('/') && !rootEmpty)) {
     fail(site, `${label}.path must be a non-root JSON Pointer`);
   }
-  const parts = predicate.path.slice(1).split('/');
+  const parts = rootEmpty ? [] : predicate.path.slice(1).split('/');
   if (parts.some(part => /~(?![01])/.test(part) ||
       ['__proto__', 'prototype', 'constructor'].includes(part.replace(/~1/g, '/').replace(/~0/g, '~')))) {
     fail(site, `${label}.path contains an invalid or unsafe segment`);
   }
-  if (!['exists', 'equals', 'truthy', 'falsey'].includes(predicate.op)) {
-    fail(site, `${label}.op must be exists, equals, truthy, or falsey`);
+  if (!['exists', 'equals', 'truthy', 'falsey', 'empty'].includes(predicate.op)) {
+    fail(site, `${label}.op must be exists, equals, truthy, falsey, or empty`);
   }
   if (predicate.op === 'equals') {
     if (!Object.hasOwn(predicate, 'value') || !validateJsonValue(predicate.value)) {
@@ -173,8 +176,8 @@ function validateCredential(site) {
   if ((credential.header === undefined) === (credential.query === undefined)) {
     fail(site, 'credential needs exactly one of header or query');
   }
-  if (credential.header !== undefined && !['authorization', 'x-api-key'].includes(credential.header)) {
-    fail(site, 'credential.header must be authorization or x-api-key');
+  if (credential.header !== undefined && !['authorization', 'x-api-key', 'trakt-api-key'].includes(credential.header)) {
+    fail(site, 'credential.header must be authorization, x-api-key or trakt-api-key');
   }
   if (credential.scheme !== undefined && (credential.header === undefined || !['Bearer', 'token'].includes(credential.scheme))) {
     fail(site, 'credential.scheme must be Bearer or token and requires a header');
@@ -261,12 +264,15 @@ function resolvePointer(root, pointer) {
 }
 
 function matchesPredicate(root, predicate) {
-  const resolved = resolvePointer(root, predicate.path);
+  const resolved = predicate.path === '' ? { exists: true, value: root } : resolvePointer(root, predicate.path);
   switch (predicate.op) {
     case 'exists': return resolved.exists;
     case 'equals': return resolved.exists && isDeepStrictEqual(resolved.value, predicate.value);
     case 'truthy': return resolved.exists && Boolean(resolved.value);
     case 'falsey': return resolved.exists && !resolved.value;
+    case 'empty': return resolved.exists && (Array.isArray(resolved.value)
+      ? resolved.value.length === 0
+      : isPlainObject(resolved.value) && Object.keys(resolved.value).length === 0);
     default: throw new TypeError(`Unsupported JSON predicate operator "${predicate.op}"`);
   }
 }

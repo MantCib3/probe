@@ -33,3 +33,8 @@ services:
       # back to unauthenticated requests.
       - key: GITHUB_TOKEN
         sync: false
+      # Optional keyed lookups (free keys; see BACKEND_SOURCE_ADAPTERS.md).
+      - key: OSU_API_KEY
+        sync: false
+      - key: TRAKT_CLIENT_ID
+        sync: false

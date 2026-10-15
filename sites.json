@@ -595,7 +595,26 @@
     "checkMethod": "message",
     "positiveMsg": "s profile - Trakt",
     "errorMsg": "The page you were looking for doesn't exist",
-    "cfProxy": true
+    "cfProxy": true,
+    "credential": {
+      "env": "TRAKT_CLIENT_ID",
+      "host": "api.trakt.tv",
+      "header": "trakt-api-key",
+      "overrides": {
+        "apiUrl": "https://api.trakt.tv/users/{}",
+        "checkMethod": "status_code",
+        "expectedStatus": 200,
+        "notFoundStatus": 404,
+        "requestAdapter": {
+          "method": "GET",
+          "headers": {
+            "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)",
+            "trakt-api-version": "2",
+            "Content-Type": "application/json"
+          }
+        }
+      }
+    }
   },
   {
     "name": "YouTube",
@@ -1800,6 +1819,33 @@
       "method": "GET",
       "headers": {
         "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    },
+    "credential": {
+      "env": "OSU_API_KEY",
+      "host": "osu.ppy.sh",
+      "query": "k",
+      "overrides": {
+        "apiUrl": "https://osu.ppy.sh/api/get_user?u={}&type=string",
+        "checkMethod": "message",
+        "requestAdapter": {
+          "method": "GET",
+          "headers": {
+            "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+          },
+          "response": {
+            "json": {
+              "positive": {
+                "path": "/0/user_id",
+                "op": "exists"
+              },
+              "negative": {
+                "path": "",
+                "op": "empty"
+              }
+            }
+          }
+        }
       }
     }
   },
