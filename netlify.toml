@@ -176,3 +176,36 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
+
+[[redirects]]
+  from = "/blog/honest-by-default.html"
+  to = "/blog/honest-by-default"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/honest-by-default"
+  to = "/blog/honest-by-default.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/what-were-building-next.html"
+  to = "/blog/what-were-building-next"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/what-were-building-next"
+  to = "/blog/what-were-building-next.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/how-to-search-a-username.html"
+  to = "/blog/how-to-search-a-username"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/how-to-search-a-username"
+  to = "/blog/how-to-search-a-username.html"
+  status = 200

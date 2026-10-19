@@ -1,3 +1,42 @@
+HONEST BY DEFAULT: WHY PROBE SAYS WHO IT IS
+Image: honest-by-default.png
+
+Every request PROBE sends says who it is.
+
+No browser disguise, no borrowed search-crawler identity, and no workaround when a platform says no. Some sources stay manual on purpose, even when a check would technically work.
+
+What that costs, and why it is worth it:
+https://usernameprobe.com/blog/honest-by-default
+
+Short version:
+PROBE names itself in every request and keeps sources manual when their terms prohibit automated checks. Fewer answers, better evidence: https://usernameprobe.com/blog/honest-by-default
+
+WHAT WE’RE BUILDING NEXT
+Image: what-were-building-next.png
+
+We mapped every source PROBE cannot yet answer automatically.
+
+80 sources, tested from a home connection and from our hosting network. Every one now has a recorded reason. None are left unclassified.
+
+What blocks them, and what comes next:
+https://usernameprobe.com/blog/what-were-building-next
+
+Short version:
+80 sources mapped to the exact reason PROBE cannot answer them yet, plus nightly canaries and the work ahead: https://usernameprobe.com/blog/what-were-building-next
+
+HOW TO SEARCH A USERNAME ACROSS THE WEB
+Image: how-to-search-a-username.png
+
+How to search a username across the web, properly.
+
+Pick sensible variants, read found, not found and unknown for what they really mean, and verify a match before you rely on it. A matching username is a lead, not proof.
+
+The practical guide:
+https://usernameprobe.com/blog/how-to-search-a-username
+
+Short version:
+A practical guide to username searches: variants, reading every result type, and verifying a match before you rely on it: https://usernameprobe.com/blog/how-to-search-a-username
+
 COPY-READY SOCIAL CAPTIONS — 12 OCTOBER 2026
 Use each caption with its matching PNG. Publication is manual; nothing has been posted.
 

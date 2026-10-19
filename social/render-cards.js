@@ -127,6 +127,30 @@ const cards = [
     foot: 'usernameprobe.com/blog/the-internet-isnt-forever',
     stats: [['Present', 'LIVE EVIDENCE'], ['Past', 'UNPROVEN ABSENCE']],
   },
+  {
+    slug: 'honest-by-default', kicker: 'HOW PROBE WORKS', accent: STYLE.green,
+    title: 'HONEST<br>BY DEFAULT',
+    deck: 'Every request says who it is.<br>Some sources stay manual on purpose.',
+    side: '<div class="panel"><strong class="words">NO<br>MASKS</strong><span>IDENTIFIED REQUESTS</span></div>',
+    foot: 'usernameprobe.com/blog/honest-by-default',
+    stats: [['Named', 'EVERY REQUEST'], ['Terms', 'BEFORE COVERAGE']],
+  },
+  {
+    slug: 'what-were-building-next', kicker: 'BUILD IN PUBLIC', accent: STYLE.blue,
+    title: 'WHAT WE’RE<br>BUILDING<br>NEXT',
+    deck: 'Every unanswered source,<br>mapped to the reason why.',
+    side: '<div class="panel"><strong class="ratio">80 / 80</strong><span>SOURCES CLASSIFIED</span></div><p class="note">Blocker census · 15 Oct 2026<br>Home and hosted networks</p>',
+    foot: 'usernameprobe.com/blog/what-were-building-next',
+    stats: [['35', 'ANTI-BOT PROTECTED'], ['4', 'NEARLY READY']],
+  },
+  {
+    slug: 'how-to-search-a-username', kicker: 'PRACTICAL GUIDE', accent: STYLE.purple,
+    title: 'HOW TO SEARCH<br>A USERNAME',
+    deck: 'Read every result for what it says.<br>Verify before you rely on it.',
+    side: '<div class="panel"><strong class="words">VERIFY<br>FIRST</strong><span>A MATCH IS A LEAD</span></div>',
+    foot: 'usernameprobe.com/blog/how-to-search-a-username',
+    stats: [['Found', 'NOT IDENTITY'], ['Unknown', 'NOT A NO']],
+  },
 ];
 
 function template(card) {

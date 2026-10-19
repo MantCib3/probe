@@ -432,5 +432,98 @@
     },
     "sourceSha256": "4ddf9b4e79fc61cf4cc25a8f96c4d35c1c5b0d41a9c2d4eb9990635e115230a3",
     "imageSha256": "6eaab883d9dea028b7f8f4b15c932033aeefae6de8b994e70060ad65726ea7a3"
+  },
+  {
+    "slug": "honest-by-default",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "155e4bfaf553e01c8744cd7573715a431bf64fd66c9cd3523da01d5cde802287",
+    "imageSha256": "5cbef5326e84e39c822cd138998c5da1d584cddef6dc7aca63941eb8313b1435"
+  },
+  {
+    "slug": "what-were-building-next",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "19deb1f8c17ee0639c45130cafa00690eda7df6a317fe1378630f0c980125b37",
+    "imageSha256": "65a453834b38a49d1ad0e2afcf2269756972986a3ffde519605b0fd5e1de8e8e"
+  },
+  {
+    "slug": "how-to-search-a-username",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "06938403bf05007e49c777b1284c3951b2f847372ea528c594055cafa5274a9a",
+    "imageSha256": "85568939ef07ea7414162057b74f96f943d87bdecbc03afc5ba6993b665af28e"
   }
 ]

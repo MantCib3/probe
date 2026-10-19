@@ -2970,6 +2970,9 @@ function isPrivateScript(filePath) {
 const CLEAN_PAGE_ROUTES = new Map([
   ['/roadmap', 'roadmap.html'],
   ['/privacy', 'privacy.html'],
+  ['/blog/honest-by-default', 'blog/honest-by-default.html'],
+  ['/blog/what-were-building-next', 'blog/what-were-building-next.html'],
+  ['/blog/how-to-search-a-username', 'blog/how-to-search-a-username.html'],
   ['/blog/the-internet-isnt-forever', 'blog/the-internet-isnt-forever.html'],
   ['/blog/the-soft-404-epidemic', 'blog/the-soft-404-epidemic.html'],
   ['/blog/decay-of-the-open-web', 'blog/decay-of-the-open-web.html'],

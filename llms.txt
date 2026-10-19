@@ -7,6 +7,9 @@ PROBE is intended for lawful research using publicly reachable information. A re
 ## Primary pages
 
 - [Username search](https://usernameprobe.com/): The interactive PROBE application and its current source coverage.
+- [Honest by Default: Why PROBE Says Who It Is](https://usernameprobe.com/blog/honest-by-default): How PROBE identifies its requests, respects platform terms and rate limits, and why some technically checkable sources stay manual.
+- [What We're Building Next](https://usernameprobe.com/blog/what-were-building-next): Blocker census of 80 manual or non-deciding sources, nightly canary checks, sources being verified for release, and planned infrastructure and measurement work.
+- [How to Search a Username Across the Web](https://usernameprobe.com/blog/how-to-search-a-username): Practical guide to username searches: variants, reading found, not found, unknown, blocked and skipped results, verifying matches, and responsible use.
 - [The internet isn't forever](https://usernameprobe.com/blog/the-internet-isnt-forever): Digital footprints fade, platforms shutter, and archives crumble. What link rot and ephemerality mean for username intelligence.
 - [The soft 404 epidemic](https://usernameprobe.com/blog/the-soft-404-epidemic): Why modern single-page applications return HTTP 200 OK for every path, and how PROBE requires corroborating evidence before claiming a match.
 - [Decay of the open web](https://usernameprobe.com/blog/decay-of-the-open-web): Over half of historical OSINT targets are defunct. Why catalog size is a vanity metric and ruthless source pruning protects scan integrity.

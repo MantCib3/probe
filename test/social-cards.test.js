@@ -20,7 +20,7 @@ const originalSlugs = [
 
 test('reproducible renderer includes every original and new social card exactly once', () => {
   const files = fs.readdirSync(path.join(root, 'social')).filter(file => file.endsWith('.png')).sort();
-  assert.equal(cards.length, 14);
+  assert.equal(cards.length, 17);
   assert.equal(new Set(cards.map(card => card.slug)).size, cards.length);
   assert.deepEqual(files, cards.map(card => `${card.slug}.png`).sort());
   for (const slug of originalSlugs) assert.ok(cards.some(card => card.slug === slug), slug);
