@@ -525,5 +525,67 @@
     },
     "sourceSha256": "06938403bf05007e49c777b1284c3951b2f847372ea528c594055cafa5274a9a",
     "imageSha256": "85568939ef07ea7414162057b74f96f943d87bdecbc03afc5ba6993b665af28e"
+  },
+  {
+    "slug": "audit-your-username-footprint",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "c6c6f6b22c1191496ad2507c951ed1a6651f3898c4ecb4e2288ced2f1cd40974",
+    "imageSha256": "302497ae1c24c66bfa6a8f17c2b2a94fbb41d42385e168da23225ddc2a15ab8a"
+  },
+  {
+    "slug": "choosing-a-private-username",
+    "overflow": [],
+    "headline": {
+      "fontSize": "72px",
+      "fontWeight": "700",
+      "lineHeight": "61.92px"
+    },
+    "deck": {
+      "fontSize": "29px",
+      "fontWeight": "400",
+      "lineHeight": "34.8px"
+    },
+    "kicker": {
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal"
+    },
+    "stats": {
+      "x": 830,
+      "y": 501,
+      "width": 300,
+      "height": 76
+    },
+    "brand": {
+      "x": 1000,
+      "y": 50
+    },
+    "sourceSha256": "599d8aed807844b9f5ea880f1562681bccc33973c7e6b4a013c7a45eeda07892",
+    "imageSha256": "3765a3e2ec517e78dcf23ab64335d2aeb2930f484282e4f5eb87646621c908b1"
   }
 ]

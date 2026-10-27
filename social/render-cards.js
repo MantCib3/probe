@@ -151,6 +151,22 @@ const cards = [
     foot: 'usernameprobe.com/blog/how-to-search-a-username',
     stats: [['Found', 'NOT IDENTITY'], ['Unknown', 'NOT A NO']],
   },
+  {
+    slug: 'audit-your-username-footprint', kicker: 'PRACTICAL GUIDE', accent: STYLE.yellow,
+    title: 'AUDIT YOUR<br>USERNAME<br>FOOTPRINT',
+    deck: 'Search every handle you use.<br>Decide what stays.',
+    side: '<div class="panel"><strong>15 MIN</strong><span>SELF-AUDIT</span></div>',
+    foot: 'usernameprobe.com/blog/audit-your-username-footprint',
+    stats: [['Search', 'EVERY HANDLE'], ['Lock', 'WHAT YOU KEEP']],
+  },
+  {
+    slug: 'choosing-a-private-username', kicker: 'PRIVACY', accent: STYLE.red,
+    title: 'A USERNAME<br>THAT DOESN’T<br>GIVE YOU AWAY',
+    deck: 'Keep names, ages and places out.<br>Keep separate lives separate.',
+    side: '<div class="panel"><strong class="words">REUSE<br>LINKS</strong><span>ACCOUNTS TOGETHER</span></div>',
+    foot: 'usernameprobe.com/blog/choosing-a-private-username',
+    stats: [['Unique', 'PER CONTEXT'], ['Plain', 'NO PERSONAL DATA']],
+  },
 ];
 
 function template(card) {

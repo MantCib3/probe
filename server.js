@@ -2970,6 +2970,8 @@ function isPrivateScript(filePath) {
 const CLEAN_PAGE_ROUTES = new Map([
   ['/roadmap', 'roadmap.html'],
   ['/privacy', 'privacy.html'],
+  ['/blog/audit-your-username-footprint', 'blog/audit-your-username-footprint.html'],
+  ['/blog/choosing-a-private-username', 'blog/choosing-a-private-username.html'],
   ['/blog/honest-by-default', 'blog/honest-by-default.html'],
   ['/blog/what-were-building-next', 'blog/what-were-building-next.html'],
   ['/blog/how-to-search-a-username', 'blog/how-to-search-a-username.html'],

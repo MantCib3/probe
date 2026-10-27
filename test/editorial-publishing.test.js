@@ -10,6 +10,8 @@ const cheerio = require('cheerio');
 
 const root = path.join(__dirname, '..');
 const slugs = [
+  'audit-your-username-footprint',
+  'choosing-a-private-username',
   'honest-by-default',
   'what-were-building-next',
   'how-to-search-a-username',

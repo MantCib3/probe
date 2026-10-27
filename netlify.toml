@@ -209,3 +209,25 @@
   from = "/blog/how-to-search-a-username"
   to = "/blog/how-to-search-a-username.html"
   status = 200
+
+[[redirects]]
+  from = "/blog/audit-your-username-footprint.html"
+  to = "/blog/audit-your-username-footprint"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/audit-your-username-footprint"
+  to = "/blog/audit-your-username-footprint.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/choosing-a-private-username.html"
+  to = "/blog/choosing-a-private-username"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/choosing-a-private-username"
+  to = "/blog/choosing-a-private-username.html"
+  status = 200
