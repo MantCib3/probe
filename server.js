@@ -11,6 +11,7 @@ const { URL } = require('url');
 const profileMetadata = require('./profile-metadata');
 const usernameRules = require('./username-rules');
 const sourceRequestAdapter = require('./source-request-adapter');
+const { createStagingHandler } = require('./staging-probe');
 
 // Disguised (stealth) browser automation is never loaded: PROBE identifies
 // itself honestly. Code paths below that check this value stay inert.
@@ -3028,6 +3029,31 @@ async function streamTaskResults(send, startPayload, taskFactories) {
 }
 
 /* ── HTTP server ──────────────────────────────────────────────────────── */
+const handleStaging = createStagingHandler({
+  enabled: process.env.PROBE_STAGING === '1',
+  secret: process.env.STAGING_PROBE_KEY,
+  sites: SITES,
+  isValidUsername,
+  readBody,
+  probeWithDeadline,
+  deadlineMs: PROBE_DEADLINE_MS,
+  normalizeResult,
+  hourlyLimit: Number(process.env.STAGING_PROBE_HOURLY_LIMIT) || 120,
+  credentialsConfigured: Object.fromEntries([...new Set(SITES.filter(site => site.credential).map(site => site.credential.env))]
+    .map(name => [name, Boolean((process.env[name] || '').trim())])),
+  runtimeFingerprint: {
+    ...LAB_RUNTIME_FINGERPRINT,
+    profileMetadataSha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, 'profile-metadata.js'))).digest('hex'),
+    metadataHintsSha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, 'metadata-hints.json'))).digest('hex'),
+    stagingHandlerSha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, 'staging-probe.js'))).digest('hex'),
+  },
+  deployment: {
+    commit: process.env.RENDER_GIT_COMMIT || null,
+    region: process.env.RENDER_REGION || null,
+    provider: process.env.RENDER ? 'render' : 'local',
+  },
+});
+
 const server = http.createServer((req, res) => {
   setSecurityHeaders(res);
   let urlObj;
@@ -3041,6 +3067,17 @@ const server = http.createServer((req, res) => {
     const ray = String(req.headers['cf-ray'] || '').split('-', 1)[0].slice(0, 32);
     console.warn(`[http] ${req.method} ${pathname} ${res.statusCode}${ray ? ` cf-ray=${ray}` : ''}`);
   });
+
+  if (pathname === '/api/staging-probe' || pathname === '/api/staging-health') {
+    handleStaging(pathname, req, res).catch(error => {
+      console.error(`[staging-probe] handler failed (${error.code || error.name || 'Error'})`);
+      if (!res.destroyed && !res.writableEnded) {
+        res.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: false, error: 'Staging handler failed.' }));
+      }
+    });
+    return;
+  }
 
   const canonicalPath = LEGACY_PAGE_REDIRECTS.get(pathname);
   if (canonicalPath) {

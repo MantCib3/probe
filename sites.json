@@ -664,13 +664,15 @@
     "url": "https://www.patreon.com/{}",
     "urlMain": "https://www.patreon.com",
     "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "errorCode\": 404,",
-    "undetectable": true,
-    "cfProxy": true,
-    "positiveMsg": "full_name\":",
+    "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Ko-fi",
@@ -1887,12 +1889,14 @@
     "url": "https://www.bigo.tv/user/{}",
     "urlMain": "https://www.bigo.tv",
     "category": "gaming",
-    "checkMethod": "message",
-    "errorMsg": "userInfo:{}",
-    "cfProxy": true,
-    "undetectable": true,
-    "positiveMsg": "userInfo:{nickName",
-    "expectedStatus": 200
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "hiberworld",
@@ -2854,17 +2858,23 @@
   {
     "name": "Booth",
     "url": "https://{}.booth.pm/",
-    "urlMain": "https://{}.booth.pm",
+    "urlMain": "https://booth.pm",
     "category": "shopping",
     "checkMethod": "message",
+    "checkUrl": "https://{}.booth.pm/items",
     "positiveMsg": "- BOOTH</title>",
-    "undetectable": true,
+    "positiveMissingStatus": "unknown",
     "expectedStatus": 200,
-    "notFoundStatus": 302,
     "usernameRule": {
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    },
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
     }
   },
   {
@@ -6613,9 +6623,14 @@
     "url": "https://teamtreehouse.com/{}",
     "urlMain": "https://teamtreehouse.com",
     "category": "developer",
-    "checkMethod": "message",
-    "undetectable": true,
-    "caveat": "Profile pages require a signed-in session; existing and missing users are not reliably distinguishable."
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Teespring",

@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: probe-staging
+    branch: staging
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24.11.1"
+      - key: PROBE_STAGING
+        value: "1"
+      - key: STAGING_PROBE_KEY
+        generateValue: true
+      - key: TRUST_PROXY
+        value: "1"
+      - key: STAGING_PROBE_HOURLY_LIMIT
+        value: "300"
+      # Set in the dashboard only; never commit values.
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: LASTFM_API_KEY
+        sync: false
+      - key: OSU_API_KEY
+        sync: false
+      - key: TRAKT_CLIENT_ID
+        sync: false

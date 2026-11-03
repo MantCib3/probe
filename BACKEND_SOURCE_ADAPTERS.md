@@ -60,7 +60,7 @@ browser-only client hints (`sec-ch-ua*`, `Sec-Fetch-*`,
 impersonation (`crawlerUA`, e.g. Googlebot) is no longer used by any active
 source; do not reintroduce it. Adopt honest headers per source only after a
 hosted A/B shows the change produces correct decisions on existing and missing
-controls (run from the private staging repository).
+controls (`tools/run-header-ab.js`, staging `variant` option).
 
 ## Environment credentials
 
@@ -101,7 +101,7 @@ At most `MAX_ACTIVE_SCANS` (default 4) public scans run at once; up to 20 more
 wait in a FIFO queue and receive `queued` events, and further scans get a 503.
 A source with three consecutive `blocked` results is skipped for ten minutes in
 public scans and reported as `blocked` with `source_cooldown`; any decision
-clears it. Lab probes bypass cooldown so measurements stay real.
+clears it. Lab and staging probes bypass cooldown so measurements stay real.
 A `Retry-After` longer than five seconds is honoured by not retrying in-scan.
 
 ## Frontend explanation reason codes
