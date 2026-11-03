@@ -5,6 +5,7 @@ const http = require('node:http');
 const test = require('node:test');
 const server = require('../server');
 const adapter = require('../source-request-adapter');
+const { applyVariant } = require('../staging-probe');
 
 test('scan slots are reserved synchronously, capped, and refundable', () => {
   const ip = `203.0.113.${Math.floor(Math.random() * 200)}`;
@@ -116,4 +117,16 @@ test('credentials are never sent over plain HTTP and never appear in results', a
   const result = await server.probeWithDeadline(site, 'alice', 5000).promise;
   assert.equal(received[0].authorization, null, 'plain HTTP never receives credentials');
   assert.ok(!JSON.stringify(result).includes('never-sent-over-http'));
+});
+
+test('staging variants change only request identity, never detection rules', () => {
+  const site = { name: 'V', url: 'https://example.com/{}', crawlerUA: 'googlebot', errorMsg: 'missing', requestAdapter: { method: 'GET', headers: { 'User-Agent': 'Old', Accept: 'text/html' } } };
+  assert.equal(applyVariant(site, 'catalog'), site);
+  const honest = applyVariant(site, 'honest');
+  assert.equal(honest.crawlerUA, undefined);
+  assert.deepEqual(honest.requestAdapter.headers, { Accept: 'text/html', 'User-Agent': adapter.HONEST_USER_AGENT });
+  assert.equal(honest.errorMsg, 'missing');
+  assert.deepEqual(applyVariant(site, 'browserlike').requestAdapter.headers, { Accept: 'text/html' });
+  assert.equal(applyVariant(site, 'invented'), null);
+  assert.equal(site.crawlerUA, 'googlebot', 'catalog object is not mutated');
 });

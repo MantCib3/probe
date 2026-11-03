@@ -19,9 +19,9 @@ const cards = [
     slug: 'probe-blog', kicker: 'FIELD NOTES', accent: STYLE.lime,
     title: 'THE<br>PROBE<br>LOG',
     deck: 'How PROBE measures results, handles<br>uncertainty, and keeps sources useful.',
-    metric: '322', metricLabel: 'ACTIVE SOURCES',
+    metric: '318', metricLabel: 'ACTIVE SOURCES',
     foot: 'usernameprobe.com/blog',
-    stats: [['265', 'AUTOMATIC'], ['57', 'MANUAL ONLY']],
+    stats: [['269', 'AUTOMATIC'], ['49', 'MANUAL ONLY']],
   },
   {
     slug: 'probe-roadmap', kicker: 'BUILD IN PUBLIC', accent: STYLE.yellow,
@@ -65,11 +65,11 @@ const cards = [
   },
   {
     slug: 'maintaining-a-source-catalog', kicker: 'KEEPING SOURCES CURRENT', accent: STYLE.yellow,
-    title: 'MAINTAINING<br>322 ACTIVE<br>SOURCES',
+    title: 'MAINTAINING<br>318 ACTIVE<br>SOURCES',
     deck: 'Automatic checks and manual links,<br>tested as platforms change.',
-    metric: '322', metricLabel: 'ACTIVE SOURCES',
+    metric: '318', metricLabel: 'ACTIVE SOURCES',
     foot: 'usernameprobe.com/blog/maintaining-a-source-catalog',
-    stats: [['265', 'AUTOMATIC'], ['57', 'MANUAL ONLY']],
+    stats: [['269', 'AUTOMATIC'], ['49', 'MANUAL ONLY']],
   },
   {
     slug: 'what-your-username-doesnt-hide', kicker: 'PRIVACY', accent: STYLE.purple,

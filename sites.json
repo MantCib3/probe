@@ -11,10 +11,20 @@
     "category": "social",
     "checkMethod": "message",
     "caveat": "Only detects public accounts; private/protected accounts show as not found",
-    "checkUrl": "https://publish.twitter.com/oembed?url=https://x.com/{}",
+    "checkUrl": "https://publish.x.com/oembed?url=https://x.com/{}",
     "cors": true,
-    "positiveMsg": "\"author_name\":",
-    "errorMsg": "\"errors\":["
+    "requestAdapter": {
+      "method": "GET",
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/provider_name",
+            "op": "equals",
+            "value": "X"
+          }
+        }
+      }
+    }
   },
   {
     "name": "Instagram",
@@ -169,7 +179,9 @@
     "category": "social",
     "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 308
+    "notFoundStatus": 308,
+    "defunct": true,
+    "caveat": "Foursquare retired username profile URLs: every foursquare.com/{name} returns 404 (real or not), and profiles now live at app.foursquare.com/user/{numeric id} behind a login (reviewed 2026-11-03)."
   },
   {
     "name": "GitHub",
@@ -408,7 +420,8 @@
     "category": "developer",
     "checkMethod": "status_code",
     "apiUrl": "https://www.hackerearth.com/@{}/",
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "skipBodyCheck": true
   },
   {
     "name": "Stack Overflow",
@@ -664,13 +677,15 @@
     "url": "https://www.patreon.com/{}",
     "urlMain": "https://www.patreon.com",
     "category": "content",
-    "checkMethod": "message",
-    "errorMsg": "errorCode\": 404,",
-    "undetectable": true,
-    "cfProxy": true,
-    "positiveMsg": "full_name\":",
+    "checkMethod": "status_code",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "Ko-fi",
@@ -750,8 +765,29 @@
     "url": "https://500px.com/p/{}",
     "urlMain": "https://500px.com",
     "category": "content",
-    "checkMethod": "status_code",
-    "usernameInBody": true
+    "checkMethod": "message",
+    "apiUrl": "https://api-neo.500px.com/graphql",
+    "requestAdapter": {
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      },
+      "bodyTemplate": "{\"query\":\"query getUserProfile($username: String!) { getUser(username: $username) { id username } }\",\"variables\":{\"username\":\"{{username}}\"}}",
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/data/getUser/id",
+            "op": "exists"
+          },
+          "negative": {
+            "path": "/data/getUser",
+            "op": "equals",
+            "value": null
+          }
+        }
+      }
+    }
   },
   {
     "name": "SoundCloud",
@@ -866,7 +902,7 @@
     "urlMain": "https://www.dailymotion.com",
     "category": "content",
     "checkMethod": "status_code",
-    "apiUrl": "https://api.dailymotion.com/user/{}"
+    "apiUrl": "https://api.dailymotion.com/user/{}?fields=username"
   },
   {
     "name": "Imgur",
@@ -982,9 +1018,10 @@
     "urlMain": "https://slashdot.org",
     "category": "forum",
     "checkMethod": "message",
-    "positiveMsg": "class=\"user-bio\"",
+    "positiveMsg": "<body class=\"anon users2",
     "errorMsg": "Page Not Found",
-    "cfProxy": true
+    "cfProxy": true,
+    "positiveMissingStatus": "unknown"
   },
   {
     "name": "LinkedIn",
@@ -1210,7 +1247,8 @@
     "url": "https://www.goodreads.com/{}",
     "urlMain": "https://www.goodreads.com",
     "category": "misc",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "redirectIdentityMarker": "<meta property=\"profile:username\" content=\"{}\">"
   },
   {
     "name": "Letterboxd",
@@ -1610,8 +1648,8 @@
     "category": "social",
     "checkMethod": "status_code",
     "cfProxy": true,
-    "expectedStatus": 400,
-    "notFoundStatus": 200
+    "undetectable": true,
+    "caveat": "Manual check: Cloudflare challenges server requests. Real profiles (e.g. zala) load with HTTP 200, so the old mapping of 200 to \"not found\" was inverted, and missing names could not be observed past the challenge (reviewed 2026-11-03)."
   },
   {
     "name": "Zepeto",
@@ -1847,7 +1885,8 @@
           }
         }
       }
-    }
+    },
+    "redirectIdentityMarker": "<meta property=\"og:title\" content=\"{} · player info\">"
   },
   {
     "name": "Playstation Network",
@@ -1858,7 +1897,9 @@
     "errorMsg": "We couldn't find anything",
     "allowBrowserFallback": false,
     "cors": true,
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "undetectable": true,
+    "caveat": "Manual check: the PSNProfiles user search also lists near-matches (searching Hakoom also returns Hakoom_), so a name match cannot be tied to one exact account, and Cloudflare blocks server requests to psnprofiles.com. Use the PSN Profiles source or open the search (reviewed 2026-11-03)."
   },
   {
     "name": "pokemonshowdown",
@@ -1887,12 +1928,14 @@
     "url": "https://www.bigo.tv/user/{}",
     "urlMain": "https://www.bigo.tv",
     "category": "gaming",
-    "checkMethod": "message",
-    "errorMsg": "userInfo:{}",
-    "cfProxy": true,
-    "undetectable": true,
-    "positiveMsg": "userInfo:{nickName",
-    "expectedStatus": 200
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    }
   },
   {
     "name": "hiberworld",
@@ -1932,7 +1975,9 @@
       "headers": {
         "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
       }
-    }
+    },
+    "positiveMsg": " - Xbox Gamertag</title>",
+    "positiveMissingStatus": "unknown"
   },
   {
     "name": "ArmorGames",
@@ -2854,17 +2899,23 @@
   {
     "name": "Booth",
     "url": "https://{}.booth.pm/",
-    "urlMain": "https://{}.booth.pm",
+    "urlMain": "https://booth.pm",
     "category": "shopping",
     "checkMethod": "message",
+    "checkUrl": "https://{}.booth.pm/items",
     "positiveMsg": "- BOOTH</title>",
-    "undetectable": true,
+    "positiveMissingStatus": "unknown",
     "expectedStatus": 200,
-    "notFoundStatus": 302,
     "usernameRule": {
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
+    },
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
     }
   },
   {
@@ -3247,8 +3298,8 @@
   },
   {
     "name": "datezone",
-    "url": "https://www.datezone.com/users/{}/",
-    "urlMain": "https://datezone.com",
+    "url": "https://en.datezone.com/users/{}",
+    "urlMain": "https://en.datezone.com",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "404: page not found",
@@ -4310,7 +4361,9 @@
     "checkMethod": "message",
     "errorMsg": "Sorry, that user does not exist",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "defunct": true,
+    "caveat": "hubpages.com no longer serves the public: its DNS (also via 8.8.8.8 and 1.1.1.1) resolves only to private 10.x addresses, so no profile can be reached (reviewed 2026-11-03)."
   },
   {
     "name": "Hubski",
@@ -4663,9 +4716,10 @@
     "category": "social",
     "checkMethod": "message",
     "errorMsg": "class=\"not_found_text\"",
-    "abstainOn200": true,
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "positiveMsg": "<link rel=\"canonical\" href=\"https://www.lemon8-app.com/@",
+    "positiveMissingStatus": "unknown"
   },
   {
     "name": "LevelBlue",
@@ -4787,7 +4841,9 @@
     "checkMethod": "message",
     "errorMsg": "Page not Found.",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "positiveMsg": " (Threat Actor)</title>",
+    "positiveMissingStatus": "unknown"
   },
   {
     "name": "MapMyTracks",
@@ -5255,18 +5311,19 @@
   },
   {
     "name": "myportfolio",
-    "url": "https://{}.myportfolio.com/work",
+    "url": "https://{}.myportfolio.com/",
     "urlMain": "https://{}.myportfolio.com",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "<title>Adobe Portfolio | Build your own personalized website</title>",
     "expectedStatus": 200,
-    "notFoundStatus": 302,
     "usernameRule": {
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
-    }
+    },
+    "positiveMsg": "content=\"@AdobePortfolio\"",
+    "positiveMissingStatus": "unknown"
   },
   {
     "name": "Myspreadshop",
@@ -5625,8 +5682,10 @@
     "urlMain": "https://paypal.com",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "<title>PayPal.Me</title><meta",
-    "expectedStatus": 200
+    "errorMsg": "content=\"Get your very own PayPal.Me link\"",
+    "expectedStatus": 200,
+    "positiveMsg": "<meta property=\"og:url\" content=\"https://www.paypal.com/",
+    "positiveMissingStatus": "unknown"
   },
   {
     "name": "PCGamer",
@@ -5958,10 +6017,21 @@
     "urlMain": "https://rarible.com",
     "category": "developer",
     "checkMethod": "message",
-    "errorMsg": "\"success\":false",
     "expectedStatus": 200,
     "notFoundStatus": 404,
-    "apiUrl": "https://rarible.com/marketplace/api/v4/urls/{}"
+    "apiUrl": "https://rarible.com/marketplace/api/v4/urls/{}",
+    "requestAdapter": {
+      "method": "GET",
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/type",
+            "op": "equals",
+            "value": "USER"
+          }
+        }
+      }
+    }
   },
   {
     "name": "RedGIFs",
@@ -6228,7 +6298,8 @@
       "pattern": "^[a-z0-9_-]+$",
       "description": "This lookup inserts the name as one hostname label: letters, digits, hyphens or legacy underscores; dots cannot be part of that label.",
       "source": "https://www.rfc-editor.org/rfc/rfc1123.html#section-2.1"
-    }
+    },
+    "redirectIdentityMarker": "Shopify.shop = \"{}.myshopify.com\";"
   },
   {
     "name": "Showup.tv",
@@ -6279,7 +6350,8 @@
     "checkMethod": "message",
     "errorMsg": "You may have mistyped the address",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "redirectIdentityMarker": "<link rel=\"canonical\" href=\"https://team.slides.com/{}\" />"
   },
   {
     "name": "SmashRun",
@@ -6316,13 +6388,16 @@
   },
   {
     "name": "Snipfeed",
-    "url": "https://snipfeed.co/{}",
-    "urlMain": "https://snipfeed.co",
+    "url": "https://planoly.store/{}",
+    "urlMain": "https://planoly.store",
     "category": "misc",
     "checkMethod": "message",
     "errorMsg": "Oops, you hit a dead end!",
     "expectedStatus": 200,
-    "notFoundStatus": 404
+    "notFoundStatus": 404,
+    "positiveMsg": ">Planoly Creator Store | ",
+    "positiveMissingStatus": "unknown",
+    "caveat": "Snipfeed moved to Planoly: snipfeed.co/{name} now redirects to planoly.store/{name}. Names Planoly marks unavailable (many common words) redirect to a generic page and stay unconfirmed."
   },
   {
     "name": "soc.citizen4.eu",
@@ -6613,9 +6688,16 @@
     "url": "https://teamtreehouse.com/{}",
     "urlMain": "https://teamtreehouse.com",
     "category": "developer",
-    "checkMethod": "message",
-    "undetectable": true,
-    "caveat": "Profile pages require a signed-in session; existing and missing users are not reliably distinguishable."
+    "checkMethod": "status_code",
+    "expectedStatus": 200,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
+      }
+    },
+    "positiveMsg": " | User Profile</title>",
+    "positiveMissingStatus": "unknown"
   },
   {
     "name": "Teespring",
@@ -6630,7 +6712,9 @@
       "headers": {
         "User-Agent": "PROBE/1.0 (+https://usernameprobe.com)"
       }
-    }
+    },
+    "defunct": true,
+    "caveat": "Spring (formerly Teespring) closed its creator stores: every {name}.creator-spring.com store, real or not, returns HTTP 410 \"This Spring store is no longer available\", and teespring.com redirects to amazecommerce.com (reviewed 2026-11-03)."
   },
   {
     "name": "Teknik",
@@ -6639,7 +6723,9 @@
     "category": "developer",
     "checkMethod": "message",
     "errorMsg": "The user does not exist",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "defunct": true,
+    "caveat": "Teknik shut down: teknik.io shows \"Teknik is Shut Down\" and every user.teknik.io/{name} profile returns 404 (reviewed 2026-11-03)."
   },
   {
     "name": "Teletype",

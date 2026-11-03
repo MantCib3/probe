@@ -18,7 +18,10 @@ const path = require('path');
 let cheerio = null;
 const loadCheerio = () => (cheerio = cheerio || require('cheerio'));
 
-const FIELDS = ['picture', 'name', 'bio', 'location', 'links', 'joined', 'followers'];
+const FIELDS = ['picture', 'name', 'bio', 'location', 'links', 'joined', 'followers',
+  'following', 'posts', 'verified', 'accountId', 'lastActive', 'contactEmail'];
+const COUNT_FIELDS = new Set(['followers', 'following', 'posts']);
+const DATE_FIELDS = new Set(['joined', 'lastActive']);
 const HEAD_SCHEMAS = new Set(['open_graph', 'twitter_card', 'meta', 'html_title']);
 const MAX_EXTENDED_BYTES = 524288;
 const LIMITS = { name: 80, bio: 280, location: 80 };
@@ -33,6 +36,7 @@ const clean = value => {
   const text = value.replace(/\s+/g, ' ').trim();
   return text ? text : null;
 };
+const EMAIL = /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}$/;
 
 const KEY_MAP = {
   picture: ['avatar', 'avatarurl', 'avatarurlhttps', 'avatarlarger', 'avatarmedium', 'avatarthumb', 'avatarlarge', 'avatarfull', 'avatarimage', 'avatarimageurl', 'profileimage', 'profileimageurl', 'profileimageurlhttps', 'profilepicurl', 'profilepicurlhd', 'profilepicture', 'profilephoto', 'photo', 'photourl', 'picture', 'pictureurl', 'image', 'imageurl', 'icon', 'iconimg', 'iconurl', 'userpic', 'thumbnail', 'thumbnailurl'],
@@ -42,6 +46,12 @@ const KEY_MAP = {
   links: ['website', 'websiteurl', 'blog', 'homepage', 'homepageurl', 'links', 'externalurl', 'sameas', 'socials'],
   joined: ['createdat', 'created', 'createdutc', 'createdon', 'creationdate', 'datecreated', 'joined', 'joinedat', 'joindate', 'joinedon', 'registered', 'registeredat', 'registrationdate', 'membersince', 'signupdate', 'memberdate'],
   followers: ['followers', 'followerscount', 'followercount', 'numfollowers', 'followerstotal', 'subscribers', 'subscriberscount', 'subscribercount', 'fans', 'fanscount', 'watchers'],
+  following: ['following', 'followingcount', 'followings', 'followingscount', 'numfollowing', 'friendscount', 'followscount', 'followeescount', 'followees'],
+  posts: ['postscount', 'postcount', 'numposts', 'statusescount', 'mediacount', 'articlescount', 'storiescount', 'videocount', 'videoscount', 'uploadscount', 'tweetcount', 'publicrepos', 'submissionscount', 'entriescount'],
+  verified: ['verified', 'isverified', 'verifiedaccount', 'isblueverified', 'blueverified', 'verifiedbadge', 'isofficial'],
+  accountId: ['id', 'userid', 'accountid', 'uid', 'pk', 'memberid', 'profileid', 'steamid', 'steamid64', 'restid', 'idstr'],
+  lastActive: ['lastactive', 'lastactiveat', 'lastseen', 'lastseenat', 'lastonline', 'lastlogin', 'lastloginat', 'lastvisit', 'lastvisitat', 'lastactivity', 'lastactivityat', 'lastplayed', 'lastlogoff', 'onlineat'],
+  contactEmail: ['publicemail', 'contactemail', 'email', 'emailaddress', 'businessemail'],
 };
 const KEY_LOOKUP = {};
 for (const [field, keys] of Object.entries(KEY_MAP)) keys.forEach(k => { if (!KEY_LOOKUP[k]) KEY_LOOKUP[k] = field; });
@@ -50,11 +60,14 @@ const normKey = key => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
 
 function scalarFor(field, value) {
   if (value === null || value === undefined) return null;
+  if (field === 'verified') return value === true || value === 'true' || value === 1 ? 'true' : null;
   if (typeof value === 'string' || typeof value === 'number') {
     const text = clean(value);
     if (!text) return null;
-    if (field === 'followers' && !/^\d[\d,.\s]*[kKmM]?$/.test(text)) return null;
+    if (COUNT_FIELDS.has(field) && !/^\d[\d,.\s]*[kKmM]?$/.test(text)) return null;
     if (field === 'picture' && !/^(https?:)?\/\/|^\//.test(text)) return null;
+    if (field === 'accountId' && !/^[A-Za-z0-9_:.-]{1,64}$/.test(text)) return null;
+    if (field === 'contactEmail' && !EMAIL.test(text)) return null;
     return text;
   }
   if (Array.isArray(value)) {
@@ -67,7 +80,7 @@ function scalarFor(field, value) {
   if (typeof value === 'object') {
     if (field === 'picture') return scalarFor(field, value.url || value.src || value.large || value.medium || value.original || value.href || (Array.isArray(value.urlList) && value.urlList[0]) || (Array.isArray(value.url_list) && value.url_list[0]));
     if (field === 'location') return scalarFor(field, value.name || value.city || value.addressLocality || value.country);
-    if (field === 'followers') return scalarFor(field, value.count || value.total || value.totalCount);
+    if (COUNT_FIELDS.has(field)) return scalarFor(field, value.count || value.total || value.totalCount);
   }
   return null;
 }
@@ -368,8 +381,14 @@ function finalise(field, raw, rule, ctx) {
         .filter(link => link && link.indexOf('://') === link.lastIndexOf('://'));
       return list.length ? [...new Set(list)].slice(0, 5) : null;
     }
-    case 'joined': return normaliseDate(raw);
-    case 'followers': return normaliseCount(raw);
+    case 'joined':
+    case 'lastActive': return normaliseDate(raw);
+    case 'followers':
+    case 'following':
+    case 'posts': return normaliseCount(raw);
+    case 'verified': return String(raw) === 'true' ? true : null;
+    case 'accountId': return /^[A-Za-z0-9_:.-]{1,64}$/.test(value) ? value : null;
+    case 'contactEmail': return EMAIL.test(value) ? value.toLowerCase() : null;
     default: return null;
   }
 }
@@ -425,12 +444,16 @@ function extractWith(hint, site, username, body, contentType, pageUrl) {
   if (hint.accountObject) {
     try { validateAccountObjectRule(hint.accountObject); } catch (_) { return null; }
   }
+  if (hint.page) {
+    try { validatePageRule(hint.page); } catch (_) { return null; }
+  }
   const source = hint.headOnly ? headSlice(body) : body;
   let schemas;
   try {
     schemas = hint.accountObject
       ? extractAccountObject(source, username, hint.accountObject)
-      : extractAll(source, contentType || '', username, hostOf(site)).schemas;
+      : hint.page ? {} : extractAll(source, contentType || '', username, hostOf(site)).schemas;
+    if (hint.page) schemas.page_dom = extractPage(source, username, hint.page);
   } catch (_) {
     return null;
   }
@@ -461,6 +484,7 @@ function validateAccountObjectRule(rule) {
   const flagMapOk = map => map === undefined || (map && typeof map === 'object' && !Array.isArray(map) &&
     Object.entries(map).every(([field, flag]) => FIELDS.includes(field) && safeKeyPath(flag)));
   if (!Array.isArray(rule.path) || rule.path.length > 10 ||
+      !validateSource(rule.source) ||
       !rule.path.every(safeAccountKey) || !safeAccountKey(rule.identityKey) ||
       !rule.fields || typeof rule.fields !== 'object' || Array.isArray(rule.fields) ||
       (rule.caseSensitive !== undefined && typeof rule.caseSensitive !== 'boolean') ||
@@ -495,7 +519,7 @@ function identityMatches(value, username, rule) {
 }
 
 function extractAccountObject(body, username, rule) {
-  let account = JSON.parse(body);
+  let account = loadAccountSource(body, rule.source);
   for (const key of rule.path) {
     if (!account || typeof account !== 'object') { account = null; break; }
     if (key === USERNAME_SEGMENT) {
@@ -541,11 +565,134 @@ function hostOf(site) {
   try { return new URL(String(site.url).replace(/\{\}/g, 'x')).hostname.replace(/^www\./, ''); } catch (_) { return ''; }
 }
 
+/* ── Embedded app state and page rules ─────────────────────────────── */
+
+const SCRIPT_SELECTOR = /^[A-Za-z0-9#._\-\[\]="' :]{1,120}$/;
+const ASSIGNMENT_NAME = /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*){0,4}$/;
+
+// Reads the balanced JSON value that starts at `start` (object or array).
+function balancedJson(text, start) {
+  const open = text[start];
+  const close = open === '{' ? '}' : open === '[' ? ']' : null;
+  if (!close) return null;
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < text.length && i - start < 3000000; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (ch === '\\') i++;
+      else if (ch === '"') inString = false;
+    } else if (ch === '"') inString = true;
+    else if (ch === open) depth++;
+    else if (ch === close && --depth === 0) return text.slice(start, i + 1);
+  }
+  return null;
+}
+
+/* Account JSON source: the whole body (default), a <script> element's JSON
+ * text, or a `NAME = {…}` / `NAME = JSON.parse("…")` assignment in a script. */
+function loadAccountSource(body, source) {
+  if (!source) return JSON.parse(body);
+  if (source.script) {
+    const text = loadCheerio().load(body)(source.script).first().contents().text();
+    return JSON.parse(text);
+  }
+  if (source.assignment) {
+    const name = source.assignment.replace(/[.$]/g, '\\$&');
+    const match = new RegExp(`${name}\\s*=\\s*(JSON\\.parse\\(\\s*)?`).exec(body);
+    if (!match) throw new SyntaxError('assignment not found');
+    const at = match.index + match[0].length;
+    if (match[1]) {
+      const quoted = /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/.exec(body.slice(at, at + 3000000));
+      if (!quoted) throw new SyntaxError('JSON.parse argument not a string literal');
+      const literal = quoted[1][0] === "'" ? `"${quoted[1].slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '\\"')}"` : quoted[1];
+      return JSON.parse(JSON.parse(literal));
+    }
+    const json = balancedJson(body, at);
+    if (!json) throw new SyntaxError('assignment value is not JSON');
+    return JSON.parse(json);
+  }
+  throw new TypeError('unknown account source');
+}
+
+function validateSource(source) {
+  if (source === undefined) return true;
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return false;
+  const keys = Object.keys(source);
+  if (keys.length !== 1) return false;
+  if (keys[0] === 'script') return typeof source.script === 'string' && SCRIPT_SELECTOR.test(source.script);
+  if (keys[0] === 'assignment') return typeof source.assignment === 'string' && ASSIGNMENT_NAME.test(source.assignment);
+  return false;
+}
+
+/* Page rules: CSS selector + optional attribute + optional regex (one capture
+ * group). An identity element must show the requested username, so generic,
+ * login or challenge pages contribute nothing. */
+const SELECTOR_LIMIT = 240;
+function validatePageRule(rule) {
+  const specOk = (spec, field) => spec && typeof spec === 'object' && !Array.isArray(spec) &&
+    typeof spec.selector === 'string' && spec.selector.length > 0 && spec.selector.length <= SELECTOR_LIMIT &&
+    (spec.attr === undefined || (typeof spec.attr === 'string' && /^[a-z][a-z0-9:_-]{0,40}$/i.test(spec.attr))) &&
+    (spec.pattern === undefined || (typeof spec.pattern === 'string' && spec.pattern.length <= 200 && (() => { try { new RegExp(spec.pattern, 'i'); return true; } catch (_) { return false; } })())) &&
+    (spec.present === undefined || (spec.present === true && field === 'verified')) &&
+    (spec.all === undefined || (spec.all === true && field === 'links'));
+  if (!rule || typeof rule !== 'object' || !specOk(rule.identity) ||
+      (rule.identity.match !== undefined && !['equals', 'contains'].includes(rule.identity.match)) ||
+      !rule.fields || typeof rule.fields !== 'object' || Array.isArray(rule.fields) ||
+      Object.entries(rule.fields).some(([field, spec]) => !FIELDS.includes(field) || !specOk(spec, field))) {
+    throw new TypeError('Invalid page metadata rule.');
+  }
+}
+
+function pageValue($, spec, all = false) {
+  const nodes = $(spec.selector);
+  if (!nodes.length) return null;
+  const read = el => {
+    const raw = spec.attr ? $(el).attr(spec.attr) : $(el).text();
+    if (typeof raw !== 'string') return null;
+    const text = raw.replace(/\s+/g, ' ').trim().slice(0, 2000);
+    if (!spec.pattern) return text || null;
+    const match = new RegExp(spec.pattern, 'i').exec(text);
+    return match ? (match[1] !== undefined ? match[1] : match[0]).trim() || null : null;
+  };
+  if (all) return nodes.toArray().slice(0, 20).map(read).filter(Boolean);
+  return read(nodes.first());
+}
+
+function extractPage(body, username, rule) {
+  const $ = loadCheerio().load(body);
+  const identity = pageValue($, rule.identity);
+  if (!identity) return {};
+  const shown = identity.toLowerCase().replace(/^@/, '');
+  const target = username.toLowerCase();
+  if (rule.identity.match === 'contains' ? !shown.includes(target) : shown !== target) return {};
+  const fields = {};
+  for (const [field, spec] of Object.entries(rule.fields)) {
+    if (field === 'verified') { if ($(spec.selector).length) fields.verified = { value: 'true' }; continue; }
+    if (field === 'links') {
+      const list = pageValue($, spec, true);
+      const links = (list || []).filter(link => /^https?:\/\//i.test(link));
+      if (links.length) fields.links = { value: [...new Set(links)].slice(0, 5).join(' | ') };
+      continue;
+    }
+    const value = pageValue($, spec);
+    if (value) fields[field] = { value };
+  }
+  return fields;
+}
+
 // Shipped hints must be valid: fail at startup, not silently during scans.
 for (const [name, hint] of Object.entries(hints.sites)) {
-  if (hint && hint.accountObject) {
-    try { validateAccountObjectRule(hint.accountObject); }
-    catch (_) { throw new TypeError(`Invalid accountObject metadata hint for "${name}".`); }
+  for (const part of [hint, hint && hint.followUp]) {
+    if (!part) continue;
+    if (part.accountObject) {
+      try { validateAccountObjectRule(part.accountObject); }
+      catch (_) { throw new TypeError(`Invalid accountObject metadata hint for "${name}".`); }
+    }
+    if (part.page) {
+      try { validatePageRule(part.page); }
+      catch (_) { throw new TypeError(`Invalid page metadata hint for "${name}".`); }
+    }
   }
 }
 
@@ -555,6 +702,7 @@ module.exports = {
   MAX_EXTENDED_BYTES,
   extractAll,
   extractProfile,
+  extractWith,
   findUserObject,
   followUpPlan,
   hintFor,
@@ -562,4 +710,6 @@ module.exports = {
   mergeFollowUp,
   readPlan,
   setHints,
+  validateAccountObjectRule,
+  validatePageRule,
 };
