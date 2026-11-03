@@ -2,11 +2,13 @@ services:
   - type: web
     name: probe
     runtime: node
-    buildCommand: npm install --omit=dev
+    buildCommand: npm ci --omit=dev
     startCommand: node server.js
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "24.11.1"
       # Set these in the Render dashboard (Environment tab) — do not commit
       # real values here. See SECURITY notes / conversation for details.
       - key: TURNSTILE_SECRET

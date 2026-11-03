@@ -15,3 +15,9 @@ calibrate.js
 scan-test.js
 run_calibrate.bat
 wmn-data.json
+
+# local tooling and scratch
+.wrangler/
+*.log
+test-x-li.js
+PROBE_TECHNICAL_REVIEW.txt

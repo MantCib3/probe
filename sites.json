@@ -6664,13 +6664,15 @@
   },
   {
     "name": "TF2 Backpack Examiner",
-    "url": "http://www.tf2items.com/id/{}/",
+    "url": "https://www.tf2items.com/id/{}/",
     "urlMain": "https://tf2items.com",
     "category": "gaming",
     "checkMethod": "message",
     "positiveMsg": "<title>TF2 Backpack -",
     "expectedStatus": 200,
-    "notFoundStatus": 302
+    "notFoundStatus": 302,
+    "undetectable": true,
+    "caveat": "Hosted checks are redirected to the home page even for existing profiles, which would read as not found; open the profile manually (reviewed 2026-11-02)."
   },
   {
     "name": "thegatewaypundit",

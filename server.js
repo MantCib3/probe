@@ -12,12 +12,9 @@ const profileMetadata = require('./profile-metadata');
 const usernameRules = require('./username-rules');
 const sourceRequestAdapter = require('./source-request-adapter');
 
-// Stealth browser — lazy-loaded; absent gracefully if not installed
-let chromiumStealth = null;
-try {
-  chromiumStealth = require('playwright-extra').chromium;
-  chromiumStealth.use(require('puppeteer-extra-plugin-stealth')());
-} catch (_) { /* run: npm install playwright-extra puppeteer-extra-plugin-stealth */ }
+// Disguised (stealth) browser automation is never loaded: PROBE identifies
+// itself honestly. Code paths below that check this value stay inert.
+const chromiumStealth = null;
 
 // Test seam: a fixture catalog for integration tests; ignored in production.
 const SITES_PATH = process.env.PROBE_SITES_PATH && process.env.NODE_ENV !== 'production' && !process.env.RENDER
@@ -603,7 +600,7 @@ function fetchText(url, timeoutMs = 20000, maxRedirects = 5, headers = null) {
     // spoofed-Chrome UA that's missing the rest of a real browser's header
     // fingerprint (sec-ch-ua, Accept-Language, etc.) more aggressively than
     // it challenges a plain/no UA request.
-    const reqHeaders = headers || { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' };
+    const reqHeaders = headers || { 'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT };
 
     const req = transport.get(parsed, { headers: reqHeaders }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
@@ -652,7 +649,7 @@ function fetchStatusV(url, timeoutMs = 10000, maxRedirects = 4, redirects = [], 
     }, timeoutMs + 3000);
 
     const req = transport.get(parsed, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+      headers: { 'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT },
       lookup: publicLookup,
     }, (res) => {
       if (res.statusCode >= 301 && res.statusCode <= 308) {
@@ -731,8 +728,10 @@ const BLOCKED_ADDRESSES = new net.BlockList();
   ['198.18.0.0', 15], ['198.51.100.0', 24], ['203.0.113.0', 24],
   ['224.0.0.0', 4], ['240.0.0.0', 4],
 ].forEach(([address, prefix]) => BLOCKED_ADDRESSES.addSubnet(address, prefix, 'ipv4'));
+// IPv4-mapped IPv6 (::ffff:a.b.c.d) is matched against the IPv4 rules above
+// by BlockList itself; an explicit ::ffff:0:0/96 rule would block all IPv4.
 [
-  ['::', 96], ['::ffff:0:0', 96], ['100::', 64], ['2001:db8::', 32],
+  ['::', 96], ['100::', 64], ['2001:db8::', 32],
   ['fc00::', 7], ['fe80::', 10], ['ff00::', 8],
 ].forEach(([address, prefix]) => BLOCKED_ADDRESSES.addSubnet(address, prefix, 'ipv6'));
 
@@ -760,12 +759,14 @@ function publicLookup(hostname, options, callback) {
 }
 
 // SSRF guard shared by proxy endpoints that accept an arbitrary target URL.
+// IP-literal hosts never reach publicLookup (Node skips DNS for them), so
+// this check is the only barrier for them; URL hostnames bracket IPv6.
 function isPrivateHost(hostname) {
-  const h = String(hostname || '').toLowerCase();
+  const h = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
   const family = net.isIP(h);
   return (
     (family > 0 && isPrivateAddress(h)) ||
-    h === 'localhost' || h.endsWith('.localhost') ||
+    h === '' || h === 'localhost' || h.endsWith('.localhost') ||
     h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.home.arpa')
   );
 }
@@ -1232,7 +1233,7 @@ function fetchStatus(targetUrl) {
       path: parsed.pathname + parsed.search,
       method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT,
         'Accept': '*/*',
       },
       timeout: TIMEOUT_MS,
@@ -1471,7 +1472,7 @@ async function fetchRenderedPageText(targetUrl) {
   try {
     const b = await ensureBrowser();
     context = await b.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      userAgent: sourceRequestAdapter.HONEST_USER_AGENT,
       locale: 'en-US',
       viewport: { width: 1280, height: 800 },
     });
@@ -1830,11 +1831,7 @@ const FOLLOW_UP_MAX_HOPS = 3;
  * profile page, or a public data feed). Runs only after a found verdict, never
  * changes that verdict, and gives up quietly on any error, block or timeout. */
 function fetchFollowUpPage(site, plan, signal) {
-  const crawlerUA = site.crawlerUA === 'googlebot'
-    ? 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-    : site.crawlerUA === 'twitterbot' ? 'Twitterbot/1.0'
-    : site.crawlerUA === 'facebookbot' ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
-    : null;
+  const crawlerUA = null;
   const cookieJars = new Map();
   return new Promise(resolve => {
     let settled = false;
@@ -2068,7 +2065,7 @@ async function probeNameSearch(site, firstName, lastName, filters = {}) {
   try {
     const b = await ensureBrowser();
     context = await b.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      userAgent: sourceRequestAdapter.HONEST_USER_AGENT,
       locale   : 'en-US',
       viewport : { width: 1280, height: 800 },
     });
@@ -2322,13 +2319,7 @@ function doRequest(site, username, origUrl, url, hops, finish, attempt = 0, cook
     console.error(`[source-request] Invalid request configuration for "${site.name}": ${error.message}`);
     return finish({ ...base, status: 'error', statusCode: 0, reasonCodes: ['invalid_source_request'] });
   }
-  const crawlerUA = site.crawlerUA === 'googlebot'
-    ? 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-    : site.crawlerUA === 'twitterbot'
-    ? 'Twitterbot/1.0'
-    : site.crawlerUA === 'facebookbot'
-    ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
-    : null;
+  const crawlerUA = null;
   let responseState = null;
 
   const startRequest = () => {
@@ -2513,7 +2504,7 @@ async function probeStealth(site, username, signal) {
     if (signal?.aborted) return { ...base, status: 'timeout', statusCode: 0 };
     const b = await ensureBrowser();
     context = await b.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      userAgent: sourceRequestAdapter.HONEST_USER_AGENT,
       locale   : 'en-US',
       viewport : { width: 1280, height: 800 },
       extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
@@ -2732,7 +2723,7 @@ function httpSnapshotFallback(rawUrl, res) {
   const mod = rawUrl.startsWith('https') ? https : http2;
   const req = mod.get(rawUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT,
       'Accept': 'text/html,application/xhtml+xml',
       'Accept-Language': 'en-US,en;q=0.9',
     },
@@ -2833,7 +2824,7 @@ async function fetchPageCheerio(rawUrl, res) {
     const html = await new Promise((resolve, reject) => {
       const req = mod.get(rawUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+          'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT,
           'Accept': 'text/html,application/xhtml+xml',
           'Accept-Language': 'en-US,en;q=0.9',
         },
@@ -2884,7 +2875,7 @@ function proxyImage(rawUrl, res) {
   const httpMod = require('http');
   const mod = rawUrl.startsWith('https') ? https : httpMod;
   const req = mod.get(rawUrl, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' },
+    headers: { 'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT },
     timeout: 8000,
     lookup: publicLookup,
   }, (r) => {
@@ -3667,7 +3658,7 @@ const server = http.createServer((req, res) => {
     const mod = parsed.protocol === 'https:' ? https : http;
     const req = mod.get(parsed, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT,
         'Accept': 'text/html,application/xhtml+xml',
       },
       timeout: 6000,
@@ -3681,7 +3672,7 @@ const server = http.createServer((req, res) => {
           if (!/^https?:$/.test(next.protocol) || isPrivateHost(next.hostname)) return sendNoImage(res);
           const nextMod = next.protocol === 'https:' ? https : http;
           const req2 = nextMod.get(next, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+            headers: { 'User-Agent': sourceRequestAdapter.HONEST_USER_AGENT },
             timeout: 6000,
             lookup: publicLookup,
           }, (r2) => readAndExtractImage(r2, next, res));
@@ -3772,13 +3763,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: false, error: 'Invalid URL' }));
     }
-    const hOG = parsedOG.hostname.toLowerCase();
-    if (
-      hOG === 'localhost' || hOG === '127.0.0.1' || hOG === '::1' ||
-      /^10\./.test(hOG) || /^192\.168\./.test(hOG) ||
-      /^172\.(1[6-9]|2\d|3[01])\./.test(hOG) ||
-      /^169\.254\./.test(hOG) || hOG.endsWith('.local')
-    ) {
+    if (isPrivateHost(parsedOG.hostname)) {
       res.writeHead(403, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
     }
@@ -3797,13 +3782,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: false, error: 'Invalid URL' }));
     }
-    const hFP = parsedFP.hostname.toLowerCase();
-    if (
-      hFP === 'localhost' || hFP === '127.0.0.1' || hFP === '::1' ||
-      /^10\./.test(hFP) || /^192\.168\./.test(hFP) ||
-      /^172\.(1[6-9]|2\d|3[01])\./.test(hFP) ||
-      /^169\.254\./.test(hFP) || hFP.endsWith('.local')
-    ) {
+    if (isPrivateHost(parsedFP.hostname)) {
       res.writeHead(403, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
     }
@@ -3823,13 +3802,7 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ ok: false, error: 'Invalid URL' }));
     }
     // SSRF guard — block private/loopback ranges
-    const h = targetUrl.hostname.toLowerCase();
-    if (
-      h === 'localhost' || h === '127.0.0.1' || h === '::1' ||
-      /^10\./.test(h) || /^192\.168\./.test(h) ||
-      /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-      /^169\.254\./.test(h) || h.endsWith('.local')
-    ) {
+    if (isPrivateHost(targetUrl.hostname)) {
       res.writeHead(403, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ ok: false, error: 'Forbidden' }));
     }
@@ -3853,7 +3826,7 @@ const server = http.createServer((req, res) => {
           return httpSnapshotFallback(rawUrl, res);
         }
         context = await b.newContext({
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          userAgent: sourceRequestAdapter.HONEST_USER_AGENT,
           locale: 'en-US',
           viewport: { width: 1280, height: 900 },
           extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
@@ -3913,6 +3886,20 @@ const server = http.createServer((req, res) => {
   /* ── Serve sites.json for client ────────────────────────────────────── */
   if (pathname === '/sites.json') {
     return serveStatic(res, path.join(__dirname, 'sites.json'));
+  }
+
+  // Public deploy identity for pipeline verification; contains no secrets.
+  if (pathname === '/version.json') {
+    if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, { Allow: 'GET, HEAD' }); return res.end(); }
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    return res.end(req.method === 'HEAD' ? undefined : JSON.stringify({
+      commit: process.env.RENDER_GIT_COMMIT || null,
+      catalogSha256: LAB_RUNTIME_FINGERPRINT.catalogSha256,
+      classifierSha256: LAB_RUNTIME_FINGERPRINT.classifierSha256,
+      sourceRequestAdapterSha256: LAB_RUNTIME_FINGERPRINT.sourceRequestAdapterSha256,
+      node: process.version,
+      sources: { active: SITES.length, manual: SITES.filter(site => site.undetectable).length },
+    }));
   }
 
   /* ── Serve name-sites.json for client ───────────────────────────────── */
@@ -4104,6 +4091,6 @@ if (require.main === module) {
   });
 }
 
-module.exports = { classify, classifyVerifyResponse, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan, hasIntegrityAbstention, LAB_RUNTIME_FINGERPRINT,
+module.exports = { isPrivateHost, classify, classifyVerifyResponse, makeClassifiedResult, normalizeResult, probe, probeWithDeadline, withProfile, usernamePreflight, planUsernameScan, hasIntegrityAbstention, LAB_RUNTIME_FINGERPRINT,
   reserveScanSlot, refundScanSlot, acquireScanCapacity, releaseScanCapacity, sourceCooldownResult, recordSourceHealth,
   requestedRetryDelayMs, makeReqOptions, redirectRetainsProfileIdentity, RATE_LIMIT_MAX, MAX_ACTIVE_SCANS, MAX_QUEUED_SCANS, SOURCE_COOLDOWN_THRESHOLD };

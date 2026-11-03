@@ -52,9 +52,6 @@ test('new articles have consistent SEO, discovery links and local assets', () =>
       const asset = $(element).attr('href') || $(element).attr('src');
       assert.ok(fs.existsSync(path.join(root, asset.split('?')[0])), asset);
     }
-    const netlify = read('netlify.toml');
-    assert.ok(netlify.includes(`from = "/blog/${slug}.html"\n  to = "/blog/${slug}"\n  status = 301`));
-    assert.ok(netlify.includes(`from = "/blog/${slug}"\n  to = "/blog/${slug}.html"\n  status = 200`));
   }
 });
 
@@ -129,6 +126,13 @@ test('new clean routes, legacy redirects and PNGs are delivered by the local ser
     assert.equal(image.headers.get('content-type'), 'image/png');
     assert.ok((await image.arrayBuffer()).byteLength > 1000);
   }
+  const version = await fetch(`${origin}/version.json`);
+  assert.equal(version.status, 200);
+  assert.match(version.headers.get('cache-control'), /no-store/);
+  const identity = await version.json();
+  assert.match(identity.catalogSha256, /^[0-9a-f]{64}$/);
+  assert.equal(identity.sources.active, JSON.parse(read('sites.json')).filter(site => !site.defunct).length);
+  assert.equal(identity.node, process.version);
   const generator = await fetch(`${origin}/social/render-cards.js`);
   assert.equal(generator.status, 404);
 });

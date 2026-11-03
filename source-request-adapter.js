@@ -144,6 +144,8 @@ function validateCatalog(sites) {
     if (!isPlainObject(site) || typeof site.name !== 'string') {
       throw new TypeError('Backend source entries must be objects with a name');
     }
+    // PROBE never presents another client's identity (search crawlers, bots).
+    if (site.crawlerUA !== undefined) fail(site, 'crawlerUA impersonation is not allowed');
     for (const field of ['authRedirectMeansFound', 'authRedirectMeansNotFound', 'redirectMeansFound']) {
       if (site[field] !== undefined && typeof site[field] !== 'boolean') {
         fail(site, `${field} must be a boolean when configured`);
