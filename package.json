@@ -7,7 +7,7 @@
     "start": "node server.js",
     "build:assets": "node build-assets.js",
     "social:render": "node social/render-cards.js",
-    "check": "node --check server.js && node --check script.js && node --check build-assets.js && node --check username-rules.js && node --check source-request-adapter.js",
+    "check": "node --check server.js && node --check script.js && node --check build-assets.js && node --check username-rules.js && node --check source-request-adapter.js && node tools/check-lib.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {

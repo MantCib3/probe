@@ -6,8 +6,8 @@ const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 
 const root = path.join(__dirname, '..');
+const { runtimeCodeSha256 } = require('../lib/runtime-fingerprint');
 const fingerprintFiles = {
-  classifierSha256: 'server.js',
   sourceRequestAdapterSha256: 'source-request-adapter.js',
   catalogSha256: 'sites.json',
   usernameRulesSha256: 'username-rules.js',
@@ -42,8 +42,11 @@ async function main() {
     throw new Error('Manifest must contain 1-60 explicit {site, username, expected} controls.');
   }
   const headers = { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' };
-  const expected = Object.fromEntries(Object.entries(fingerprintFiles).map(([key, file]) =>
-    [key, crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')]));
+  const expected = {
+    classifierSha256: runtimeCodeSha256(root),
+    ...Object.fromEntries(Object.entries(fingerprintFiles).map(([key, file]) =>
+      [key, crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')])),
+  };
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   const dirty = Boolean(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim());
   if (dirty) throw new Error('Commit staging changes before recording a hosted comparison.');

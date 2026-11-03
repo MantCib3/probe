@@ -146,4 +146,7 @@ account existence. Ordinary unknown reasons remain eligible for configured
 browser fallback; manual archive research remains separate.
 
 The local accuracy-lab runtime fingerprint includes the SHA-256 of
-`source-request-adapter.js` as `sourceRequestAdapterSha256`.
+`source-request-adapter.js` as `sourceRequestAdapterSha256`. Its
+`classifierSha256` is the SHA-256 of the concatenated bytes of `server.js` and
+every `lib/**/*.js` file, ordered by POSIX relative path
+(`lib/runtime-fingerprint.js`); the lab's parity check computes the same value.
