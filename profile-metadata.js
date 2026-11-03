@@ -710,5 +710,6 @@ module.exports = {
   mergeFollowUp,
   readPlan,
   setHints,
+  validateAccountObjectRule,
   validatePageRule,
 };

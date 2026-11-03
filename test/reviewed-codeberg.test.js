@@ -33,6 +33,6 @@ test('Codeberg identifies PROBE honestly while preserving positive, missing and 
   for (const username of ['account1', 'account2', 'account3', 'absent1', 'absent2', 'absent3', 'challenge']) {
     const result = await probeWithDeadline(fixture, username, 5000).promise;
     assert.equal(result.status, username === 'challenge' ? 'blocked' : username.startsWith('absent') ? 'not_found' : 'found', username);
-    assert.deepEqual(result.profile, username.startsWith('account') ? { name: 'Fixture Account' } : undefined, username);
+    assert.deepEqual(result.profile, username.startsWith('account') ? { name: 'Fixture Account', accountId: '42' } : undefined, username);
   }
 });
