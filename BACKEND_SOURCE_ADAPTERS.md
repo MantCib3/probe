@@ -51,6 +51,21 @@ Authentication redirects are ambiguous by default and return `unknown`.
 Only a validated per-source `authRedirectMeansFound: true` or the explicit
 `authRedirectMeansNotFound: true` opts into a different interpretation.
 
+A found page reached through a redirect that no longer names the account
+(an ID-based URL such as `/user/show/1-otis-chandler`, or another host) is
+`unknown` with `redirect_profile_identity_lost`. A source may set
+`redirectIdentityMarker`, a reviewed string containing `{}` once (e.g.
+`<meta property="profile:username" content="{}">`), to prove ownership: only
+when that string, with the requested name substituted, appears
+(case-insensitively) in the first 32 KB of the destination page does the
+verdict stay `found`, with `site_redirect_identity_marker` added. Catalog
+validation requires at least 8 fixed characters around the placeholder.
+
+The body rate-limit check ignores only exact, reviewed library constants that
+quote a rate-limit message on ordinary pages (currently the New Relic browser
+agent's `TOO_MANY:{message:"429: Too Many Requests",sm:"Too-Many"}`); any other
+rate-limit text still makes the response `blocked`.
+
 ## Request identity
 
 Sources may set an honest `User-Agent` of `PROBE/1.0 (+https://usernameprobe.com)`
@@ -116,6 +131,9 @@ can keep the existing generic underscore-to-space fallback:
 | `redirect_hop_limit` | Redirect chain exceeded the server hop budget. |
 | `redirect_requires_follow` | Redirect could not be treated as profile evidence. |
 | `redirect_profile_identity_lost` | Followed destination no longer identifies the requested profile. |
+| `site_redirect_identity_marker` | Followed destination contains the source's reviewed `redirectIdentityMarker` for the requested name. |
+| `redirect_to_site_root` | Profile URL redirected to the site's home page (missing account). |
+| `redirect_to_not_found_path` | Profile URL redirected to a 404/not-found path (missing account). |
 | `redirect_auth_login` | Authentication redirect is ambiguous by default. |
 | `redirect_bot_challenge` | Redirect points to a challenge interstitial. |
 | `body_authentication_required` | Response body requires authentication. |

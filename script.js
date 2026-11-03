@@ -41,6 +41,9 @@ const REASON_LABEL = {
   redirect_hop_limit: 'Redirect chain exceeded the check limit',
   redirect_requires_follow: 'Redirect alone does not confirm an account',
   redirect_profile_identity_lost: 'Redirect destination no longer identifies the requested profile',
+  site_redirect_identity_marker: 'Redirect destination names the requested account',
+  redirect_to_site_root: 'Profile URL redirected to the site home page',
+  redirect_to_not_found_path: 'Profile URL redirected to a not-found page',
   redirect_bot_challenge: 'Redirected to a bot-check page',
   body_authentication_required: 'Page requires authentication - account existence is unclear',
   body_rate_limited: 'Page reports rate limiting',
@@ -2413,7 +2416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(() => {
       // Fallback count — update if site list size changes
       document.querySelectorAll('#heroCount, #siteCount, .step-count').forEach(el => {
-        el.textContent = '322';
+        el.textContent = '318';
       });
     });
 

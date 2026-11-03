@@ -143,6 +143,26 @@ describe('classify', () => {
       expected: ['blocked', 'body_rate_limited', 0.9],
     },
     {
+      name: 'ignores the New Relic recorder error-message constant on an ordinary page',
+      input: { body: '<script>var e={TOO_MANY:{message:"429: Too Many Requests",sm:"Too-Many"}};</script><h1>alice</h1>' },
+      expected: ['found', 'body_guard_username_match', 0.74],
+    },
+    {
+      name: 'still reports rate limiting when real text accompanies the New Relic constant',
+      input: { body: '<script>var e={TOO_MANY:{message:"429: Too Many Requests",sm:"Too-Many"}};</script><h1>Too many requests</h1><p>alice</p>' },
+      expected: ['blocked', 'body_rate_limited', 0.9],
+    },
+    {
+      name: 'still reports rate limiting for a quoted 429 message outside the exact constant',
+      input: { body: '<script>var e={message:"429: Too Many Requests"};</script><p>alice</p>' },
+      expected: ['blocked', 'body_rate_limited', 0.9],
+    },
+    {
+      name: 'treats a Cloudflare challenge bootstrap as blocked even when it echoes the username',
+      input: { source: site({ positiveMsg: 'alice' }), body: '<title>example.test</title><script>window._cf_chl_opt={cUPMDTk:"/search/alice?__cf_chl_tk=x"};</script>' },
+      expected: ['blocked', 'body_blocked_pattern', 0.9],
+    },
+    {
       name: 'uses only configured JSON evidence for adapter responses',
       input: {
         source: site({

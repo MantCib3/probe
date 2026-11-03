@@ -154,6 +154,15 @@ function validateCatalog(sites) {
     if (site.authRedirectMeansFound === true && site.authRedirectMeansNotFound === true) {
       fail(site, 'auth redirect cannot mean both found and not found');
     }
+    if (site.redirectIdentityMarker !== undefined) {
+      const marker = site.redirectIdentityMarker;
+      // The marker must name the account ({} once) inside enough fixed context
+      // that a bare username elsewhere on the page cannot satisfy it.
+      if (typeof marker !== 'string' || marker.split('{}').length !== 2 ||
+          marker.replace('{}', '').trim().length < 8) {
+        fail(site, 'redirectIdentityMarker must be a string containing {} once with at least 8 fixed characters');
+      }
+    }
     if (site.requestAdapter !== undefined) validateAdapter(site);
     if (site.credential !== undefined) validateCredential(site);
   }
