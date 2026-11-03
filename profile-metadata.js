@@ -18,7 +18,10 @@ const path = require('path');
 let cheerio = null;
 const loadCheerio = () => (cheerio = cheerio || require('cheerio'));
 
-const FIELDS = ['picture', 'name', 'bio', 'location', 'links', 'joined', 'followers'];
+const FIELDS = ['picture', 'name', 'bio', 'location', 'links', 'joined', 'followers',
+  'following', 'posts', 'verified', 'accountId', 'lastActive', 'contactEmail'];
+const COUNT_FIELDS = new Set(['followers', 'following', 'posts']);
+const DATE_FIELDS = new Set(['joined', 'lastActive']);
 const HEAD_SCHEMAS = new Set(['open_graph', 'twitter_card', 'meta', 'html_title']);
 const MAX_EXTENDED_BYTES = 524288;
 const LIMITS = { name: 80, bio: 280, location: 80 };
@@ -33,6 +36,7 @@ const clean = value => {
   const text = value.replace(/\s+/g, ' ').trim();
   return text ? text : null;
 };
+const EMAIL = /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}$/;
 
 const KEY_MAP = {
   picture: ['avatar', 'avatarurl', 'avatarurlhttps', 'avatarlarger', 'avatarmedium', 'avatarthumb', 'avatarlarge', 'avatarfull', 'avatarimage', 'avatarimageurl', 'profileimage', 'profileimageurl', 'profileimageurlhttps', 'profilepicurl', 'profilepicurlhd', 'profilepicture', 'profilephoto', 'photo', 'photourl', 'picture', 'pictureurl', 'image', 'imageurl', 'icon', 'iconimg', 'iconurl', 'userpic', 'thumbnail', 'thumbnailurl'],
@@ -42,6 +46,12 @@ const KEY_MAP = {
   links: ['website', 'websiteurl', 'blog', 'homepage', 'homepageurl', 'links', 'externalurl', 'sameas', 'socials'],
   joined: ['createdat', 'created', 'createdutc', 'createdon', 'creationdate', 'datecreated', 'joined', 'joinedat', 'joindate', 'joinedon', 'registered', 'registeredat', 'registrationdate', 'membersince', 'signupdate', 'memberdate'],
   followers: ['followers', 'followerscount', 'followercount', 'numfollowers', 'followerstotal', 'subscribers', 'subscriberscount', 'subscribercount', 'fans', 'fanscount', 'watchers'],
+  following: ['following', 'followingcount', 'followings', 'followingscount', 'numfollowing', 'friendscount', 'followscount', 'followeescount', 'followees'],
+  posts: ['postscount', 'postcount', 'numposts', 'statusescount', 'mediacount', 'articlescount', 'storiescount', 'videocount', 'videoscount', 'uploadscount', 'tweetcount', 'publicrepos', 'submissionscount', 'entriescount'],
+  verified: ['verified', 'isverified', 'verifiedaccount', 'isblueverified', 'blueverified', 'verifiedbadge', 'isofficial'],
+  accountId: ['id', 'userid', 'accountid', 'uid', 'pk', 'memberid', 'profileid', 'steamid', 'steamid64', 'restid', 'idstr'],
+  lastActive: ['lastactive', 'lastactiveat', 'lastseen', 'lastseenat', 'lastonline', 'lastlogin', 'lastloginat', 'lastvisit', 'lastvisitat', 'lastactivity', 'lastactivityat', 'lastplayed', 'lastlogoff', 'onlineat'],
+  contactEmail: ['publicemail', 'contactemail', 'email', 'emailaddress', 'businessemail'],
 };
 const KEY_LOOKUP = {};
 for (const [field, keys] of Object.entries(KEY_MAP)) keys.forEach(k => { if (!KEY_LOOKUP[k]) KEY_LOOKUP[k] = field; });
@@ -50,11 +60,14 @@ const normKey = key => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
 
 function scalarFor(field, value) {
   if (value === null || value === undefined) return null;
+  if (field === 'verified') return value === true || value === 'true' || value === 1 ? 'true' : null;
   if (typeof value === 'string' || typeof value === 'number') {
     const text = clean(value);
     if (!text) return null;
-    if (field === 'followers' && !/^\d[\d,.\s]*[kKmM]?$/.test(text)) return null;
+    if (COUNT_FIELDS.has(field) && !/^\d[\d,.\s]*[kKmM]?$/.test(text)) return null;
     if (field === 'picture' && !/^(https?:)?\/\/|^\//.test(text)) return null;
+    if (field === 'accountId' && !/^[A-Za-z0-9_:.-]{1,64}$/.test(text)) return null;
+    if (field === 'contactEmail' && !EMAIL.test(text)) return null;
     return text;
   }
   if (Array.isArray(value)) {
@@ -67,7 +80,7 @@ function scalarFor(field, value) {
   if (typeof value === 'object') {
     if (field === 'picture') return scalarFor(field, value.url || value.src || value.large || value.medium || value.original || value.href || (Array.isArray(value.urlList) && value.urlList[0]) || (Array.isArray(value.url_list) && value.url_list[0]));
     if (field === 'location') return scalarFor(field, value.name || value.city || value.addressLocality || value.country);
-    if (field === 'followers') return scalarFor(field, value.count || value.total || value.totalCount);
+    if (COUNT_FIELDS.has(field)) return scalarFor(field, value.count || value.total || value.totalCount);
   }
   return null;
 }
@@ -368,8 +381,14 @@ function finalise(field, raw, rule, ctx) {
         .filter(link => link && link.indexOf('://') === link.lastIndexOf('://'));
       return list.length ? [...new Set(list)].slice(0, 5) : null;
     }
-    case 'joined': return normaliseDate(raw);
-    case 'followers': return normaliseCount(raw);
+    case 'joined':
+    case 'lastActive': return normaliseDate(raw);
+    case 'followers':
+    case 'following':
+    case 'posts': return normaliseCount(raw);
+    case 'verified': return String(raw) === 'true' ? true : null;
+    case 'accountId': return /^[A-Za-z0-9_:.-]{1,64}$/.test(value) ? value : null;
+    case 'contactEmail': return EMAIL.test(value) ? value.toLowerCase() : null;
     default: return null;
   }
 }

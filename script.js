@@ -1177,17 +1177,52 @@ function httpsUrl(value) {
 function normaliseProfile(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const text = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+  const count = v => (Number.isFinite(v) && v >= 0 ? Math.round(v) : null);
+  const day = v => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
   const profile = {
     picture  : httpsUrl(raw.picture),
     name     : text(raw.name, 80),
     bio      : text(raw.bio, 280),
     location : text(raw.location, 80),
     links    : Array.isArray(raw.links) ? raw.links.map(httpsUrl).filter(Boolean).slice(0, 5) : [],
-    joined   : typeof raw.joined === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.joined) ? raw.joined : null,
-    followers: Number.isFinite(raw.followers) && raw.followers >= 0 ? Math.round(raw.followers) : null,
+    joined   : day(raw.joined),
+    followers: count(raw.followers),
+    following: count(raw.following),
+    posts    : count(raw.posts),
+    verified : raw.verified === true,
+    accountId: typeof raw.accountId === 'string' && /^[A-Za-z0-9_:.-]{1,64}$/.test(raw.accountId) ? raw.accountId : null,
+    lastActive: day(raw.lastActive),
+    contactEmail: typeof raw.contactEmail === 'string' && /^[^\s@<>"]{1,64}@[^\s@<>"]{1,190}$/.test(raw.contactEmail) ? raw.contactEmail : null,
   };
-  const hasAny = profile.picture || profile.name || profile.bio || profile.location || profile.links.length || profile.joined || profile.followers !== null;
+  profile.linkedAccounts = linkedAccountsFor(profile.links);
+  const hasAny = profile.picture || profile.name || profile.bio || profile.location || profile.links.length || profile.joined ||
+    profile.followers !== null || profile.following !== null || profile.posts !== null || profile.verified || profile.accountId ||
+    profile.lastActive || profile.contactEmail;
   return hasAny ? profile : null;
+}
+
+// Profile links that point at another catalog source become pivots: the
+// linked username on that platform, derived from the source's URL template.
+let linkMatchers = [];
+function buildLinkMatchers(sites) {
+  linkMatchers = (Array.isArray(sites) ? sites : []).filter(site => site && !site.defunct && typeof site.url === 'string' && site.url.includes('{}'))
+    .map(site => {
+      try {
+        const template = site.url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '');
+        if (template.indexOf('{}') < 3 && !/^\{\}\./.test(template)) return null;
+        const pattern = template.split('{}').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('([A-Za-z0-9._-]{1,50})');
+        return { name: site.name, regex: new RegExp(`^${pattern}/?$`, 'i') };
+      } catch (_) { return null; }
+    }).filter(Boolean);
+}
+function linkedAccountsFor(links) {
+  const found = [];
+  for (const link of links || []) {
+    const bare = link.replace(/^https?:\/\/(www\.)?/i, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
+    const hit = linkMatchers.find(matcher => matcher.regex.test(bare));
+    if (hit) found.push({ site: hit.name, username: bare.match(hit.regex)[1], url: link });
+  }
+  return found.slice(0, 5);
 }
 
 function compactCount(n) {
@@ -1198,10 +1233,19 @@ function compactCount(n) {
 
 function profileBlockHtml(profile) {
   const facts = [];
+  if (profile.verified) facts.push('<span class="profile-verified" title="The platform marks this account as verified">Verified</span>');
   if (profile.location) facts.push(`<span>${escHtml(profile.location)}</span>`);
   if (profile.joined) facts.push(`<span>Joined ${escHtml(profile.joined.slice(0, 7))}</span>`);
+  if (profile.lastActive) facts.push(`<span>Active ${escHtml(profile.lastActive)}</span>`);
   if (profile.followers !== null) facts.push(`<span>${escHtml(compactCount(profile.followers))} followers</span>`);
-  profile.links.slice(0, 2).forEach(link => {
+  if (profile.following !== null) facts.push(`<span>${escHtml(compactCount(profile.following))} following</span>`);
+  if (profile.posts !== null) facts.push(`<span>${escHtml(compactCount(profile.posts))} posts</span>`);
+  if (profile.contactEmail) facts.push(`<span title="Shown publicly on the profile">${escHtml(profile.contactEmail)}</span>`);
+  const linked = new Set(profile.linkedAccounts.map(account => account.url));
+  profile.linkedAccounts.forEach(account => {
+    facts.push(`<a href="${escHtml(account.url)}" target="_blank" rel="noopener noreferrer nofollow" title="Linked from this profile">${escHtml(account.site)} @${escHtml(account.username)}</a>`);
+  });
+  profile.links.filter(link => !linked.has(link)).slice(0, 2).forEach(link => {
     let host = link;
     try { host = new URL(link).hostname.replace(/^www\./, ''); } catch (_) {}
     facts.push(`<a href="${escHtml(link)}" target="_blank" rel="noopener noreferrer nofollow">${escHtml(host)}</a>`);
@@ -1851,7 +1895,7 @@ function csvCell(value) {
 }
 
 function buildCsvRows(subset) {
-  const header = 'Name,Category,Status,Confidence,Reasons,URL,Profile name,Bio,Picture,Location,Joined,Followers,Links,Format rule,Method';
+  const header = 'Name,Category,Status,Confidence,Reasons,URL,Profile name,Bio,Picture,Location,Joined,Followers,Links,Format rule,Method,Following,Posts,Verified,Account ID,Last active,Public email,Linked accounts';
   const rows = subset.map(r => {
     const p = r.profile || {};
     return [r.name, r.category, r.status,
@@ -1859,7 +1903,9 @@ function buildCsvRows(subset) {
      Array.isArray(r.reasonCodes) ? r.reasonCodes.join('|') : '', r.url,
      p.name || '', p.bio || '', p.picture || '', p.location || '', p.joined || '',
      p.followers ?? '', Array.isArray(p.links) ? p.links.join(' ') : '',
-     r.formatReason || '', r.detectionMethod || '']
+     r.formatReason || '', r.detectionMethod || '',
+     p.following ?? '', p.posts ?? '', p.verified ? 'yes' : '', p.accountId || '', p.lastActive || '', p.contactEmail || '',
+     Array.isArray(p.linkedAccounts) ? p.linkedAccounts.map(a => `${a.site}:${a.username}`).join(' ') : '']
       .map(csvCell)
       .join(',');
   });
@@ -2363,7 +2409,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load sites.json to populate platforms grid + update counts
   fetch('./sites.json')
     .then(r => r.ok ? r.json() : Promise.reject())
-    .then(sites => initPlatformsGrid(sites))
+    .then(sites => { buildLinkMatchers(sites); initPlatformsGrid(sites); })
     .catch(() => {
       // Fallback count — update if site list size changes
       document.querySelectorAll('#heroCount, #siteCount, .step-count').forEach(el => {
