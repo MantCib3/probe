@@ -620,6 +620,48 @@ payment ledger entry. Explicit resume is separate and retains cap zero.
 Supplier testing is currently on hold; the requested ten-request limit is not
 an authorization to dispatch without a confirmed budget or browser isolation.
 
+On 2026-11-09 standalone replacement passed real sandbox acceptance: setup
+confirmed, one signed Checkout setup event, changed saved card, guest still
+paused, debt zero, paid AUD 1.00 and exactly one existing payment ledger entry.
+The separate replacement resume then passed, retaining cap zero and unchanged
+accounting. Public paid config remained disabled. No new payment or supplier
+request was made by this acceptance.
+
+### Supplier pricing evidence and reporting limits
+
+Official [pricing](https://www.zyte.com/pricing/) and
+[pricing documentation](https://docs.zyte.com/zyte-api/pricing.html), reviewed
+2026-11-09, document per-website/per-transport tiers, not a universal per-request
+price. PAYG base rates per 1,000 successful responses are $0.13-$1.27 for HTTP
+and $1.01-$16.08 for browser. Thus the lowest HTTP base is $0.00013/request,
+which is consistent with a four-decimal dashboard display of `0.0001`, though
+the dashboard's exact rounding rule has not been verified. The operator's
+10,000-request/$4 calculator result averages $0.0004/request; its selected
+sites/features determine applicability.
+
+Tier assignments can change; the documentation states quarterly reviews with
+two weeks' notice. Explicit device residential IPs/extended geolocations have
+different bases plus network costs, and actions/other features can add charges.
+Automatic infrastructure selection is not the same pricing commitment as an
+explicit residential request.
+
+The public extraction OpenAPI, inspected directly from the official
+[reference](https://docs.zyte.com/zyte-api/usage/reference.html), does not document
+a per-response price field/header or a per-request billing-export endpoint.
+The pricing page advertises monthly reports and dashboard cost estimation.
+This is not proof that private dashboard exports or support-provided reporting
+are unavailable. Do not require the operator to keep searching for a specific
+export assumed to exist, or invent an ingestion API.
+
+The reported request-level `0.0001` records are useful supplier evidence for
+the tested requests, but must not silently become an exact universal rate.
+Documented successful Zyte responses include target 404s; PROBE classifications
+still do not determine supplier costs. Until an exact supported cost source is
+available, retain operator reconciliation or explicitly redesign pricing as
+published per-attempt customer rates, with PROBE absorbing supplier variance.
+The latter changes the actual-cost-plus-margin promise and needs explicit
+product approval before changing consent, rate contracts or accounting.
+
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Currency, transport assumptions and actual per-request
 costs are not verified; use this for planning, not customer ledger ingestion.
@@ -628,9 +670,10 @@ Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
 paths passed. Four authorized Zyte HTTP controls also passed with supplier
 references. Remaining blockers: automated authoritative per-request cost
 ingestion (including precision/currency/FX policy), approved paid-source
-detection/transport, browser-side supplier isolation, standalone card-replacement
-checkout acceptance and small-debt/expired-session operator resolution.
+detection/transport, browser-side supplier isolation and small-debt/
+expired-session operator resolution.
 Hosted recovery payment and explicit resume have now passed sandbox acceptance;
+standalone card replacement and its explicit resume have also passed.
 live activation and remaining launch gates are still separate.
 Therefore public paid execution remains locked.
 
