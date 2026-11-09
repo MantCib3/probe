@@ -204,6 +204,30 @@ then uses its authoritative `last_payment_error.payment_method` only for
 foreign methods still fail. Failed-payment accounting errors freeze collection
 and spending rather than leaving an active guest after an unrecorded decline.
 
+### Observed sandbox acceptance results (2026-11-09 UTC)
+
+| Check | Observed result |
+|---|---|
+| Hosted test-card setup | Confirmed through actual signed event and authoritative Stripe retrieval |
+| AUD 1.00 test success | Stripe succeeded; debt zero; exactly one payment ledger entry |
+| Attached-card decline | `card_declined`; collection failed; no payment entry; spending paused |
+| Off-session authentication | `authentication_required`; collection failed; no payment entry; spending paused |
+| Simulated response loss | Initially uncertain/frozen; actual signed webhook recovered the same payment; exactly one payment entry |
+| Repeated collection call and operator webhook resend | Success/recovery ledger entries remained exactly one |
+| Signed event delivery | Success, decline, authentication and response-loss fixtures each have an accepted payment event |
+
+Two successful synthetic AUD 1.00 **test** payments occurred; no real funds
+moved and no Zyte/supplier calls occurred. Test fixtures remain zero-cap and
+spending-suspended for inspection/retries. Production was not changed.
+The earlier deprecated API requests created no PaymentIntent; one-time
+corrected-key repair required definitive rejection plus a complete empty
+customer-scoped lookup. This is distinct from unknown-outcome recovery.
+
+These results verify the exercised sandbox paths, not provider accounting,
+the full 20-hour recovery window or a customer-facing authentication/recovery
+portal. Supplier billability/rate measurement, source support, retention and
+payment recovery UX remain unresolved. Keep all spending gates at `0`.
+
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 
 ```powershell
