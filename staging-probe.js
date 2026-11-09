@@ -117,10 +117,14 @@ function createStagingHandler(options) {
         } finally {
           req.setTimeout(0);
         }
-        if (!input || input.confirmation !== 'stripe-test-setup-only-v1' ||
-            !['start', 'status'].includes(input.action) ||
+        const payment = input?.confirmation === 'stripe-test-payments-v1' &&
+          ['pay', 'payment-status'].includes(input.action) &&
+          ['success', 'decline', 'authentication', 'unknown'].includes(input.scenario) && Object.keys(input).length === 4;
+        const setup = input?.confirmation === 'stripe-test-setup-only-v1' &&
+          ['start', 'status'].includes(input.action) && Object.keys(input).length === 3;
+        if ((!payment && !setup) ||
             !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.guestId || '') ||
-            Object.keys(input).length !== 3) {
+            !input) {
           return send(400, { ok: false, error: 'Explicit sandbox setup confirmation and fixture UUID required.' });
         }
         stripeSetupNext = Date.now() + 10000;

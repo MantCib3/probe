@@ -161,6 +161,31 @@ absent, turns every listed non-card method off, and verifies effective card-only
 settings before creating Checkout. An altered configuration fails closed.
 PaymentIntent collection still uses its separately supported card restriction.
 
+### Isolated Stripe test-payment acceptance
+
+The same authenticated operator endpoint supports
+`{"action":"pay","guestId":"<v4-uuid>","scenario":"success","confirmation":"stripe-test-payments-v1"}`.
+The success UUID must be the signed, hosted setup fixture. `decline`,
+`authentication` and `unknown` require fresh UUIDs and fixed Stripe test
+PaymentMethods, never user-supplied card information. Each scenario is durably
+bound in a cancelled `StripeAcceptanceFixture` job; it is never provider work.
+These actions seed a **synthetic AUD 1.00 balance** and one collection whose ID
+is the fixture UUID. This is not supplier usage or a customer invoice.
+They call the normal `collect`/`paymentResult` path with test credentials only.
+Repeated calls reuse that collection, PaymentIntent or original idempotency
+key. Public actions, workers and provider execution remain disabled.
+
+The `unknown` scenario deliberately discards the successful Stripe API
+response once to simulate a lost response. It freezes spending, then uses the
+normal signed webhook or original collection key to recover without another
+payment. This is a simulated network fault against a real sandbox PaymentIntent,
+not proof of every real outage case or the full 20-hour recovery window.
+Use `action:"payment-status"` with the same scenario/UUID to inspect ledger,
+Stripe outcome and actual signed event counts. Only fixed AUD 100-cent
+collections owned by zero-cap acceptance guests may pass the locked webhook
+exception; all other payment events remain rejected. Fixtures/test customers
+are retained for webhook retries and explicit later cleanup.
+
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 
 ```powershell

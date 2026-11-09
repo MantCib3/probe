@@ -294,7 +294,7 @@ test('locked billing accepts real signatures only for isolated sandbox setup fix
   assert.equal(confirms, 1);
   const payment = { ...event, type: 'payment_intent.succeeded' };
   const paymentSignature = sdk.webhooks.generateTestHeaderString({ payload: JSON.stringify(payment), secret: env.STRIPE_WEBHOOK_SECRET });
-  assert.equal((await request('webhook', { method: 'POST', headers: { 'stripe-signature': paymentSignature }, body: payment })).status, 400);
+  assert.equal((await request('webhook', { method: 'POST', headers: { 'stripe-signature': paymentSignature }, body: payment })).status, 403);
   for (const route of ['session', 'setup', 'jobs']) {
     assert.equal((await request(route, { method: 'POST', body: {} })).status, 503);
   }

@@ -174,6 +174,21 @@ test('sandbox setup requires authenticated explicit bounded confirmation and exc
   assert.equal((await setup().request({ route, body })).status, 404);
 });
 
+test('test-payment action requires its own exact confirmation and fixed scenario', async () => {
+  let calls = 0;
+  const fixture = setup({ stripeSetup: async input => { calls++; return { scenario: input.scenario }; } });
+  const route = '/api/staging-billing-stripe-setup';
+  const input = { action: 'pay', guestId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    scenario: 'success', confirmation: 'stripe-test-payments-v1' };
+  for (const changes of [{ confirmation: 'stripe-test-setup-only-v1' }, { scenario: 'custom' },
+    { amount: 100000 }, { action: 'refund' }]) {
+    assert.equal((await fixture.request({ route, body: JSON.stringify({ ...input, ...changes }) })).status, 400);
+  }
+  assert.equal(calls, 0);
+  assert.equal((await fixture.request({ route, body: JSON.stringify(input) })).status, 200);
+  assert.equal(calls, 1);
+});
+
 test('oversized bodies are rejected explicitly', async () => {
   const fixture = setup({ readBody: async () => { throw Object.assign(new Error('large'), { code: 'BODY_TOO_LARGE' }); } });
   assert.equal((await fixture.request()).status, 413);
