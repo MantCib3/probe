@@ -152,7 +152,9 @@ function createStagingHandler(options) {
           ['start', 'status'].includes(input.action) && Object.keys(input).length === 3;
         const recovery = input?.confirmation === 'stripe-test-recovery-one-checkout-v1' &&
           ['recovery-start','recovery-status','recovery-resume'].includes(input.action) && Object.keys(input).length === 3;
-        if ((!payment && !setup && !recovery) ||
+        const replacement = input?.confirmation === 'stripe-test-replacement-one-setup-v1' &&
+          ['replacement-start','replacement-status','replacement-resume'].includes(input.action) && Object.keys(input).length === 3;
+        if ((!payment && !setup && !recovery && !replacement) ||
             !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.guestId || '') ||
             !input) {
           return send(400, { ok: false, error: 'Explicit sandbox setup confirmation and fixture UUID required.' });

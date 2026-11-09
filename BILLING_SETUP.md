@@ -607,6 +607,19 @@ zero at verification; the signed payment-event recovery path was sufficient.
 These safe status checks do not independently expose/verify the card's 3DS
 authentication details or prove standalone card-replacement checkout acceptance.
 
+Standalone replacement acceptance reuses that recovered zero-cap fixture.
+The same authenticated endpoint accepts exactly its `guestId`,
+`confirmation:"stripe-test-replacement-one-setup-v1"` and `action`
+(`replacement-start`, `replacement-status`, `replacement-resume`).
+Only one setup is allowed; a ready setup is reused, while confirmed/uncertain/
+expired setups cannot start another. The standard replacement flow pauses
+spending and requests only a SetupIntent, not a payment. Verification requires
+a signed confirmed setup, a saved card different from the settled collection's
+immutable card reference, unchanged zero debt/AUD 1.00 paid balance and one
+payment ledger entry. Explicit resume is separate and retains cap zero.
+Supplier testing is currently on hold; the requested ten-request limit is not
+an authorization to dispatch without a confirmed budget or browser isolation.
+
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Currency, transport assumptions and actual per-request
 costs are not verified; use this for planning, not customer ledger ingestion.

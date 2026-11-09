@@ -73,3 +73,43 @@ test('locked webhook recovery admits new test card only for exact owned amount, 
   await assert.rejects(assertAcceptanceEvent(f.pool, { ...event, account: 'acct_connect' }));
   await assert.rejects(assertAcceptanceEvent(f.pool, { ...event, type: 'unrelated' }));
 });
+test('replacement status verifies a changed card without charges; ready checkout reuses its full URL and blocks another setup', async () => {
+  const f = fixture();
+  f.guest.state = 'action_required';
+  f.guest.debt_micros = '0';
+  f.guest.paid_micros = '1000000';
+  f.recovery.state = 'confirmed';
+  f.collection.state = 'succeeded';
+  f.collection.payment_method_id = 'pm_old';
+  const setup = { id: randomUUID(), state: 'ready', terms_hash: TERMS_HASH,
+    created_at: new Date(), checkout_id: 'cs_replacement',
+    checkout_url: 'https://checkout.stripe.com/c/pay/replacement#full-fragment' };
+  const baseQuery = f.pool.query;
+  const query = async (sql, values) => {
+    if (sql.includes('FROM probe_billing.setups')) return { rows: [setup], rowCount: 1 };
+    if (sql.startsWith('SELECT id FROM probe_billing.recoveries')) return { rows: [], rowCount: 0 };
+    return baseQuery(sql, values);
+  };
+  f.pool.query = query;
+  f.pool.connect = async () => ({ query, release() {} });
+  const request = action => ({ action, guestId: RECOVERY_GUEST, confirmation: 'stripe-test-replacement-one-setup-v1' });
+  const ready = await runSetupAcceptance(f.pool, {}, request('replacement-start'));
+  assert.equal(ready.url, setup.checkout_url);
+  assert.equal(ready.replacementVerified, false);
+  for (const state of ['confirmed','uncertain','expired','creating']) {
+    setup.state = state;
+    await assert.rejects(runSetupAcceptance(f.pool, {}, request('replacement-start')), /already_started/);
+  }
+  setup.state = 'confirmed';
+  const verified = await runSetupAcceptance(f.pool, {}, request('replacement-status'));
+  assert.equal(verified.replacementVerified, true);
+  assert.equal(verified.cardChanged, true);
+  assert.equal(verified.paymentLedgerEntries, 1);
+  assert.equal(verified.guestState, 'action_required');
+  assert.equal(verified.spendingCapMicros, 0);
+  assert.equal(JSON.stringify(verified).includes('private'), false);
+  f.collection.payment_method_id = f.guest.payment_method_id;
+  assert.equal((await runSetupAcceptance(f.pool, {}, request('replacement-status'))).replacementVerified, false);
+  await assert.rejects(runSetupAcceptance(f.pool, {}, request('replacement-resume')), /not_verified/);
+  await assert.rejects(runSetupAcceptance(f.pool, {}, { ...request('replacement-start'), guestId: randomUUID() }), /invalid_acceptance/);
+});
