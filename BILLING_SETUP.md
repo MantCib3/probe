@@ -656,11 +656,16 @@ export assumed to exist, or invent an ingestion API.
 The reported request-level `0.0001` records are useful supplier evidence for
 the tested requests, but must not silently become an exact universal rate.
 Documented successful Zyte responses include target 404s; PROBE classifications
-still do not determine supplier costs. Until an exact supported cost source is
-available, retain operator reconciliation or explicitly redesign pricing as
-published per-attempt customer rates, with PROBE absorbing supplier variance.
-The latter changes the actual-cost-plus-margin promise and needs explicit
-product approval before changing consent, rate contracts or accounting.
+still do not determine supplier costs.
+
+Product decision confirmed 2026-11-09: retain actual supplier cost plus the
+disclosed margin. Do not switch to fixed per-attempt customer prices.
+Supplier costs must be matched to the owned attempt using authoritative
+evidence, with explicit currency/FX handling. Rounded dashboard rows,
+calculator averages and published tier estimates are not exact reconciled
+costs. Retain the existing operator reconciliation path until a supported
+automated source is available; do not settle unsupported amounts as customer
+debt. Public paid execution remains locked pending the outstanding launch gates.
 
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Currency, transport assumptions and actual per-request
