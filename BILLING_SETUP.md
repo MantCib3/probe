@@ -300,8 +300,8 @@ The JSON object must contain:
 | `measured` | `true`, only after an authorized measurement |
 | `measurementReference` | Nonempty private reference to measured supplier evidence |
 | `creditMicros` | Positive safe integer maximum outstanding debt + reservations |
-| `thresholdMicros` | Integer >= 10,000 and <= credit; earlier collection threshold |
-| `minimumCents` | Explicit positive integer, <= threshold in whole cents; set from current Stripe AUD minimum/fee requirements |
+| `thresholdMicros` | Integer >= 500,000 (AUD 0.50) and <= credit; earlier collection threshold |
+| `minimumCents` | Explicit integer >= 50, <= threshold in whole cents; may be higher for operator fee requirements |
 | `sources` | Nonempty array of individually approved sources |
 
 Each source requires `source` (exact catalog name), `mode` (`http` or `browser`),
@@ -494,9 +494,9 @@ conservative 20-hour window; after that it freezes, because Stripe may prune
 24-hour idempotency keys. If a PaymentIntent id is known, recovery retrieves
 it instead. Do not clear/delete a collection, manually mark it paid, create
 a replacement claim, reset a setup or re-enable a guest without authoritative
-provider reconciliation. This slice has no debt recovery/customer-action
-portal: failed payments, stale unknown Stripe creations and setup timeouts
-require operator review and remain fail-closed.
+provider reconciliation. Hosted card replacement/debt recovery and explicit
+resume are described below. Stale unknown Stripe creations and setup timeouts
+still require operator review and remain fail-closed.
 
 ## Records and remaining blockers
 
@@ -518,8 +518,8 @@ retention and incident procedures before public paid use.
 Recovery keeps the same opaque HttpOnly guest cookie, same-origin/CSRF checks,
 current explicit consent and sandbox gates. No PROBE customer account, email
 lookup, client secret or card details are introduced. Losing/expiring that
-cookie still requires operator assistance; never silently create a replacement
-money-bearing guest.
+cookie can be recovered with a private recovery code as described below;
+never silently create a replacement money-bearing guest.
 
 - `POST /api/paid/replacement` saves a new card with the existing Stripe-hosted
   setup flow. The guest stays paused. It cannot run alongside an open debt
@@ -562,7 +562,7 @@ Apply using the existing gated migration command, or authenticated
 
 That staging-only operator check requires all three spending gates exactly `0`,
 verified database TLS, a bounded body and the existing bearer. It applies
-checksum-verified migrations and runs eight UUID-owned synthetic SQL checks,
+checksum-verified migrations and runs twelve UUID-owned synthetic SQL checks,
 then removes/verifies only those fixtures. Existing acceptance guests are
 preserved. It makes zero Stripe or supplier requests. It does **not** prove a
 real hosted recovery checkout/authentication by itself; the separate observed
@@ -627,6 +627,73 @@ The separate replacement resume then passed, retaining cap zero and unchanged
 accounting. Public paid config remained disabled. No new payment or supplier
 request was made by this acceptance.
 
+### Private session recovery and small-debt policy
+
+The operator selected a user-held recovery code with operator fallback and
+carry-forward of small debt; no fixed pricing, small-debt forgiveness or
+automatic payment-failure resume was approved.
+
+Migration `003-session-recovery-code.sql` adds only a unique nullable recovery
+hash and creation timestamp. Existing guests/financial records are unchanged.
+New guest sessions generate an independent 256-bit random recovery code,
+returned once alongside CSRF in a no-store JSON response. Only a domain-separated
+SHA-256 digest is persisted. The UI masks the code, supports reveal/copy and
+requires saving acknowledgement before leaving new-session setup for Stripe.
+The paid UI does not persist codes in local/session storage or URLs.
+
+Existing authenticated guests can explicitly create/replace a code through
+`POST /api/paid/recovery-code` with exactly `{"replaceRecoveryCode":true}`;
+same-origin, CSRF, rate limiting and current unexpired cookie ownership are
+required. Replacement invalidates the old code. `GET /api/paid/status` exposes
+only whether a code is configured, never its hash/value.
+
+`POST /api/paid/restore-session` requires exactly `restore:true`, a complete
+43-character `recoveryCode` and a verified paid-action `cfToken`. Same-origin/
+Fetch-Metadata guards and existing per-IP rate limits apply before lookup.
+An already-valid browser session cannot silently be overwritten; use a separate
+browser profile for another session. A lost/expired/invalid cookie may be
+replaced only after matching the code. The guest row is locked, token/CSRF
+hashes rotate and cookie/DB expiry is renewed for 30 days. The same guest ID,
+debt, collected spend, cap, consent, reservations and revocation remain intact.
+Previously active spending is paused; normal debt/setup/reservation guards and
+current explicit consent are still required to resume.
+
+The saved recovery code remains usable until explicitly replaced. This permits
+retry after a lost restore response without stranding the customer; each
+successful restore invalidates the previous browser token. It is a bearer
+credential, not proof of personal identity. Anyone who obtains it can restore
+access. Save it in a password manager and keep it out of messages/screenshots.
+Losing both cookie and code has no automatic email/account recovery.
+
+Small balances carry forward. Automatic rate cards must set a collection
+minimum of at least 50 AUD cents and threshold at least AUD 0.50, avoiding
+invalid sub-minimum Stripe charges. Paused guests with whole-cent debt below
+that minimum cannot checkout or resume; no round-up, forgiveness or added
+supplier requests are used to force a charge. Existing sub-cent settlement
+remainders still carry forward and do not prevent explicit resume once all
+whole-cent debt and unresolved collections/reservations are cleared.
+
+Operator fallback:
+
+1. Do not ask customers to send a code, cookie, PAN/CVC or database credential.
+   Never identify a guest from a name/email that PROBE does not collect.
+2. With a valid cookie, use the explicit code replacement UI. With a valid code,
+   use the bot-verified restore UI. If neither exists, preserve balances and
+   paused/revoked status while assessing ownership from existing authoritative
+   Stripe transaction references; assistance does not guarantee recovery.
+3. Unknown payments remain frozen until authoritative Stripe reconciliation.
+   Never delete a claim, mark debt paid, bypass a reservation or reverse
+   revocation to resolve a support ticket.
+4. Small whole-cent debts remain owed and paused until lawfully resolved;
+   changing this policy needs explicit approval. Terminal job content retains
+   the existing seven-day scrubbing rule; financial/consent retention still
+   needs a lawful operator policy before launch, not blanket automatic deletion.
+
+The existing authenticated staging recovery check applies migration 003 and
+exercises small-debt refusal, expired-session restoration, credential rotation/
+response-loss retry and revocation preservation with UUID-owned SQL fixtures.
+It makes no Stripe or supplier requests.
+
 ### Supplier pricing evidence and reporting limits
 
 Official [pricing](https://www.zyte.com/pricing/) and
@@ -658,14 +725,15 @@ the tested requests, but must not silently become an exact universal rate.
 Documented successful Zyte responses include target 404s; PROBE classifications
 still do not determine supplier costs.
 
-Product decision confirmed 2026-11-09: retain actual supplier cost plus the
-disclosed margin. Do not switch to fixed per-attempt customer prices.
-Supplier costs must be matched to the owned attempt using authoritative
-evidence, with explicit currency/FX handling. Rounded dashboard rows,
-calculator averages and published tier estimates are not exact reconciled
-costs. Retain the existing operator reconciliation path until a supported
-automated source is available; do not settle unsupported amounts as customer
-debt. Public paid execution remains locked pending the outstanding launch gates.
+On 2026-11-09 the operator explicitly retained **actual supplier cost plus the
+disclosed margin**, rejecting a fixed per-attempt pricing substitution.
+Retain authoritative operator reconciliation until an exact supported cost
+source can be automated. Calculator estimates and rounded dashboard values
+must not be substituted for exact reconciled costs. Unresolved attempts remain
+pending reconciliation, not collectible customer debt; preserve existing
+reservation/credit limits and absorb PROBE errors and duplicate attempts.
+This decision does not authorize further supplier requests or public paid
+activation.
 
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Currency, transport assumptions and actual per-request
@@ -675,8 +743,9 @@ Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
 paths passed. Four authorized Zyte HTTP controls also passed with supplier
 references. Remaining blockers: automated authoritative per-request cost
 ingestion (including precision/currency/FX policy), approved paid-source
-detection/transport, browser-side supplier isolation and small-debt/
-expired-session operator resolution.
+detection/transport, browser-side supplier isolation and a lawful financial
+retention/ownership-assistance policy. Small-debt carry-forward and private
+lost/expired-session recovery are implemented; they do not bypass cost evidence.
 Hosted recovery payment and explicit resume have now passed sandbox acceptance;
 standalone card replacement and its explicit resume have also passed.
 live activation and remaining launch gates are still separate.

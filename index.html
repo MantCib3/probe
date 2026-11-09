@@ -102,6 +102,21 @@
         <p id="paidTerms">AUD daily postpaid, with earlier credit-threshold collection. Authoritative provider-billable usage plus disclosed margin can cost money even when inconclusive. PROBE errors and duplicate attempts are absorbed. Revocation stops new spending, not existing debt. Stripe may retain identity/payment records; PROBE stores pseudonymous references, consent and a ledger.</p>
         <p id="paidRates">Rates unavailable — paid execution disabled.</p>
         <div id="paidControls" hidden>
+          <details id="paidSessionHelp">
+            <summary>Save a recovery code or restore this billing session</summary>
+            <p>No account or email is required. Keep the code in a password manager: anyone holding it can access this billing session. Lost cookie and lost code require <a href="/#contact">operator assistance</a>; do not send your code or card details in a message.</p>
+            <label><input type="checkbox" id="paidCodeReplaceConsent"> Create a private recovery code; replace and invalidate any previous code</label>
+            <button type="button" class="btn" id="paidCreateCode">Create recovery code</button>
+            <div id="paidCodeOutput" hidden>
+              <label>Private recovery code <input type="password" id="paidNewCode" readonly autocomplete="off" spellcheck="false" aria-label="New private recovery code"></label>
+              <button type="button" class="btn" id="paidRevealCode">Show / hide code</button>
+              <button type="button" class="btn" id="paidCopyCode">Copy code</button>
+              <label><input type="checkbox" id="paidCodeSaved"> I saved this code privately before leaving this page</label>
+            </div>
+            <label>Your saved recovery code <input type="password" id="paidRestoreCode" maxlength="43" autocomplete="off" spellcheck="false"></label>
+            <button type="button" class="btn" id="paidRestoreSession">Restore billing session</button>
+            <p id="paidSessionStatus" role="status" aria-live="polite"></p>
+          </details>
           <button type="button" class="btn" id="paidSetup">Save sandbox payment method with Stripe</button>
           <label>Optional lifetime cap (AUD) <input type="text" id="paidCap" inputmode="decimal" maxlength="12" placeholder="No customer cap"></label>
           <button type="button" class="btn" id="paidSaveCap">Save cap</button>
@@ -110,7 +125,7 @@
           <button type="button" class="btn" id="paidRefresh">Refresh meter</button>
           <button type="button" class="btn" id="paidRevoke">Revoke new spending</button>
           <div id="paidRecovery" hidden>
-            <p>Spending is paused. Stripe can authenticate a debt payment or save a replacement card. Paying never resumes spending or reverses revocation. Keep this browser's session cookie; there is no customer account or email recovery.</p>
+            <p>Spending is paused. Stripe can authenticate a debt payment or save a replacement card. Paying never resumes spending or reverses revocation. A private saved recovery code can restore a lost browser session; there is no customer account or email recovery.</p>
             <label><input type="checkbox" id="paidRecoveryConsent"> Agree to the terms above to save a replacement card or pay the disclosed outstanding debt through Stripe</label>
             <button type="button" class="btn" id="paidReplace">Replace sandbox card only</button>
             <button type="button" class="btn" id="paidSettle">Review and pay sandbox debt with Stripe</button>
@@ -405,6 +420,6 @@
     </div>
   </div>
 
-  <script src="script.min.js?v=21" defer></script>
+  <script src="script.min.js?v=22" defer></script>
 </body>
 </html>

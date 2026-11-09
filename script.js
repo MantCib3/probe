@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let state = 'new';
   let busy = false;
   let collectibleDebt = false;
+  let debtBelowMinimum = false;
   let recoveryComplete = false;
   const sync = () => {
     element('paidRun').disabled = busy || !optIn.checked || state !== 'active';
@@ -30,9 +31,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     element('paidSaveCap').disabled = busy || !csrf;
     const recoveryConsent = element('paidRecoveryConsent').checked;
     element('paidReplace').disabled = busy || !csrf || !recoveryConsent || state !== 'action_required';
-    element('paidSettle').disabled = busy || !csrf || !recoveryConsent || !collectibleDebt ||
+    element('paidSettle').disabled = busy || !csrf || !recoveryConsent || !collectibleDebt || debtBelowMinimum ||
       !['action_required', 'revoked'].includes(state);
     element('paidResume').disabled = busy || !optIn.checked || state !== 'action_required' || !recoveryComplete;
+    element('paidCreateCode').disabled = busy || !element('paidCodeReplaceConsent').checked;
+    element('paidRestoreSession').disabled = busy || Boolean(csrf);
+    element('paidCopyCode').disabled = busy || !element('paidNewCode').value;
+    element('paidRevealCode').disabled = busy || !element('paidNewCode').value;
   };
   async function api(path, body) {
     const response = await fetch(`/api/paid/${path}`, {
@@ -49,16 +54,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     return data;
   }
   async function refresh() {
-    const status = await api('status');
+    let status;
+    try { status = await api('status'); }
+    catch (error) {
+      if (error.httpStatus === 401) {
+        csrf = undefined;
+        state = 'session_missing';
+        optIn.checked = false;
+        element('paidSessionHelp').open = true;
+        element('paidSessionStatus').textContent = 'Session missing or expired. Restore with your saved recovery code. If both cookie and code are lost, contact the operator; debt is not erased.';
+        sync();
+      }
+      throw error;
+    }
     csrf = status.csrf;
     state = status.state === 'active' && status.termsHash !== config.termsHash ? 'consent_required' : status.state;
     collectibleDebt = BigInt(status.debtMicros) >= 10000n;
+    debtBelowMinimum = collectibleDebt && BigInt(status.debtMicros) < 500000n;
     recoveryComplete = !collectibleDebt && BigInt(status.reservedMicros) === 0n &&
       !status.collections?.length && !['creating', 'ready', 'uncertain'].includes(status.recovery?.state);
     element('paidRecovery').hidden = !['action_required', 'revoked'].includes(state);
     element('paidRecoveryStatus').textContent = status.recovery
       ? `Hosted recovery: ${status.recovery.state}; ${paidAud(BigInt(status.recovery.amount_cents) * 10000n)}. Refresh after Stripe finishes. New spending stays paused until explicitly resumed; revoked spending cannot resume.`
       : 'Replace a declined card, or review the fixed debt amount in Stripe checkout. Unknown payments require operator review; do not pay twice.';
+    if (debtBelowMinimum) {
+      element('paidRecoveryStatus').textContent += ' Debt is below Stripe’s AUD 0.50 minimum. It carries forward without rounding up or forgiveness; failed-payment spending remains paused.';
+    }
+    if (element('paidCodeOutput').hidden) {
+      element('paidSessionStatus').textContent = status.recoveryCodeConfigured
+        ? 'A private recovery code is configured. Keep your saved copy; PROBE cannot display it again. Restoring replaces browser access but never clears debt or reverses revocation.'
+        : 'No recovery code is configured. Create and save one before losing access to this browser session.';
+    }
     notice.textContent = `Sandbox: ${state}. A return from Stripe never authorizes spending by itself.`;
     element('paidMeter').textContent = `Confirmed debt ${paidAud(status.debtMicros)}; reserved pending usage ${paidAud(status.reservedMicros)}; collected ${paidAud(status.paidMicros)}. Lifetime cap: ${status.capMicros === null ? 'none (credit limit still applies)' : paidAud(status.capMicros)}. Sub-cent balances carry forward.`;
     element('paidJobs').replaceChildren();
@@ -73,7 +99,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (csrf) return;
     const cfToken = await acquireTurnstileToken('paid', 'turnstileContainerPaid');
     if (!cfToken) throw new Error('Security check failed; try again.');
-    csrf = (await api('session', { cfToken })).csrf;
+    const created = await api('session', { cfToken });
+    csrf = created.csrf;
+    if (created.recoveryCode) showRecoveryCode(created.recoveryCode);
+  }
+  function showRecoveryCode(code) {
+    if (typeof code !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(code)) throw new Error('Invalid recovery code response.');
+    element('paidNewCode').value = code;
+    element('paidNewCode').type = 'password';
+    element('paidCodeOutput').hidden = false;
+    element('paidCodeSaved').checked = false;
+    element('paidCodeReplaceConsent').checked = false;
+    element('paidSessionHelp').open = true;
+    element('paidSessionStatus').textContent = 'Save this code privately now. It is shown only in this response, not stored in the browser. Keep it out of messages, URLs and screenshots.';
   }
   function action(id, callback) {
     element(id).addEventListener('click', async () => {
@@ -89,6 +127,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           debt_below_stripe_minimum: 'This debt is below Stripe’s AUD 0.50 minimum. It remains owed; contact the operator rather than attempting another payment.',
           payment_already_settled_refresh: 'Stripe already settled this payment. Refresh the meter; no second payment was created.',
           spending_suspended: 'Spending cannot resume for this session. Revocation cannot be reversed.',
+          invalid_recovery_code: 'Recovery code not recognized. Check your saved copy. If both code and cookie are lost, contact the operator; never send card details or the code.',
+          existing_session_present: 'This browser already has a billing session. Use a separate browser profile to restore another session without losing the current one.',
+          session_invalid: 'The browser session is invalid or expired. Restore it with your saved recovery code.',
+          session_required: 'Restore your billing session with its saved recovery code.',
         };
         notice.textContent = `Sandbox: ${messages[error.message] || error.message}. No automatic paid retry.`;
       }
@@ -97,6 +139,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   optIn.addEventListener('change', sync);
   element('paidRecoveryConsent').addEventListener('change', sync);
+  element('paidCodeReplaceConsent').addEventListener('change', sync);
+  action('paidCreateCode', async () => {
+    if (!element('paidCodeReplaceConsent').checked) throw new Error('Explicit code replacement confirmation required.');
+    const hadSession = Boolean(csrf);
+    await session();
+    if (hadSession || element('paidCodeOutput').hidden) {
+      showRecoveryCode((await api('recovery-code', { replaceRecoveryCode: true })).recoveryCode);
+    }
+    await refresh();
+  });
+  action('paidRevealCode', async () => {
+    element('paidNewCode').type = element('paidNewCode').type === 'password' ? 'text' : 'password';
+  });
+  action('paidCopyCode', async () => {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable. Reveal and save the code privately instead.');
+    await navigator.clipboard.writeText(element('paidNewCode').value);
+    element('paidSessionStatus').textContent = 'Code copied. Save it in your password manager and clear your clipboard when finished.';
+  });
+  action('paidRestoreSession', async () => {
+    const recoveryCode = element('paidRestoreCode').value.trim();
+    if (!/^[A-Za-z0-9_-]{43}$/.test(recoveryCode)) throw new Error('Enter the complete 43-character recovery code.');
+    const cfToken = await acquireTurnstileToken('paid', 'turnstileContainerPaid');
+    if (!cfToken) throw new Error('Security check failed; try again.');
+    const restored = await api('restore-session', { restore: true, recoveryCode, cfToken });
+    csrf = restored.csrf;
+    element('paidRestoreCode').value = '';
+    element('paidNewCode').value = '';
+    element('paidCodeOutput').hidden = true;
+    optIn.checked = false;
+    await refresh();
+    element('paidSessionStatus').textContent = 'Billing session restored; old browser access was replaced. Keep the same saved code. Debt/cap/revocation are unchanged and spending is not resumed automatically.';
+  });
   const consent = () => ({ consent: true, consentVersion: config.consentVersion, termsHash: config.termsHash });
   function goToStripe(value) {
     const url = new URL(value);
@@ -108,6 +182,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   action('paidSetup', async () => {
     if (!optIn.checked) throw new Error('Explicit consent required.');
     await session();
+    if (!element('paidCodeOutput').hidden && !element('paidCodeSaved').checked) {
+      throw new Error('Save your private recovery code and confirm it is saved, then click payment setup again.');
+    }
     const setup = await api('setup', consent());
     goToStripe(setup.url);
   });

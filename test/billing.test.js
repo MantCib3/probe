@@ -13,7 +13,7 @@ const { transaction } = require('../lib/billing/db');
 const { Store, reserveAllowed, centsForDebt, intentPaymentMethodId } = require('../lib/billing/store');
 const { startSetup, processWebhook, collect, createStripe, assertAustralianAccount, checkSandboxConfiguration, cardOnlyConfiguration } = require('../lib/billing/stripe');
 const { execute, targetFor, classifyResponse } = require('../lib/billing/zyte');
-const { createBillingHandler, COOKIE, csrfFor, hash, readRaw } = require('../lib/routes/billing');
+const { createBillingHandler, COOKIE, csrfFor, recoveryHash, hash, readRaw } = require('../lib/routes/billing');
 const { tick } = require('../scripts/billing-worker');
 
 const config = { staging: true, enabled: true, origin: 'https://staging.example.test',
@@ -68,7 +68,7 @@ test('disabled and non-staging endpoints never initialize dependencies or spend'
   const request = await fixtureServer(t, createBillingHandler({ env: { PROBE_STAGING: '1' }, store, stripe: {} }));
   assert.equal((await request('config')).body.enabled, false);
   assert.equal((await request('jobs', { method: 'POST', body: {} })).status, 503);
-  for (const endpoint of ['replacement','recovery','resume']) {
+  for (const endpoint of ['replacement','recovery','resume','recovery-code','restore-session']) {
     assert.equal((await request(endpoint, { method: 'POST', body: {} })).status, 503);
   }
   assert.equal((await request('webhook', { method: 'POST' })).status, 503);
@@ -120,7 +120,7 @@ test('real rate parser requires explicit gates, measured per-source AUD rates, p
   const file = path.join(directory, 'rate-fixture.json');
   const card = { currency: 'aud', billability: 'authoritative-reconciliation', measured: true,
     measurementReference: 'UNIT-TEST-ONLY-NOT-LAUNCH-RATES', creditMicros: config.creditMicros,
-    thresholdMicros: config.thresholdMicros, minimumCents: config.minimumCents, sources: config.rates };
+    thresholdMicros: config.thresholdMicros, minimumCents: 50, sources: config.rates };
   fs.writeFileSync(file, JSON.stringify(card));
   const env = { PROBE_STAGING: '1', PAID_INFRA_ENABLED: '1', PAID_MONEY_PATH_VERIFIED: '1',
     STRIPE_SECRET_KEY: 'sk_test_fixture', STRIPE_WEBHOOK_SECRET: 'whsec_fixture', ZYTE_API_KEY: 'fixture',
@@ -143,7 +143,8 @@ test('real rate parser requires explicit gates, measured per-source AUD rates, p
   }
   fs.writeFileSync(file, JSON.stringify(card));
   assert.notEqual(loadConfig(env, [{ ...site, positiveMsg: 'changed-marker' }]).termsHash, baseline);
-  for (const patch of [{ measured: false }, { minimumCents: 0 }, { currency: 'usd' },
+  for (const patch of [{ measured: false }, { minimumCents: 0 }, { minimumCents: 49 },
+    { thresholdMicros: 499999 }, { currency: 'usd' },
     { sources: [{ ...card.sources[0], hosts: ['127.0.0.1'] }] },
     { sources: [{ ...card.sources[0], mode: 'browser' }] },
     { sources: [{ ...card.sources[0], ipType: 'automatic' }] },
@@ -169,8 +170,60 @@ test('session cookies are random Secure HttpOnly hashed, rate-controlled and bot
   assert.equal(token.length, 43);
   assert.equal(created[0][0], hash(token));
   assert.equal(created[0][1], hash(response.body.csrf));
+  assert.match(response.body.recoveryCode, /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(created[0][2], recoveryHash(response.body.recoveryCode));
+  assert.notEqual(response.body.recoveryCode, token);
   assert.equal(response.body.csrf, csrfFor(token));
   assert.equal(JSON.stringify(created).includes(token), false);
+  assert.equal(JSON.stringify(created).includes(response.body.recoveryCode), false);
+});
+test('recovery codes restore only through explicit same-origin bot-verified POST, rotate cookies and never expose code/hash on status', async t => {
+  const code = 'k'.repeat(43);
+  const existingToken = 'j'.repeat(43);
+  const owner = { ...guest(), token_hash: hash(existingToken), csrf_hash: hash(csrfFor(existingToken)) };
+  const restored = [];
+  const replaced = [];
+  const store = {
+    async authenticate(value) { return value === owner.token_hash ? owner : null; },
+    async restoreSession(...values) {
+      if (values[0] !== recoveryHash(code)) {
+        const error = new Error('invalid_recovery_code'); error.publicCode = error.message; error.status = 401; throw error;
+      }
+      restored.push(values);
+    },
+    async setRecoveryCode(...values) { replaced.push(values); },
+    async createGuest() { assert.fail('Restoration must not create another guest.'); },
+  };
+  const request = await fixtureServer(t, createBillingHandler({ config, store, stripe: {}, verifyToken: async value => value === 'fixture' }));
+  const headers = { origin: config.origin, 'content-type': 'application/json' };
+  const body = { restore: true, recoveryCode: code, cfToken: 'fixture' };
+  assert.equal((await request('restore-session', { method: 'GET', headers })).status, 405);
+  for (const patch of [{ restore: false }, { recoveryCode: 'short' }, { extra: true }]) {
+    assert.equal((await request('restore-session', { method: 'POST', headers, body: { ...body, ...patch } })).status, 400);
+  }
+  assert.equal((await request('restore-session', { method: 'POST', headers: { ...headers, origin: 'https://evil.test' }, body })).status, 403);
+  assert.equal((await request('restore-session', { method: 'POST', headers, body: { ...body, cfToken: '' } })).status, 403);
+  assert.equal((await request('restore-session', { method: 'POST', headers, body: { ...body, recoveryCode: 'x'.repeat(43) } })).status, 401);
+  assert.equal((await request('restore-session', { method: 'POST', headers: { ...headers, cookie: `${COOKIE}=${existingToken}` }, body })).status, 409);
+  assert.equal(restored.length, 0);
+  const result = await request('restore-session', { method: 'POST', headers: { ...headers, cookie: `${COOKIE}=${'z'.repeat(43)}` }, body });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.authorized, false);
+  assert.equal(result.body.restored, true);
+  const cookie = result.headers['set-cookie'][0];
+  const token = cookie.split(';')[0].split('=')[1];
+  assert.match(cookie, /HttpOnly; Secure; SameSite=Strict/);
+  assert.equal(result.headers['cache-control'], 'no-store');
+  assert.deepEqual(restored[0], [recoveryHash(code), hash(token), hash(csrfFor(token))]);
+  assert.notEqual(token, existingToken);
+  assert.equal(JSON.stringify(restored).includes(code), false);
+  assert.equal(Object.hasOwn(result.body, 'recoveryCode'), false);
+  const auth = { ...headers, cookie: `${COOKIE}=${existingToken}`, 'x-probe-csrf': csrfFor(existingToken) };
+  assert.equal((await request('recovery-code', { method: 'POST', headers: auth, body: {} })).status, 400);
+  assert.equal((await request('recovery-code', { method: 'POST', headers: { ...auth, 'x-probe-csrf': '' }, body: { replaceRecoveryCode: true } })).status, 403);
+  const replacement = await request('recovery-code', { method: 'POST', headers: auth, body: { replaceRecoveryCode: true } });
+  assert.equal(replacement.status, 200);
+  assert.deepEqual(replaced[0], [owner.id, hash(existingToken), recoveryHash(replacement.body.recoveryCode)]);
 });
 test('forged sessions, missing CSRF, cross-origin and cross-site requests fail closed', async t => {
   const token = 'b'.repeat(43);

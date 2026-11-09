@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-test('offline browser: paid checkbox never spends implicitly, meter and explicit job are integrated', async t => {
+test('offline browser: paid checkbox never spends implicitly, meter and explicit job are integrated', { timeout: 90000 }, async t => {
   let browser;
   try { browser = await chromium.launch({ headless: true }); }
   catch (error) {
@@ -15,6 +15,7 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   }
   t.after(() => browser.close());
   const page = await browser.newPage();
+  page.setDefaultTimeout(15000);
   const origin = 'https://staging.example.test';
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const source = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
@@ -24,7 +25,7 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   let enabled = false;
   const config = { enabled: false, reason: 'Sandbox disabled', consentVersion: 'fixture-v1',
     consentText: 'Provider-billable inconclusive checks count; PROBE errors are absorbed.', termsHash: 'a'.repeat(64),
-    creditMicros: 1000000, thresholdMicros: 500000, minimumCents: 1,
+    creditMicros: 1000000, thresholdMicros: 500000, minimumCents: 50,
     rates: [{ source: 'Fixture', mode: 'http', supplierMicros: 2000, marginMicros: 1000, maximumMicros: 3000 }] };
   let jobs = [];
   let guestState = 'active';
@@ -32,6 +33,9 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   let reservedMicros = '3000';
   let collections = [];
   let recovery = null;
+  let sessionAvailable = true;
+  let recoveryCodeConfigured = false;
+  const recoveryCode = 'q'.repeat(43);
   // Every request, including apparent provider/navigation URLs, is intercepted locally.
   await page.route('**/*', async route => {
     const request = route.request();
@@ -44,9 +48,25 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
     const endpoint = url.pathname.split('/').pop();
     calls.push({ endpoint, method: request.method(), body: request.postDataJSON(), headers: request.headers() });
     if (endpoint === 'config') return route.fulfill({ json: { ...config, enabled } });
+    if (endpoint === 'status' && !sessionAvailable) return route.fulfill({ status: 401, json: { error: 'session_required' } });
     if (endpoint === 'status') return route.fulfill({ json: { state: guestState, termsHash: config.termsHash,
       csrf: 'b'.repeat(64), debtMicros, reservedMicros, paidMicros: '10000', capMicros: null,
-      jobs, usage: [], collections, recovery } });
+      jobs, usage: [], collections, recovery, recoveryCodeConfigured } });
+    if (endpoint === 'session') {
+      sessionAvailable = true;
+      recoveryCodeConfigured = true;
+      guestState = 'new';
+      return route.fulfill({ json: { csrf: 'b'.repeat(64), recoveryCode } });
+    }
+    if (endpoint === 'recovery-code') {
+      recoveryCodeConfigured = true;
+      return route.fulfill({ json: { recoveryCode } });
+    }
+    if (endpoint === 'restore-session') {
+      sessionAvailable = true;
+      return route.fulfill({ json: { csrf: 'b'.repeat(64), restored: true, authorized: false } });
+    }
+    if (endpoint === 'setup') return route.fulfill({ json: { url: 'https://foreign.test/not-stripe', authorized: false } });
     if (endpoint === 'recovery') return route.fulfill({ json: { url: 'https://foreign.test/not-stripe', authorized: false } });
     if (endpoint === 'resume') {
       guestState = 'active';
@@ -130,6 +150,16 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   await page.waitForFunction(() => document.getElementById('paidRecovery').hidden);
   assert.equal(await page.locator('#paidRun').isEnabled(), true);
   assert.equal(calls.filter(call => call.endpoint === 'jobs').length, 1);
+  guestState = 'action_required';
+  debtMicros = '490000';
+  await page.reload();
+  await page.locator('#paid').evaluate(element => { element.open = true; });
+  await page.waitForFunction(() => document.getElementById('paidRecoveryStatus').textContent.includes('AUD 0.50 minimum'));
+  await page.locator('#paidRecoveryConsent').check();
+  await page.locator('#paidOptIn').check();
+  assert.equal(await page.locator('#paidSettle').isDisabled(), true);
+  assert.equal(await page.locator('#paidResume').isDisabled(), true);
+  assert.equal(await page.locator('#paidRun').isDisabled(), true);
   guestState = 'revoked';
   debtMicros = '1000000';
   await page.reload();
@@ -140,4 +170,53 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   assert.equal(await page.locator('#paidSettle').isEnabled(), true);
   assert.equal(await page.locator('#paidReplace').isDisabled(), true);
   assert.equal(await page.locator('#paidResume').isDisabled(), true);
+  await page.locator('#paidSessionHelp').evaluate(element => { element.open = true; });
+  assert.equal(await page.locator('#paidCreateCode').isDisabled(), true);
+  await page.locator('#paidCodeReplaceConsent').check();
+  await page.locator('#paidCreateCode').click();
+  await page.waitForFunction(() => !document.getElementById('paidCodeOutput').hidden);
+  assert.equal(await page.locator('#paidNewCode').inputValue(), recoveryCode);
+  assert.equal(await page.locator('#paidNewCode').getAttribute('type'), 'password');
+  await page.locator('#paidRevealCode').click();
+  assert.equal(await page.locator('#paidNewCode').getAttribute('type'), 'text');
+  assert.equal(await page.evaluate(() => localStorage.length + sessionStorage.length), 0);
+  assert.equal(calls.filter(call => call.endpoint === 'recovery-code').length, 1);
+  assert.equal(await page.locator('#paidRestoreSession').isDisabled(), true);
+  sessionAvailable = false;
+  await page.reload();
+  await page.locator('#paid').evaluate(element => { element.open = true; });
+  await page.waitForFunction(() => document.getElementById('paidSessionStatus').textContent.includes('Session missing'));
+  assert.equal(await page.locator('#paidNewCode').inputValue(), '');
+  await page.locator('#paidRestoreCode').fill(recoveryCode);
+  await page.locator('#paidRestoreSession').click();
+  await page.waitForFunction(() => document.getElementById('paidSessionStatus').textContent.includes('Billing session restored'));
+  assert.equal(await page.locator('#paidRestoreCode').inputValue(), '');
+  assert.equal(await page.locator('#paidOptIn').isChecked(), false);
+  assert.equal(await page.locator('#paidResume').isDisabled(), true);
+  const restoreCall = calls.find(call => call.endpoint === 'restore-session');
+  assert.equal(restoreCall.body.restore, true);
+  assert.equal(restoreCall.body.recoveryCode, recoveryCode);
+  assert.equal(restoreCall.body.cfToken, 'fixture-token');
+  assert.equal(page.url().includes(recoveryCode), false);
+  assert.equal(calls.filter(call => call.endpoint === 'jobs').length, 1);
+  // A new session must save its one-time displayed code before leaving for payment setup.
+  sessionAvailable = false;
+  guestState = 'new';
+  debtMicros = '0';
+  await page.reload();
+  await page.locator('#paid').evaluate(element => { element.open = true; });
+  await page.waitForFunction(() => document.getElementById('paidSessionStatus').textContent.includes('Session missing'));
+  await page.locator('#paidCodeReplaceConsent').check();
+  await page.locator('#paidCreateCode').click();
+  await page.waitForFunction(() => !document.getElementById('paidCodeOutput').hidden);
+  await page.locator('#paidRefresh').click();
+  await page.waitForFunction(() => document.getElementById('paidStatus').textContent.includes('Sandbox: new'));
+  await page.locator('#paidOptIn').check();
+  await page.locator('#paidSetup').click();
+  await page.waitForFunction(() => document.getElementById('paidStatus').textContent.includes('Save your private recovery code'));
+  assert.equal(calls.some(call => call.endpoint === 'setup'), false);
+  await page.locator('#paidCodeSaved').check();
+  await page.locator('#paidSetup').click();
+  await page.waitForFunction(() => document.getElementById('paidStatus').textContent.includes('Invalid Stripe checkout URL'));
+  assert.equal(calls.filter(call => call.endpoint === 'setup').length, 1);
 });
