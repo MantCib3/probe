@@ -374,6 +374,32 @@ hosted setup creation never silently creates a second setup.
 
 ## Worker, authoritative reconciliation and collection
 
+### Authorized four-request supplier trial
+
+The operator approved at most four Zyte HTTP requests, no browser mode or
+retries. Authenticated `POST /api/staging-billing-supplier-trial` accepts exactly
+`{"action":"start","confirmation":"four-http-requests-no-retries-v1"}`.
+Fixed previously reviewed controls are HackerOne `born2hack`, Tellonym `jane`,
+and missing control `prbad7f0291ab` on each. Catalog targets go through the
+normal Zyte adapter, DNS/host guards and classifier. There are no arbitrary
+URLs, headers, usernames or modes in the request.
+
+A single immutable trial UUID and database advisory lock bound the campaign
+across restarts and app instances. Four cancelled fixture jobs and attempt
+records are created before any dispatch; each attempt is marked dispatched
+durably before contacting Zyte. A started campaign cannot be restarted even
+after interruption. Configuration/authentication/rate-limit errors stop the
+remaining requests. `action:"status"` reads saved classification/status/reference
+evidence without external requests. No raw bodies or extracted profile metadata
+are retained. The zero-cap fixture creates no guest debt or payment.
+
+All spending switches stay `0`. This uses the operator's supplier account/trial
+credit: four requests is a request-count limit, **not** a guaranteed dollar cap.
+Actual billability and AUD supplier cost remain unverified until matched to
+authoritative Zyte usage evidence. An immediate HTTP 200/request reference or
+echoed attempt ID never substitutes for invoice evidence. Missing reference
+linkage blocks customer-billing activation.
+
 Only after measurement, acceptance verification and separate execution
 authorization, set the gates explicitly, enable reconciliation, then run the
 worker in a **separate controlled process**:

@@ -62,6 +62,7 @@ function createStagingHandler(options) {
   let billingAccountingNext = 0;
   let stripeSetupActive = false;
   let stripeSetupNext = 0;
+  let supplierTrialActive = false;
 
   return async function handleStaging(pathname, req, res) {
     const send = (status, payload, headers = {}) => {
@@ -98,6 +99,33 @@ function createStagingHandler(options) {
           'Database readiness check failed. Check staging database and CA settings.' });
       } finally {
         billingHealthActive = false;
+      }
+    }
+    if (pathname === '/api/staging-billing-supplier-trial') {
+      if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });
+      if (!options.supplierTrial) return send(404, { ok: false, error: 'Not found.' });
+      if (supplierTrialActive) return send(429, { ok: false, error: 'Supplier trial in progress.' });
+      supplierTrialActive = true;
+      try {
+        let input;
+        try {
+          req.setTimeout(5000, () => req.destroy());
+          input = JSON.parse(await readBody(req, 128));
+        } catch (error) {
+          return send(error.code === 'BODY_TOO_LARGE' ? 413 : 400, { ok: false, error: 'Invalid bounded supplier confirmation.' });
+        } finally {
+          req.setTimeout(0);
+        }
+        if (!input || !['start', 'status'].includes(input.action) ||
+            input.confirmation !== 'four-http-requests-no-retries-v1' || Object.keys(input).length !== 2) {
+          return send(400, { ok: false, error: 'Explicit four-request supplier confirmation required.' });
+        }
+        return send(200, { ok: true, trial: await options.supplierTrial(input) });
+      } catch (error) {
+        console.error('[staging-supplier-trial] failed; no automatic retries, details withheld.');
+        return send(error.status || 503, { ok: false, error: error.publicCode || 'Supplier trial failed. Inspect saved status; do not retry.' });
+      } finally {
+        supplierTrialActive = false;
       }
     }
     if (pathname === '/api/staging-billing-stripe-setup') {

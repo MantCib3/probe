@@ -189,6 +189,24 @@ test('test-payment action requires its own exact confirmation and fixed scenario
   assert.equal(calls, 1);
 });
 
+test('supplier trial is authenticated, bounded and never accepts caller controls or retries', async () => {
+  let calls = 0;
+  const fixture = setup({ supplierTrial: async () => { calls++; return { maximumRequests: 4 }; } });
+  const route = '/api/staging-billing-supplier-trial';
+  const input = { action: 'start', confirmation: 'four-http-requests-no-retries-v1' };
+  const body = JSON.stringify(input);
+  assert.equal((await fixture.request({ route, body, authorization: '' })).status, 401);
+  assert.equal((await fixture.request({ route, body, method: 'GET' })).status, 405);
+  for (const invalid of ['null', '{', JSON.stringify({ ...input, mode: 'browser' }),
+    JSON.stringify({ ...input, action: 'retry' })]) {
+    assert.equal((await fixture.request({ route, body: invalid })).status, 400);
+  }
+  assert.equal(calls, 0);
+  assert.equal((await fixture.request({ route, body })).status, 200);
+  assert.equal(calls, 1);
+  assert.equal((await setup().request({ route, body })).status, 404);
+});
+
 test('oversized bodies are rejected explicitly', async () => {
   const fixture = setup({ readBody: async () => { throw Object.assign(new Error('large'), { code: 'BODY_TOO_LARGE' }); } });
   assert.equal((await fixture.request()).status, 413);
