@@ -777,11 +777,69 @@ The customer ledger uses **AUD**, so these USD millionths must never be passed
 directly as `supplierMicros` to `billing:reconcile`. The controls have no
 identified customer job ownership, and allocating an aggregate across customers
 would require an explicitly approved policy. This evidence therefore does not
-alter customer debt, reservations or enable paid execution. Before customer
-reconciliation, document the USD-to-AUD conversion source/date, applicable fees,
-rounding/remainder handling and whether supplier credits/discounts change the
-cost basis. Until individual evidence or an approved allocation policy exists,
-retain the current fail-closed customer reconciliation path.
+alter customer debt, reservations or enable paid execution. The operator's
+conversion/credit/remainder choices are recorded below. Their implementation
+still requires settlement evidence and customer-owned usage. Until individual
+evidence or an approved allocation policy exists, retain the current fail-closed
+customer reconciliation path.
+
+#### Approved AUD accounting policy (not yet implemented)
+
+On 2026-11-09 the operator selected:
+
+- **Conversion:** actual AUD supplier payment cost, including documented FX
+  fees, rather than a daily reference exchange rate.
+- **Credit basis:** supplier usage value before credits, plus the separately
+  disclosed margin, even when free trial credits cover that usage.
+- **Precision:** carry fractional AUD millionths forward per customer rather
+  than discard them or round each request up.
+
+The credit decision qualifies the earlier "actual supplier cost" wording:
+customer charges are based on supplier-recorded usage value before credits,
+not PROBE's net cash outlay. Free trial credit is not passed through as free
+customer usage. This is not permission to replace measured usage with a
+universal fixed rate, disregard invoice adjustments, or treat a rounded row as
+full-precision evidence.
+
+Before enabling this policy, the consent text, rate fingerprint, meter and
+payment disclosures must explicitly state the pre-credit basis, FX-cost
+treatment and separate margin. Existing consent does not authorize silently
+changing from net cost to pre-credit usage value. Suggested disclosure:
+"Supplier-recorded usage before promotional credits, converted to AUD using
+documented supplier payment exchange costs and applicable FX fees, plus the
+separately disclosed PROBE margin. Supplier credits may reduce PROBE's payment
+without reducing your usage charge."
+
+An actual settlement conversion needs evidence linking the USD amount paid to
+the AUD debit, its settlement date and separately charged attributable FX fees.
+Do not count fees twice if they are already included in that debit, or include
+unrelated card charges, interest or payment-processing fees in supplier FX cost.
+The allocation of payment-level fees to usage must be approved and auditable
+before charging customers; these choices do not approve a specific allocation.
+
+During a fully credited trial there is no corresponding supplier cash payment
+from which to establish that actual USD-to-AUD settlement conversion. Do not
+divide by a zero payment, silently substitute a live/reference rate, or use a
+later unrelated payment's rate. Credited usage therefore remains unconverted
+and not collectible until a separately approved conversion rule/evidence can
+cover it. No bank/card payment evidence has been supplied for this four-request
+batch, and none is assumed.
+
+The eventual converter must use exact decimal/integer-rational arithmetic and
+durably retain the sub-micro remainder against the same guest. Post only whole
+AUD millionths; never round individual requests up or transfer a remainder
+between customers. Retry/duplicate evidence must not advance the remainder
+twice. Conversion, remainder updates and ledger posting must be atomic,
+preserve reservation/credit limits, and reject conflicting evidence or costs
+above the authorized reservation. Existing cent-floor Stripe collection and
+small-debt rules remain unchanged.
+
+These are recorded requirements, not deployed conversion code: the current
+ledger accepts whole AUD millionths only and has no durable fractional FX
+remainder. No customer amount, consent text or public gate was changed by this
+policy record. Implementation/acceptance must cover actual settlement evidence,
+credit handling, fee attribution, response-loss retries and cross-customer
+isolation before this path can be enabled.
 
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Its currency and transport assumptions remain
@@ -791,7 +849,8 @@ for planning, not customer ledger ingestion.
 Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
 paths passed. Four authorized Zyte HTTP controls also passed with supplier
 references. Remaining blockers: automated authoritative per-request cost
-ingestion (including precision/currency/FX policy), approved paid-source
+ingestion (including settlement evidence and implementation of the approved
+credit/FX/remainder policy), approved paid-source
 detection/transport, browser-side supplier isolation and a lawful financial
 retention/ownership-assistance policy. Small-debt carry-forward and private
 lost/expired-session recovery are implemented; they do not bypass cost evidence.
