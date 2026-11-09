@@ -578,6 +578,21 @@ the original SQL or rewriting its recorded digest. The directly related
 billing/browser/operator suite passed 68 tests (one local-only database test
 skipped); dedicated migration compatibility tests also passed.
 
+The bounded hosted recovery acceptance reuses only the existing authentication
+fixture `bd9c7b44-b2af-4ba9-b855-086f878662ed` and its synthetic AUD 1.00 debt.
+Authenticated `POST /api/staging-billing-stripe-setup` accepts exactly
+`action` (`recovery-start`, `recovery-status` or `recovery-resume`), that
+`guestId`, and `confirmation:"stripe-test-recovery-one-checkout-v1"`.
+It cannot create another guest or another synthetic debt. Starting reuses a
+ready checkout; any other existing recovery record blocks another start.
+The standard recovery adapter cancels the owned failed PaymentIntent before
+creating the one checkout. Use only Stripe test cards and fictional details.
+The locked webhook exception admits only this zero-cap synthetic fixture's
+owned AUD 1.00 recovery; standard authoritative retrieval and atomic accounting
+still apply. Signed success leaves spending paused; the separate operator
+resume action exercises the normal resume guard with cap zero, never public
+paid execution. Status reports safe state/counts only. No supplier calls occur.
+
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Currency, transport assumptions and actual per-request
 costs are not verified; use this for planning, not customer ledger ingestion.

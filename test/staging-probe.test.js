@@ -110,6 +110,20 @@ test('recovery migration/check is authenticated, bounded, separately confirmed a
   assert.equal((await setup().request({ route, body })).status, 404);
   assert.equal(fixture.calls(), 0);
 });
+test('hosted sandbox recovery action requires its own exact bounded confirmation', async () => {
+  let calls = 0;
+  const fixture = setup({ stripeSetup: async input => { calls++; return { action: input.action, supplierRequests: 0 }; } });
+  const route = '/api/staging-billing-stripe-setup';
+  const body = '{"action":"recovery-start","guestId":"bd9c7b44-b2af-4ba9-b855-086f878662ed","confirmation":"stripe-test-recovery-one-checkout-v1"}';
+  assert.equal((await fixture.request({ route, body, authorization: '' })).status, 401);
+  assert.equal((await fixture.request({ route, body: body.replace('stripe-test-recovery-one-checkout-v1','stripe-test-setup-only-v1') })).status, 400);
+  assert.equal((await fixture.request({ route, body: body.replace('recovery-start','pay') })).status, 400);
+  assert.equal((await fixture.request({ route, body: body.replace('}', ',"amount":100}') })).status, 400);
+  const result = await fixture.request({ route, body });
+  assert.equal(result.status, 200);
+  assert.equal(result.payload.setup.action, 'recovery-start');
+  assert.equal(calls, 1);
+});
 
 test('accounting writes require authentication, POST, explicit confirmation and a bounded body', async () => {
   let checks = 0;
