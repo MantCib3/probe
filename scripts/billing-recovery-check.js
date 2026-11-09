@@ -12,11 +12,18 @@ async function checkRecovery(pool) {
   const database = await checkDatabase(pool);
   const guard = await pool.connect();
   let locked = false;
+  let phase = 'lock';
   try {
     locked = (await guard.query('SELECT pg_try_advisory_lock(724196385) AS locked')).rows[0].locked;
     if (!locked) throw new Error('Recovery check already running.');
+    phase = 'migration';
     const migrations = await migrate(pool);
+    phase = 'fixtures';
     return { database, migrations, ...await runRecoveryFixtures(pool), providerRequests: 0, paymentRequests: 0 };
+  } catch (error) {
+    error.safeDiagnostic = error.safeDiagnostic || { phase,
+      code: /^[A-Z0-9_]{5,30}$/.test(error.code || '') ? error.code : 'verification_failed' };
+    throw error;
   } finally {
     try {
       if (locked) await guard.query('SELECT pg_advisory_unlock(724196385)');
@@ -30,6 +37,7 @@ async function runRecoveryFixtures(pool) {
   const config = { consentVersion: CONSENT_VERSION, termsHash, minimumCents: 1 };
   const store = new Store(pool);
   const checks = [];
+  let phase = 'fixture_creation';
   const makePayment = recovery => {
     const metadata = { probe_guest: recovery.guest_id, probe_recovery: recovery.id,
       probe_collection: recovery.collection_id, probe_terms: recovery.terms_hash };
@@ -52,11 +60,13 @@ async function runRecoveryFixtures(pool) {
       await pool.query(`INSERT INTO probe_billing.collections(id,guest_id,amount_cents,state,payment_intent_id,payment_method_id)
         VALUES($1,$2,100,'failed',$3,$4)`, [randomUUID(), id, `pi_old_${id}`, `pm_old_${id}`]);
     }
+    phase = 'concurrent_preparation';
     const attempts = await Promise.allSettled([store.prepareRecovery(ids[0], config), store.prepareRecovery(ids[0], config)]);
     assert.equal(attempts.filter(result => result.status === 'fulfilled').length, 1);
     assert.match(attempts.find(result => result.status === 'rejected').reason.message, /pending_operator_review/);
     const recovery = attempts.find(result => result.status === 'fulfilled').value;
     checks.push('one durable checkout owner under concurrent recovery requests');
+    phase = 'checkout_reuse';
     await assert.rejects(store.prepareSetup(ids[0], config, true), /recovery_pending/);
     const payment = makePayment(recovery);
     await store.recoveryReady(recovery.id, { id: payment.checkout.id, url: 'https://checkout.stripe.com/c/pay/fixture#retained' });
@@ -64,6 +74,7 @@ async function runRecoveryFixtures(pool) {
     assert.equal(replay.id, recovery.id);
     assert.equal(replay.checkout_url, 'https://checkout.stripe.com/c/pay/fixture#retained');
     checks.push('ready recovery is reused and card replacement cannot race it');
+    phase = 'ownership_guards';
     await assert.rejects(store.resume(ids[0], config), /recovery_not_complete/);
     for (const override of [{ customer: 'cus_foreign' }, { amount_total: 101 },
       { metadata: { ...payment.checkout.metadata, probe_terms: 'b'.repeat(64) } }]) {
@@ -71,6 +82,7 @@ async function runRecoveryFixtures(pool) {
         { ...payment.checkout, ...override }, payment.intent, payment.method), /ownership_mismatch/);
     }
     checks.push('foreign customer, wrong amount and altered terms cannot settle debt');
+    phase = 'settlement';
     await store.confirmRecovery({ id: events[0], type: 'checkout.session.completed' },
       payment.checkout, payment.intent, payment.method);
     await store.confirmRecovery({ id: events[1], type: 'checkout.session.completed' },
@@ -84,6 +96,7 @@ async function runRecoveryFixtures(pool) {
     const ledger = await pool.query('SELECT count(*)::int AS count FROM probe_billing.ledger WHERE guest_id=$1', [ids[0]]);
     assert.equal(ledger.rows[0].count, 1);
     checks.push('verified settlement and duplicate events create one payment ledger entry without auto-resume');
+    phase = 'superseded_intent';
     await store.paymentResult(recovery.collection_id, {
       ...payment.intent, id: recovery.prior_payment_intent_id, status: 'canceled', payment_method: `pm_old_${ids[0]}`,
     });
@@ -91,6 +104,7 @@ async function runRecoveryFixtures(pool) {
       ...payment.intent, id: recovery.prior_payment_intent_id, payment_method: `pm_old_${ids[0]}`,
     }), /ownership_mismatch/);
     checks.push('canceled superseded payment is acknowledged but cannot replace the settled intent');
+    phase = 'explicit_resume';
     await pool.query('UPDATE probe_billing.guests SET reserved_micros=1 WHERE id=$1', [ids[0]]);
     await assert.rejects(store.resume(ids[0], config), /recovery_not_complete/);
     await pool.query('UPDATE probe_billing.guests SET reserved_micros=0 WHERE id=$1', [ids[0]]);
@@ -101,6 +115,7 @@ async function runRecoveryFixtures(pool) {
     assert.equal(resumed.debtMicros, '7');
     assert.equal(resumed.capMicros, '0');
     checks.push('explicit resume preserves cap and sub-cent debt and refuses pending usage');
+    phase = 'revoked_settlement';
     const revoked = await store.prepareRecovery(ids[1], config);
     const revokedPayment = makePayment(revoked);
     await store.confirmRecovery({ id: events[2], type: 'checkout.session.completed' },
@@ -109,6 +124,7 @@ async function runRecoveryFixtures(pool) {
     await assert.rejects(store.resume(ids[1], config), /spending_suspended/);
     checks.push('revoked guest can settle debt but cannot resume');
     // Collection ownership retains the old card even if a replacement setup later changes the guest's card.
+    phase = 'method_snapshot';
     await pool.query("UPDATE probe_billing.guests SET state='action_required',debt_micros=1000000 WHERE id=$1", [ids[0]]);
     const oldMethod = payment.intent.payment_method;
     const collectionId = randomUUID();
@@ -119,6 +135,11 @@ async function runRecoveryFixtures(pool) {
       payment_method: oldMethod, metadata: { probe_collection: collectionId, probe_guest: ids[0] } });
     assert.equal((await store.status(ids[0])).debtMicros, '0');
     checks.push('old owned collection still reconciles correctly after card replacement');
+  } catch (error) {
+    error.safeDiagnostic = { phase,
+      code: /^[A-Z0-9_]{5,30}$/.test(error.code || '') ? error.code : 'verification_failed',
+      passedChecks: checks.length };
+    throw error;
   } finally {
     await transaction(pool, async client => {
       await client.query('DELETE FROM probe_billing.payment_events WHERE id=ANY($1::text[])', [events]);

@@ -191,11 +191,12 @@ function createStagingHandler(options) {
         }
         billingAccountingNext = Date.now() + 300000;
         return send(200, { ok: true, [recoveryCheck ? 'recovery' : 'accounting']: await check() });
-      } catch (_) {
+      } catch (error) {
         console.error(`[staging-billing-${recoveryCheck ? 'recovery' : 'accounting'}] verification or fixture cleanup failed; details withheld.`);
         return send(503, { ok: false, error: recoveryCheck
           ? 'Recovery migration/verification failed. Check disabled gates, database, CA and fixture cleanup.'
-          : 'Accounting verification failed. Check disabled gates, empty guest ledger, database and CA settings.' });
+          : 'Accounting verification failed. Check disabled gates, empty guest ledger, database and CA settings.',
+          ...(recoveryCheck && error.safeDiagnostic ? { diagnostic: error.safeDiagnostic } : {}) });
       } finally {
         billingAccountingActive = false;
       }
