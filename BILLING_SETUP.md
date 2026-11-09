@@ -198,6 +198,12 @@ with no matching intent. Only then is a corrected request key durably recorded.
 This is not a production/unknown-outcome retry policy and cannot be used for
 arbitrary collections or repeatedly change keys.
 
+Stripe can clear a declined PaymentIntent's primary `payment_method`. Ownership
+then uses its authoritative `last_payment_error.payment_method` only for
+`requires_payment_method`, retaining exact saved-method matching. Missing or
+foreign methods still fail. Failed-payment accounting errors freeze collection
+and spending rather than leaving an active guest after an unrecorded decline.
+
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 
 ```powershell

@@ -120,6 +120,10 @@ test('payment acceptance reuses durable collection and simulates unknown respons
       currency: 'aud', customer: 'cus_fixture', payment_method: 'pm_fixture',
       metadata: { probe_collection: id, probe_guest: id },
       status: ['success', 'unknown'].includes(scenario) ? 'succeeded' : scenario === 'decline' ? 'requires_payment_method' : 'requires_action' };
+    if (scenario === 'decline') {
+      intent.payment_method = null;
+      intent.last_payment_error = { code: 'card_declined', payment_method: { id: 'pm_fixture' } };
+    }
     const stripe = { accounts: { retrieve: async () => ({ country: 'AU', default_currency: 'aud' }) },
       customers: { async create(params, options) {
         assert.equal(options.idempotencyKey, `probe-acceptance-customer-${id}`);

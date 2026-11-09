@@ -10,7 +10,7 @@ const Stripe = require('stripe');
 const { randomUUID } = require('node:crypto');
 const { loadConfig, CONSENT_VERSION, CONSENT_TEXT } = require('../lib/billing/config');
 const { transaction } = require('../lib/billing/db');
-const { Store, reserveAllowed, centsForDebt } = require('../lib/billing/store');
+const { Store, reserveAllowed, centsForDebt, intentPaymentMethodId } = require('../lib/billing/store');
 const { startSetup, processWebhook, collect, createStripe, assertAustralianAccount, checkSandboxConfiguration, cardOnlyConfiguration } = require('../lib/billing/stripe');
 const { execute, targetFor, classifyResponse } = require('../lib/billing/zyte');
 const { createBillingHandler, COOKIE, csrfFor, hash, readRaw } = require('../lib/routes/billing');
@@ -492,6 +492,38 @@ test('payment failure and uncertainty suspend spending; succeeded webhook cannot
     if (sql.startsWith('SELECT * FROM probe_billing.collections')) return { rows: [{ ...collection }] };
     if (sql.includes("SET state='succeeded'")) collection.state = 'succeeded';
     return { rows: [], rowCount: 1 };
+  });
+  test('declines retain strict ownership when Stripe clears the primary payment method', async () => {
+    assert.equal(intentPaymentMethodId({ payment_method: 'pm_primary' }), 'pm_primary');
+    assert.equal(intentPaymentMethodId({ payment_method: { id: 'pm_expanded' } }), 'pm_expanded');
+    assert.equal(intentPaymentMethodId({ status: 'requires_payment_method', payment_method: null,
+      last_payment_error: { payment_method: { id: 'pm_failed' } } }), 'pm_failed');
+    assert.equal(intentPaymentMethodId({ status: 'succeeded', payment_method: null,
+      last_payment_error: { payment_method: 'pm_failed' } }), null);
+    const owner = guest();
+    const collection = { id: randomUUID(), guest_id: owner.id, amount_cents: '100', state: 'claimed' };
+    const pool = poolWith(async sql => {
+      if (sql.startsWith('SELECT guest_id FROM probe_billing.collections')) return { rows: [{ guest_id: owner.id }] };
+      if (sql.startsWith('SELECT * FROM probe_billing.guests')) return { rows: [owner] };
+      if (sql.startsWith('SELECT * FROM probe_billing.collections')) return { rows: [collection] };
+      return { rows: [], rowCount: 1 };
+    });
+    const intent = { id: 'pi_declined', livemode: false, currency: 'aud', amount: 100,
+      customer: owner.customer_id, payment_method: null, status: 'requires_payment_method',
+      metadata: { probe_collection: collection.id, probe_guest: owner.id },
+      last_payment_error: { payment_method: { id: owner.payment_method_id } } };
+    await new Store(pool).paymentResult(collection.id, intent);
+    assert.ok(pool.queries.some(q => q.sql.includes("SET state='failed'")));
+    await assert.rejects(new Store(pool).paymentResult(collection.id, { ...intent,
+      last_payment_error: { payment_method: { id: 'pm_foreign' } } }), /payment_ownership_mismatch/);
+    let frozen = 0;
+    await assert.rejects(collect({ async paymentResult() { throw new Error('failed ledger'); },
+      async collectionUncertain() {}, async freezeCollection() { frozen++; } },
+    { accounts, paymentMethodConfigurations, paymentIntents: { async create() {
+      throw Object.assign(new Error('declined'), { payment_intent: intent });
+    } } }, { ...collection, created_at: new Date(), customer_id: owner.customer_id,
+      payment_method_id: owner.payment_method_id }), /failed ledger/);
+    assert.equal(frozen, 1);
   });
   const store = new Store(pool);
   const intent = { id: 'pi_fixture', amount: 1, amount_received: 1, currency: 'aud', livemode: false,
