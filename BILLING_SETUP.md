@@ -568,6 +568,16 @@ preserved. It makes zero Stripe or supplier requests. It does **not** prove a
 real hosted recovery checkout/authentication; that sandbox acceptance remains
 required before activation.
 
+Hosted verification on 2026-11-09 passed **8/8 real PostgreSQL 17 recovery
+checks**, with verified client TLS and both migrations present. UUID-owned
+fixtures were removed and cleanup verified; existing acceptance records were
+preserved. There were zero Stripe/payment requests and zero supplier requests.
+The initial migration check correctly stopped on the legacy Windows CRLF
+digest; strict LF/CRLF-equivalent validation fixed portability without changing
+the original SQL or rewriting its recorded digest. The directly related
+billing/browser/operator suite passed 68 tests (one local-only database test
+skipped); dedicated migration compatibility tests also passed.
+
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Currency, transport assumptions and actual per-request
 costs are not verified; use this for planning, not customer ledger ingestion.
