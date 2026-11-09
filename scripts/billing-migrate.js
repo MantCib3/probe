@@ -20,10 +20,17 @@ async function migrate(pool) {
     const files = fs.readdirSync(directory).filter(name => /^\d{3}-.+\.sql$/.test(name)).sort();
     for (const version of files) {
       const sql = fs.readFileSync(path.join(directory, version), 'utf8');
-      const hash = crypto.createHash('sha256').update(sql).digest('hex');
+      const canonical = sql.replace(/\r\n/g, '\n');
+      const digest = value => crypto.createHash('sha256').update(value).digest('hex');
+      const hash = digest(canonical);
       const prior = await client.query('SELECT sha256 FROM probe_billing.migrations WHERE version=$1', [version]);
       if (prior.rowCount) {
-        if (prior.rows[0].sha256 !== hash) throw new Error('Applied migration checksum mismatch.');
+        // Older Windows runs recorded CRLF bytes; accept only the identical SQL with LF/CRLF endings.
+        if (![hash, digest(canonical.replace(/\n/g, '\r\n'))].includes(prior.rows[0].sha256)) {
+          const error = new Error('Applied migration checksum mismatch.');
+          error.code = 'MIGRATION_CHECKSUM_MISMATCH';
+          throw error;
+        }
         continue;
       }
       await client.query(sql);

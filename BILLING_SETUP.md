@@ -76,6 +76,9 @@ The operator command requires staging, `PAID_INFRA_ENABLED=0`, PostgreSQL 14+
 and TLS. It takes a transaction-scoped advisory lock, verifies the immutable
 SHA-256 of previously applied versioned SQL, and atomically applies new
 migrations. Never edit an applied migration: add another version. The
+digest uses canonical LF endings. Legacy Windows CRLF digests are accepted
+only for otherwise byte-identical SQL; migration history is not rewritten.
+All substantive changes still fail checksum validation. The
 `probe_billing` schema is private, with no PUBLIC/anon/authenticated schema
 access; use a controlled dedicated database role and do not expose it through
 Supabase's API. Migrations are not run on web startup.
