@@ -305,6 +305,12 @@ Each source requires `source` (exact catalog name), `mode` (`http` or `browser`)
 `hosts` (exact lowercase approved public hosts, no wildcard/IP/private host),
 `supplierMicros` (measured maximum supplier AUD per attempt) and `marginMicros`
 (explicit nonnegative AUD margin). Reservation is their sum, <= credit limit.
+Optional `ipType` is exactly `datacenter` or `residential`; omission retains
+Zyte's automatic IP selection. This choice is persisted in the rate/job and
+consent fingerprint, displayed with prices and passed explicitly to Zyte.
+Changing it requires renewed consent. Supplier price measurements must cover
+the chosen mode/IP type; the HTTP trial did not verify explicit residential
+pricing. Invalid transport values fail before dispatch.
 Browser sources additionally require `browserIsolationVerified: true`, a
 nonempty `browserApprovalReference` and `PAID_BROWSER_ENABLED=1`; approving
 HTTP money-path tests alone never unlocks browser requests.
@@ -504,10 +510,33 @@ financial/consent references are not automatically deleted. In-flight
 reconciliation inputs remain until resolved. Configure lawful financial
 retention and incident procedures before public paid use.
 
-Current blockers: no local PostgreSQL concurrency run, no authorized supplier
-measurements/billability export linkage, no Stripe sandbox acceptance, no
-browser-side supplier isolation approval, and no customer authentication/debt
-recovery portal. Therefore all real execution remains explicitly locked.
+Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
+paths passed. Four authorized Zyte HTTP controls also passed with supplier
+references. Remaining blockers: automated authoritative per-request cost
+ingestion (including precision/currency/FX policy), approved paid-source
+detection/transport, browser-side supplier isolation and customer authentication/
+debt recovery. Therefore public paid execution remains locked.
+
+The lab's existing `config/paid-tier-hints.json` contains conditional metadata
+extraction rules proven on captured browser pages/API documentation. These are
+not per-source paid execution approvals or measured rates. Zyte supports
+headless rendering (`browserHtml`) and automatic/explicit residential IPs, but
+neither establishes accurate profile detection or safe remote subrequests.
+The current paid parser still refuses manual sources/custom adapters; those
+need reviewed positive/missing detection rules and explicit transport approval
+rather than simply flipping a catalog flag.
+
+Existing hint/catalog mapping (15 sources, all present in the current catalog):
+
+| Current eligibility | Existing hint sources |
+| --- | --- |
+| Standard profile targets; candidate rules still require transport/detection validation | 7cup, ArtStation, PSN Profiles, Cults3D, VirusTotal, ACF, Lemon8 |
+| Custom request/API/adapter handling; deliberately blocked by current paid parser | 500px, TryHackMe, Trakt.tv, Reddit, Apex Legends, Arduino (Forum), Cloudflare |
+| Manual detection; deliberately blocked by current paid parser | Playstation Network |
+
+None of these entries proves that residential IPs are required, supplies
+measured prices or authorizes a new paid trial. Preserve the existing free
+source behavior and conditional metadata evidence.
 
 API contracts checked against official documentation:
 [Stripe Checkout create](https://docs.stripe.com/api/checkout/sessions/create),

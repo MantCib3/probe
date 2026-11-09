@@ -59,6 +59,14 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   await page.reload();
   await page.locator('#paid').evaluate(element => { element.open = true; });
   await page.waitForFunction(() => document.getElementById('paidMeter').textContent.includes('Confirmed debt'));
+  assert.match(await page.locator('#paidRates').textContent(), /Fixture \(http, supplier-selected IP\)/);
+  for (const ipType of ['datacenter', 'residential']) {
+    config.rates[0].ipType = ipType;
+    await page.reload();
+    await page.locator('#paid').evaluate(element => { element.open = true; });
+    await page.waitForFunction(type => document.getElementById('paidRates').textContent.includes(`${type} IP`), ipType);
+    assert.match(await page.locator('#paidRates').textContent(), new RegExp(`Fixture \\(http, ${ipType} IP\\)`));
+  }
   assert.equal(await page.locator('#paidRun').isDisabled(), true);
   await page.locator('#paidOptIn').check();
   assert.equal(await page.locator('#paidRun').isEnabled(), true);

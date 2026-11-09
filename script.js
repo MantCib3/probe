@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!config.enabled) return;
     optIn.disabled = false;
     element('paidControls').hidden = false;
-    element('paidRates').textContent = `${config.rates.map(rate => `${rate.source} (${rate.mode}): supplier up to ${paidAud(rate.supplierMicros)} + margin ${paidAud(rate.marginMicros)} per provider-billable attempt`).join('; ')}. Credit ${paidAud(config.creditMicros)}, collection threshold ${paidAud(config.thresholdMicros)}, minimum collection ${paidAud(config.minimumCents * 10000)}. Actual supplier billing requires authoritative reconciliation, not a PROBE verdict.`;
+    element('paidRates').textContent = `${config.rates.map(rate => `${rate.source} (${rate.mode}, ${rate.ipType || 'supplier-selected'} IP): supplier up to ${paidAud(rate.supplierMicros)} + margin ${paidAud(rate.marginMicros)} per provider-billable attempt`).join('; ')}. Credit ${paidAud(config.creditMicros)}, collection threshold ${paidAud(config.thresholdMicros)}, minimum collection ${paidAud(config.minimumCents * 10000)}. Actual supplier billing requires authoritative reconciliation, not a PROBE verdict.`;
     for (const rate of config.rates) {
       const option = document.createElement('option');
       option.value = rate.source;

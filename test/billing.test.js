@@ -96,10 +96,19 @@ test('real rate parser requires explicit gates, measured per-source AUD rates, p
     assert.equal(loadConfig({ ...env, ...patch }, [site]).enabled, false);
   }
   const baseline = loadConfig(env, [site]).termsHash;
+  for (const ipType of ['datacenter', 'residential']) {
+    fs.writeFileSync(file, JSON.stringify({ ...card, sources: [{ ...card.sources[0], ipType }] }));
+    const configured = loadConfig(env, [site]);
+    assert.equal(configured.enabled, true);
+    assert.equal(configured.rates[0].ipType, ipType);
+    assert.notEqual(configured.termsHash, baseline);
+  }
+  fs.writeFileSync(file, JSON.stringify(card));
   assert.notEqual(loadConfig(env, [{ ...site, positiveMsg: 'changed-marker' }]).termsHash, baseline);
   for (const patch of [{ measured: false }, { minimumCents: 0 }, { currency: 'usd' },
     { sources: [{ ...card.sources[0], hosts: ['127.0.0.1'] }] },
     { sources: [{ ...card.sources[0], mode: 'browser' }] },
+    { sources: [{ ...card.sources[0], ipType: 'automatic' }] },
     { sources: [{ ...card.sources[0], hosts: ['example.com', '*.example.com'] }] },
     { sources: [{ ...card.sources[0], supplierMicros: 1.1 }] },
     { sources: [{ ...card.sources[0], maximumMicros: 1, supplierMicros: 2000000 }] }]) {
@@ -428,6 +437,37 @@ test('provider HTTP failure differs from billable target 404; timeout never retr
   const revoked = await execute(job, site, 'fixture-key', async () => { forbidden++; }, async () => {},
     async () => { throw new Error('revoked before dispatch'); });
   assert.equal(revoked.state, 'probe_error'); assert.equal(forbidden, 0);
+});
+test('Zyte IP transport is explicit when approved, unchanged by default and guarded before dispatch', async () => {
+  for (const mode of ['http', 'browser']) {
+    for (const ipType of [undefined, 'datacenter', 'residential']) {
+      const rate = { ...config.rates[0], mode, ...(ipType === undefined ? {} : { ipType }) };
+      const job = { source: site.name, username: 'alice', rate, attempt_id: randomUUID(),
+        target_url: targetFor(site, 'alice', rate) };
+      const result = await execute(job, site, 'fixture', async (url, options) => {
+        const request = JSON.parse(options.body);
+        assert.equal(request.ipType, ipType);
+        assert.equal(Object.hasOwn(request, 'ipType'), ipType !== undefined);
+        assert.equal(request.browserHtml === true, mode === 'browser');
+        assert.equal(request.httpResponseBody === true, mode === 'http');
+        assert.equal(request.followRedirect, false);
+        return new Response(JSON.stringify({ url: job.target_url, statusCode: 404,
+          echoData: request.echoData, httpResponseHeaders: [],
+          ...(mode === 'browser' ? { browserHtml: 'missing' } : { httpResponseBody: Buffer.from('missing').toString('base64') }) }),
+        { status: 200 });
+      }, async () => {}, async () => {});
+      assert.equal(result.state, 'response');
+    }
+  }
+  for (const patch of [{ ipType: 'proxy' }, { mode: 'residential' }]) {
+    let calls = 0;
+    const job = { source: site.name, username: 'alice', rate: { ...config.rates[0], ...patch },
+      attempt_id: randomUUID(), target_url: targetFor(site, 'alice', config.rates[0]) };
+    const result = await execute(job, site, 'fixture', async () => { calls++; },
+      async () => {}, async () => { calls++; });
+    assert.equal(result.state, 'probe_error');
+    assert.equal(calls, 0);
+  }
 });
 test('authoritative reconciliation charges successful target evidence, absorbs errors and blocks rate overrun', async () => {
   for (const state of ['response','provider_error','uncertain','probe_error']) {
