@@ -1,5 +1,129 @@
 'use strict';
 
+function paidAud(micros) {
+  const value = BigInt(micros || 0);
+  return `AUD ${value / 1000000n}.${(value % 1000000n).toString().padStart(6, '0')}`;
+}
+function paidCapMicros(value) {
+  const text = value.trim();
+  if (!text) return null;
+  if (!/^\d{1,6}(?:\.\d{1,2})?$/.test(text)) throw new Error('Use an AUD cap with at most two decimal places.');
+  const [whole, decimal = ''] = text.split('.');
+  return Number(BigInt(whole) * 1000000n + BigInt(decimal.padEnd(2, '0')) * 10000n);
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  const panel = document.getElementById('paid');
+  if (!panel) return;
+  const element = id => document.getElementById(id);
+  const notice = element('paidStatus');
+  const optIn = element('paidOptIn');
+  let config;
+  let csrf;
+  let state = 'new';
+  let busy = false;
+  const sync = () => {
+    element('paidRun').disabled = busy || !optIn.checked || state !== 'active';
+    element('paidSetup').disabled = busy || !optIn.checked || !['new', 'consent_required'].includes(state);
+    element('paidRevoke').disabled = busy || !csrf || state === 'revoked';
+    element('paidSaveCap').disabled = busy || !csrf;
+  };
+  async function api(path, body) {
+    const response = await fetch(`/api/paid/${path}`, {
+      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin',
+      headers: body === undefined ? {} : { 'Content-Type': 'application/json', ...(csrf ? { 'X-Probe-CSRF': csrf } : {}) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const error = new Error(data.error || 'Paid service unavailable.');
+      error.httpStatus = response.status;
+      throw error;
+    }
+    return data;
+  }
+  async function refresh() {
+    const status = await api('status');
+    csrf = status.csrf;
+    state = status.state === 'active' && status.termsHash !== config.termsHash ? 'consent_required' : status.state;
+    notice.textContent = `Sandbox: ${state}. A return from Stripe never authorizes spending by itself.`;
+    element('paidMeter').textContent = `Confirmed debt ${paidAud(status.debtMicros)}; reserved pending usage ${paidAud(status.reservedMicros)}; collected ${paidAud(status.paidMicros)}. Lifetime cap: ${status.capMicros === null ? 'none (credit limit still applies)' : paidAud(status.capMicros)}. Sub-cent balances carry forward.`;
+    element('paidJobs').replaceChildren();
+    for (const job of status.jobs) {
+      const item = document.createElement('li');
+      item.textContent = `${job.source}: ${job.result?.status || 'pending'} — ${job.state}; ${paidAud(job.reservation_micros)} maximum reserved. ${job.result?.reasonCodes?.join(', ') || ''}`;
+      element('paidJobs').append(item);
+    }
+    sync();
+  }
+  async function session() {
+    if (csrf) return;
+    const cfToken = await acquireTurnstileToken('paid', 'turnstileContainerPaid');
+    if (!cfToken) throw new Error('Security check failed; try again.');
+    csrf = (await api('session', { cfToken })).csrf;
+  }
+  function action(id, callback) {
+    element(id).addEventListener('click', async () => {
+      if (busy) return;
+      busy = true;
+      sync();
+      try { await callback(); }
+      catch (error) { notice.textContent = `Sandbox: ${error.message}. No automatic paid retry.`; }
+      finally { busy = false; sync(); }
+    });
+  }
+  optIn.addEventListener('change', sync);
+  action('paidSetup', async () => {
+    if (!optIn.checked) throw new Error('Explicit consent required.');
+    await session();
+    const setup = await api('setup', { consent: true, consentVersion: config.consentVersion, termsHash: config.termsHash });
+    const url = new URL(setup.url);
+    if (url.protocol !== 'https:' || url.hostname !== 'checkout.stripe.com') throw new Error('Invalid Stripe checkout URL.');
+    window.location.assign(url.href);
+  });
+  action('paidSaveCap', async () => {
+    await session();
+    await api('cap', { capMicros: paidCapMicros(element('paidCap').value) });
+    await refresh();
+  });
+  action('paidRefresh', async () => { await refresh(); });
+  action('paidRevoke', async () => {
+    await api('revoke', {});
+    optIn.checked = false;
+    await refresh();
+  });
+  action('paidRun', async () => {
+    if (!optIn.checked || state !== 'active') throw new Error('Verified consent and payment required.');
+    const username = element('usernameInput').value.trim();
+    const invalid = validateUsername(username);
+    if (invalid) throw new Error(invalid);
+    await api('jobs', { source: element('paidSource').value, username, requestKey: crypto.randomUUID() });
+    await refresh();
+  });
+  try {
+    config = await api('config');
+    panel.hidden = false;
+    notice.textContent = config.reason;
+    element('paidTerms').textContent = config.consentText;
+    if (!config.enabled) return;
+    optIn.disabled = false;
+    element('paidControls').hidden = false;
+    element('paidRates').textContent = `${config.rates.map(rate => `${rate.source} (${rate.mode}): supplier up to ${paidAud(rate.supplierMicros)} + margin ${paidAud(rate.marginMicros)} per provider-billable attempt`).join('; ')}. Credit ${paidAud(config.creditMicros)}, collection threshold ${paidAud(config.thresholdMicros)}, minimum collection ${paidAud(config.minimumCents * 10000)}. Actual supplier billing requires authoritative reconciliation, not a PROBE verdict.`;
+    for (const rate of config.rates) {
+      const option = document.createElement('option');
+      option.value = rate.source;
+      option.textContent = rate.source;
+      element('paidSource').append(option);
+    }
+    sync();
+    try { await refresh(); }
+    catch (error) { if (error.httpStatus !== 401) throw error; }
+  } catch (error) {
+    notice.textContent = error.httpStatus === 404 ? 'Paid infrastructure is staging-only. Free scans are unchanged.' : 'Paid infrastructure unavailable. Free scans are unchanged.';
+    optIn.disabled = true;
+    element('paidControls').hidden = true;
+  }
+});
+
 /* ── Constants ───────────────────────────────────────────────────────── */
 const STATUS_LABEL = {
   found       : 'FOUND',
@@ -145,6 +269,7 @@ const _ts = {
   scan   : { token: null, widgetId: null, rendered: false },
   contact: { token: null, widgetId: null, rendered: false },
   report : { token: null, widgetId: null, rendered: false },
+  paid   : { token: null, widgetId: null, rendered: false },
 };
 
 // Mounts the widget for `surface` ('scan' | 'contact' | 'report') into

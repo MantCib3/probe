@@ -21,3 +21,6 @@ wmn-data.json
 *.log
 test-x-li.js
 PROBE_TECHNICAL_REVIEW.txt
+
+# Private measured rates and authoritative billing evidence
+billing-private/

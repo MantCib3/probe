@@ -36,6 +36,8 @@ const {
 const { handleDorkSearch } = require('./lib/routes/dork-search');
 const { handleNameCheck } = require('./lib/routes/name-check');
 const { handleStaging } = require('./lib/routes/staging');
+const { createBillingHandler } = require('./lib/routes/billing');
+const handleBilling = createBillingHandler();
 
 const server = http.createServer((req, res) => {
   setSecurityHeaders(res);
@@ -44,6 +46,11 @@ const server = http.createServer((req, res) => {
   catch (_) { res.writeHead(400); return res.end('Bad Request'); }
 
   const pathname = urlObj.pathname;
+
+  if (pathname.startsWith('/api/paid/')) {
+    void handleBilling(pathname, req, res);
+    return;
+  }
 
   res.on('finish', () => {
     if (res.statusCode < 400) return;

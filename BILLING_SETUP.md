@@ -1,0 +1,292 @@
+# Accountless paid infrastructure — staging only
+
+## Implemented, but locked
+
+This checkout includes a private PostgreSQL guest ledger, budget reservations,
+durable leased jobs, Zyte adapter, Stripe-hosted card setup, signed webhooks,
+authoritative usage reconciliation and daily/threshold test collection. The
+optional panel beside the free search is off by default; paid results stay
+separate and never overwrite free evidence.
+
+**No provider trial, payment, database migration, remote connection, deployment,
+commit or push has been performed by implementing this code.** Render secrets
+are not locally available. Rates remain unmeasured. Keep `PAID_INFRA_ENABLED=0`
+and `PAID_WORKER_ENABLED=0`. This is not an approved production money path.
+`PAID_MONEY_PATH_VERIFIED` is an additional unresolved acceptance gate, not a
+default activation. A missing/invalid setting locks setup, execution and payment
+webhooks. The web process never starts a worker or makes startup provider calls.
+
+## Private environment
+
+Configure **probe-staging only**, never the production service:
+
+- `PROBE_STAGING=1`
+- When `RENDER` is set, the runtime also requires Render's
+  `RENDER_SERVICE_NAME=probe-staging`; other services cannot enable these paths.
+- `PAID_INFRA_ENABLED=0`
+- `PAID_WORKER_ENABLED=0`
+- `PAID_MONEY_PATH_VERIFIED=0`
+- `PAID_BROWSER_ENABLED=0` (separate default-off browser isolation gate)
+- `PAID_RECONCILIATION_ENABLED=0`
+- `PAID_ORIGIN`: exact HTTPS browser origin, no trailing slash/path, e.g.
+  the actual staging custom domain. Never infer it from request Host headers.
+- `DATABASE_URL`: Supabase **session** pooler URI (normally port 5432);
+  percent-encode private credentials. No Supabase Auth or public Data API.
+- `DATABASE_CA_CERT_PATH` if Node needs the official Supabase CA chain, mounted
+  as a secret file. All operator/runtime pools require verified TLS; URI SSL
+  overrides are stripped. Never use `rejectUnauthorized: false`.
+- `STRIPE_SECRET_KEY`: `sk_test_...` only. Live/publishable keys cannot enable.
+- `STRIPE_WEBHOOK_SECRET`: endpoint-specific `whsec_...`.
+- `ZYTE_API_KEY`: private supplier key.
+- Existing `TURNSTILE_SECRET`, `TURNSTILE_HOSTNAMES`: must include the exact
+  paid-origin hostname. Paid session issuance reuses the existing widget and
+  server verification with action `paid`, plus bounded IP rate limiting.
+- `PAID_RATE_CONFIG_PATH`: private, operator-measured JSON rate card. If inside
+  this checkout, it **must** be beneath `billing-private\`, which is ignored by
+  Git and denied by GET/HEAD static serving. Render secret-file paths outside
+  the web root are also supported. Never put rates/evidence in public JSON.
+
+Secrets must never be pasted into chat, logs, browser code or this document.
+Driver/provider errors are sanitized rather than echoing connection details.
+
+## Migration and validation, with separate authorization
+
+After an operator separately authorizes staging database writes:
+
+```powershell
+Set-Location C:\dev\probe\probe-staging
+npm run billing:migrate
+```
+
+The operator command requires staging, `PAID_INFRA_ENABLED=0`, PostgreSQL 14+
+and TLS. It takes a transaction-scoped advisory lock, verifies the immutable
+SHA-256 of previously applied versioned SQL, and atomically applies new
+migrations. Never edit an applied migration: add another version. The
+`probe_billing` schema is private, with no PUBLIC/anon/authenticated schema
+access; use a controlled dedicated database role and do not expose it through
+Supabase's API. Migrations are not run on web startup.
+
+Local tests require no secrets or remote services:
+
+```powershell
+node --test test\billing.test.js test\billing-check.test.js test\billing-postgres.test.js test\billing-frontend.test.js test\classifier.test.js test\static-scripts.test.js
+npm run build:assets
+npm run check
+```
+
+The actual concurrency/restart/accounting test is skipped without an existing
+dedicated **local TLS PostgreSQL**. To run it, privately set
+`PROBE_BILLING_TEST_DATABASE_URL` to localhost/127.0.0.1/::1 and a database named
+`probe_billing_test_<suffix>`. Optionally set `PROBE_BILLING_TEST_CA_PATH`. It
+refuses remote hosts, uses migrations twice and deletes only its UUID-owned
+fixtures. It leaves the test schema/migration history for repeatability.
+Mock SQL/unit assertions do **not** prove Postgres concurrency safety.
+`npm run billing:check` remains a separate, operator-authorized read-only
+remote readiness check: it verifies DB TLS without Stripe/Zyte requests or
+migrations. Its `billingImplemented` flag describes code presence, not
+acceptance verification or activation. Do not run it without connection
+authorization.
+
+Before the operator sets `PAID_MONEY_PATH_VERIFIED=1`, require passing real
+PostgreSQL tests and separately authorized Stripe sandbox acceptance (setup,
+off-session authentication/failure, duplicate/out-of-order webhook and unknown
+payment recovery), and approved per-source supplier/redirect/identity/billing
+tests. None of those remote trials are authorized by this implementation task.
+In particular, supplier browser subrequests and remote DNS resolution cannot
+be fully controlled by the local SSRF guard; browser mode must remain locked
+until supplier-side isolation is approved. Do not open public paid jobs based
+only on unit-test success.
+
+## Measured rate-card contract (no launch prices supplied)
+
+The JSON object must contain:
+
+| Field | Required value |
+|---|---|
+| `currency` | `"aud"` |
+| `billability` | `"authoritative-reconciliation"` |
+| `measured` | `true`, only after an authorized measurement |
+| `measurementReference` | Nonempty private reference to measured supplier evidence |
+| `creditMicros` | Positive safe integer maximum outstanding debt + reservations |
+| `thresholdMicros` | Integer >= 10,000 and <= credit; earlier collection threshold |
+| `minimumCents` | Explicit positive integer, <= threshold in whole cents; set from current Stripe AUD minimum/fee requirements |
+| `sources` | Nonempty array of individually approved sources |
+
+Each source requires `source` (exact catalog name), `mode` (`http` or `browser`),
+`hosts` (exact lowercase approved public hosts, no wildcard/IP/private host),
+`supplierMicros` (measured maximum supplier AUD per attempt) and `marginMicros`
+(explicit nonnegative AUD margin). Reservation is their sum, <= credit limit.
+Browser sources additionally require `browserIsolationVerified: true`, a
+nonempty `browserApprovalReference` and `PAID_BROWSER_ENABLED=1`; approving
+HTTP money-path tests alone never unlocks browser requests.
+One AUD = 1,000,000 micro-units; one cent = 10,000 micro-units. These are units,
+not prices. No currency conversion, hidden fee, inferred billability or
+invented rate is implemented. Operator-set collection minimums are a batching
+floor, never an added guest fee.
+
+Only ordinary catalog profile GETs are supported in this slice. Sources with
+`checkUrl`, `apiUrl`, credentials, custom request adapters, manual or defunct
+status cannot be approved by editing only the rate card. Do not mutate the
+public catalog to evade this restriction. A rate/consent fingerprint change
+blocks old authorization and cancels old queued work; consent must be renewed
+with a verified hosted setup. Revoked or failed-payment sessions cannot be
+automatically reactivated.
+
+## Routes and hosted consent
+
+All paid endpoints live under `/api/paid/` and are unavailable outside staging.
+No CORS is enabled. Mutations require exact Origin, same-origin Fetch Metadata
+when present, JSON bounded to 8 KiB, the random guest cookie and
+`X-Probe-CSRF`. Only initial bot-verified guest issuance is CSRF-bootstrap
+exempt. Webhooks are signed-buffer exempt, not browser-authorized.
+
+- `GET /api/paid/config`: disabled status or disclosed rates/consent. No DB.
+- `POST /api/paid/session`: `{ "cfToken": "..." }`; sets random
+  `__Host-probe_paid` HttpOnly Secure SameSite=Strict cookie (30 days), stores
+  only SHA-256 hashes, returns a CSRF value. No guest token goes in a URL.
+- `GET /api/paid/status`: only the cookie owner's meter, latest 50 jobs and
+  ledger entries, and CSRF value. No arbitrary guest-id query.
+- `POST /api/paid/setup`: explicit `consent: true`, `consentVersion` and
+  `termsHash` from config; returns a validated Stripe-hosted URL. Setup is
+  AUD, card-only and test-only. There is no charge for this setup action.
+  Before a new hosted setup or new collection creation, the SDK retrieves only
+  to validate the operator Stripe account's AU country/AUD default currency;
+  its identity fields are neither stored nor logged.
+- `POST /api/paid/cap`: `{ "capMicros": integer_or_null }`; optional lifetime
+  cap includes collected usage + debt + reservations. Cannot lower below
+  committed usage. The bounded operator credit limit applies without a cap.
+- `POST /api/paid/jobs`: `{ "source": "...", "username": "...",
+  "requestKey": "uuid" }`; the server constructs the approved catalog URL,
+  reserves worst-case spend and creates one durable job transactionally.
+  Reusing a key returns the same job; changing its payload conflicts.
+  Identical guest/source/username checks with a different key within five
+  minutes are rejected rather than creating provider duplicates.
+- `POST /api/paid/revoke`: `{}`; atomically disables new spending and releases
+  queued reservations. Already leased attempts are in flight and incurred
+  debt remains collectible.
+- `POST /api/paid/webhook`: raw, signed Stripe snapshot events, max 256 KiB.
+
+Register the actual staging endpoint:
+`https://<staging-host>/api/paid/webhook`. Subscribe to
+`checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+`checkout.session.expired`,
+`payment_intent.succeeded`, `payment_intent.payment_failed`,
+`payment_intent.requires_action`, `payment_intent.processing`,
+`payment_intent.canceled`.
+Use the SDK's default pinned API version shown in `node_modules\stripe`, and
+configure snapshot events accordingly. Verify endpoint secrets privately.
+
+The return to `/#paid` has no token and **does not** authorize a guest.
+The signed webhook triggers authoritative Checkout/SetupIntent/PaymentMethod
+retrieves and validates non-live succeeded off-session setup, consent hash
+and customer/payment ownership. The same transaction deduplicates events and
+preserves revocation/failure against older setup events. Duplicate or uncertain
+hosted setup creation never silently creates a second setup.
+
+## Worker, authoritative reconciliation and collection
+
+Only after measurement, acceptance verification and separate execution
+authorization, set the gates explicitly, enable reconciliation, then run the
+worker in a **separate controlled process**:
+
+```powershell
+npm run billing:worker -- --once
+# Or, as the explicitly configured persistent staging worker:
+npm run billing:worker
+```
+
+Each tick recovers expired leases, reconciles already-claimed Stripe payments,
+claims a daily/threshold collection, then leases at most one paid job using
+guest-row locks and `SKIP LOCKED`. There is one durable supplier attempt per
+job. After DNS checks and immediately before dispatch, another guest/job
+transaction verifies current consent, revocation, lease ownership and expiry,
+then durably marks the attempt dispatched. A 65-second provider timeout fits
+inside the two-minute lease. Expired
+leases/unknown responses are never reissued: their reservations remain held
+pending evidence. PROBE pre-provider guard failures release their reservation
+and are recorded as absorbed.
+
+The adapter calls only Zyte's fixed HTTPS extract endpoint, without client
+URLs/headers, with local public-DNS/host guards and `followRedirect: false`.
+HTTP mode supplies an honest PROBE User-Agent; browser mode supports only the
+supplier's documented Referer option, not stealth/UA spoofing. Response target
+URL/status/headers/body go through the existing classifier and profile
+extractor; body evidence is capped at 32 KiB, total supplier JSON at 2 MiB.
+Challenges, lost profile identity and incomplete evidence stay inconclusive.
+The supplier itself can render resources/resolve DNS: do not treat response
+URL validation as proof that remote subrequests were confined.
+
+**A Zyte HTTP 200 is not an invoice.** A target 404 inside it is not a provider
+HTTP failure. Completed positive, negative, blocked or inconclusive checks may
+be charged only after authoritative supplier billing evidence is matched to
+the attempt. Provider HTTP failures, uncertain outcomes and PROBE defects are
+absorbed even if the supplier bills PROBE. Unknown billability never becomes
+guest debt. Do not enable execution without a working authoritative
+request-reference/usage reconciliation process. References may be missing in
+the immediate response; the operator must match the attempt to a supplier
+usage export or leave it held/absorbed, never guess.
+The request carries only a pseudonymous attempt UUID in the documented
+`echoData` field, and its echoed response must match. This correlation is
+**not** billing proof. A successful response without a persisted supplier
+request reference cannot be charged; an operator-supplied reference alone
+cannot turn it into guest debt.
+
+Use a private evidence JSON file with `jobId`, `supplierMicros` (actual AUD
+supplier cost), `providerReference`, `evidenceReference`, `authoritative: true`
+and `disposition` (`billed`, `not_billed`, or `probe_error`):
+
+```powershell
+npm run billing:reconcile -- .\billing-private\verified-usage.json
+```
+
+This explicit operator DB command makes no provider/payment request. It is
+idempotent, rejects conflicting evidence/rate overrun, releases reservation
+and books actual supplier cost plus the disclosed margin only when chargeable.
+`not_billed` requires zero supplier cost. Unknown/duplicate/PROBE-error work is
+absorbed; zero ledger entries are not a claim of zero supplier charges.
+Unmatched/over-rate usage remains reserved for review; no automatic guesses.
+
+Collection claims an immutable amount/key in PostgreSQL before contacting
+Stripe. Test off-session PaymentIntents use that claim's idempotency key and
+customer/payment references. Whole cents are rounded **down**, never up;
+fractional remainder stays as debt until a later collection reaches the
+configured minimum. Only authoritative non-live `succeeded` payments book a
+unique negative ledger entry. Payment failures/required authentication or
+unknown outcomes suspend new jobs. Failed claims block new automatic
+collection; no unattended retry of failed payments.
+
+Unknown creation can be replayed with the *same* claim/key only within a
+conservative 20-hour window; after that it freezes, because Stripe may prune
+24-hour idempotency keys. If a PaymentIntent id is known, recovery retrieves
+it instead. Do not clear/delete a collection, manually mark it paid, create
+a replacement claim, reset a setup or re-enable a guest without authoritative
+provider reconciliation. This slice has no debt recovery/customer-action
+portal: failed payments, stale unknown Stripe creations and setup timeouts
+require operator review and remain fail-closed.
+
+## Records and remaining blockers
+
+No accounts, passwords, Supabase Auth, stored card/PAN/CVC, billing name or
+billing email are added. Stripe-hosted flows may collect and retain identity
+and payment records; literal zero-identity storage is not promised. PROBE
+retains pseudonymous Stripe references, hashes, consent timestamps/version,
+financial ledger and provider references. Losing the cookie does not erase
+debt; it loses guest access. Do not treat this as a sustainable public
+anonymous-credit fraud model without acceptance/risk review.
+
+Terminal job input/result content is scrubbed after seven days by the worker;
+financial/consent references are not automatically deleted. In-flight
+reconciliation inputs remain until resolved. Configure lawful financial
+retention and incident procedures before public paid use.
+
+Current blockers: no local PostgreSQL concurrency run, no authorized supplier
+measurements/billability export linkage, no Stripe sandbox acceptance, no
+browser-side supplier isolation approval, and no customer authentication/debt
+recovery portal. Therefore all real execution remains explicitly locked.
+
+API contracts checked against official documentation:
+[Stripe Checkout create](https://docs.stripe.com/api/checkout/sessions/create),
+[Stripe webhooks](https://docs.stripe.com/webhooks),
+[Zyte reference](https://docs.zyte.com/zyte-api/usage/reference.html),
+[Zyte HTTP](https://docs.zyte.com/zyte-api/usage/http.html),
+[Zyte browser](https://docs.zyte.com/zyte-api/usage/browser.html).

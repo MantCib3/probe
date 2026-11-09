@@ -924,7 +924,7 @@
     "category": "content",
     "checkMethod": "status_code",
     "undetectable": true,
-    "caveat": "Manual check only: Spotify web pages are for personal, non-commercial use; automation requires the official Web API with registered credentials (reviewed 2026-10-15)."
+    "caveat": "Manual check: server requests reflected two synthetic missing usernames in HTTP 200 pages, creating false positives. A profile-specific marker also remained inconclusive on the bounded scan body (reviewed 2026-11-03)."
   },
   {
     "name": "Odysee",
@@ -1532,8 +1532,9 @@
     "category": "social",
     "checkMethod": "message",
     "cors": true,
-    "undetectable": true,
-    "caveat": "Manual check only: Tellonym terms prohibit automated access without prior permission (reviewed 2026-10-15)."
+    "positiveMsg": "Send me Anonymous Questions! - @",
+    "positiveMissingStatus": "unknown",
+    "caveat": "Public profiles only. Verified with two existing accounts and two missing controls locally; hosted census confirms profile/404 contrast (reviewed 2026-11-03)."
   },
   {
     "name": "Truth Social",
@@ -2284,8 +2285,9 @@
     "urlMain": "https://hackerone.com",
     "category": "developer",
     "checkMethod": "message",
-    "undetectable": true,
-    "caveat": "Manual check only: HackerOne publishes no public API for username lookups; its platform terms do not clearly permit this use (reviewed 2026-10-15)."
+    "positiveMsg": "HackerOne profile - ",
+    "positiveMissingStatus": "unknown",
+    "caveat": "Public profiles only. Verified with two existing accounts and two missing controls locally; hosted census confirms profile/404 contrast (reviewed 2026-11-03)."
   },
   {
     "name": "TryHackMe",
@@ -2513,7 +2515,6 @@
     "category": "developer",
     "checkMethod": "message",
     "positiveMsg": "avatar-container d-flex",
-    "undetectable": true,
     "expectedStatus": 200,
     "notFoundStatus": 302
   },

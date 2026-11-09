@@ -3060,3 +3060,18 @@ a.site-url::after { content: ' ↗'; font-size: 0.7rem; opacity: 0.6; }
 }
 .np-export-menu button:last-child { border-bottom: none; }
 .np-export-menu button:hover { background: #f5f5f5; color: #000; }
+.paid-panel {
+  margin: 1rem auto;
+  max-width: 42rem;
+  text-align: left;
+  padding: 1rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+}
+.paid-panel summary { cursor: pointer; font-weight: 600; }
+.paid-panel p { margin: 0.75rem 0; }
+#paidControls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+#paidControls[hidden] { display: none; }
+#paidControls input, #paidControls select { padding: 0.4rem; max-width: 13rem; }
+#paidJobs { padding-left: 1.25rem; overflow-wrap: anywhere; }

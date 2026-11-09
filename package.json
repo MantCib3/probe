@@ -5,6 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "billing:check": "node scripts/billing-check.js",
+    "billing:migrate": "node scripts/billing-migrate.js",
+    "billing:worker": "node scripts/billing-worker.js",
+    "billing:reconcile": "node scripts/billing-reconcile.js",
     "build:assets": "node build-assets.js",
     "social:render": "node social/render-cards.js",
     "check": "node --check server.js && node --check script.js && node --check build-assets.js && node --check username-rules.js && node --check source-request-adapter.js && node tools/check-lib.js",
@@ -19,6 +23,8 @@
     "terser": "^5.51.2"
   },
   "dependencies": {
-    "cheerio": "1.2.0"
+    "cheerio": "1.2.0",
+    "pg": "^8.16.3",
+    "stripe": "^23.1.0"
   }
 }

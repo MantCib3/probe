@@ -21,7 +21,7 @@ const cards = [
     deck: 'How PROBE measures results, handles<br>uncertainty, and keeps sources useful.',
     metric: '318', metricLabel: 'ACTIVE SOURCES',
     foot: 'usernameprobe.com/blog',
-    stats: [['269', 'AUTOMATIC'], ['49', 'MANUAL ONLY']],
+    stats: [['272', 'AUTOMATIC'], ['46', 'MANUAL ONLY']],
   },
   {
     slug: 'probe-roadmap', kicker: 'BUILD IN PUBLIC', accent: STYLE.yellow,
@@ -69,7 +69,7 @@ const cards = [
     deck: 'Automatic checks and manual links,<br>tested as platforms change.',
     metric: '318', metricLabel: 'ACTIVE SOURCES',
     foot: 'usernameprobe.com/blog/maintaining-a-source-catalog',
-    stats: [['269', 'AUTOMATIC'], ['49', 'MANUAL ONLY']],
+    stats: [['272', 'AUTOMATIC'], ['46', 'MANUAL ONLY']],
   },
   {
     slug: 'what-your-username-doesnt-hide', kicker: 'PRIVACY', accent: STYLE.purple,

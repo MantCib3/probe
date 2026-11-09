@@ -24,7 +24,7 @@
     "isPartOf": { "@type": "WebSite", "name": "PROBE", "url": "https://usernameprobe.com/" }
   }
   </script>
-  <link rel="stylesheet" href="/styles.min.css?v=20">
+  <link rel="stylesheet" href="/styles.min.css?v=21">
 </head>
 <body>
   <nav class="navbar">
@@ -36,7 +36,11 @@
 
     <h2>Information handling</h2>
     <p>Case notes and pinned links are stored only in your browser's local storage unless you export or submit them. Contact messages and accuracy reports are retained to respond to requests and improve source quality. Do not submit passwords, authentication tokens, or other secrets.</p>
-    <p>When a source is found, PROBE may show basic public profile details (such as a picture, display name, short bio, or join date) read from the same public page the scan already fetched. These details are passed straight to your browser and are not stored by PROBE. Profile pictures load directly from the source site.</p>
+    <p>When a source is found in a free scan, PROBE may show basic public profile details (such as a picture, display name, short bio, or join date) read from the same public page the scan already fetched. These details are passed straight to your browser and are not stored by PROBE. Profile pictures load directly from the source site.</p>
+
+    <h2>Optional paid infrastructure sandbox</h2>
+    <p>Paid checks are staging-only, disabled until operator verification and measured rates are approved, and off by default. No account or Supabase Auth is required. If you explicitly enable a sandbox payment setup, Stripe hosts the card form and may collect and retain identity and payment information. PROBE does not store billing names, billing emails or card details; it stores pseudonymous Stripe references, consent, hashed guest credentials, reservations and a financial ledger. A secure HttpOnly cookie gives access to your own guest meter; losing it does not erase existing debt.</p>
+    <p>Paid job inputs and results, including public profile details, are retained while reconciliation is pending. The worker scrubs terminal job content after seven days. Financial, consent and supplier-reference records have separate retention requirements and are not automatically erased with the cookie. Provider-billable inconclusive usage can be charged under disclosed AUD rates; PROBE errors and duplicate attempts are absorbed. Revocation stops new spending, not already incurred debt.</p>
 
     <h2>Acceptable use</h2>
     <p>Use PROBE only for lawful research and investigations. Respect privacy, platform terms, access controls, and applicable law. Do not use the service for harassment, stalking, unauthorized access, or bulk collection of personal data.</p>

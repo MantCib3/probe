@@ -71,7 +71,8 @@ test('all card owners use one new cache version consistently across OG, Twitter 
   for (const card of cards) {
     const file = card.slug === 'probe-blog' ? 'blog/index.html' : card.slug === 'probe-roadmap' ? 'roadmap.html' : `blog/${card.slug}.html`;
     const $ = cheerio.load(read(file).toString());
-    const image = `https://usernameprobe.com/social/${card.slug}.png?v=7`;
+    const version = ['probe-blog', 'maintaining-a-source-catalog'].includes(card.slug) ? 8 : 7;
+    const image = `https://usernameprobe.com/social/${card.slug}.png?v=${version}`;
     for (const selector of ['meta[property="og:image"]', 'meta[property="og:image:secure_url"]', 'meta[name="twitter:image"]']) assert.equal($(selector).attr('content'), image, `${file}: ${selector}`);
     const structured = JSON.parse($('script[type="application/ld+json"]').text());
     if (structured.image) assert.equal(structured.image, image);

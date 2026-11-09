@@ -50,7 +50,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Bebas+Neue&display=swap">
-  <link rel="stylesheet" href="styles.min.css?v=20">
+  <link rel="stylesheet" href="styles.min.css?v=22">
   <!-- Cloudflare Turnstile — replace data-sitekey with your own key from dash.cloudflare.com -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </head>
@@ -95,6 +95,25 @@
 
       <p class="search-hint" id="searchHint"><span id="siteCount">318</span> platforms <!-- hint updated by JS --></p>
       <p class="search-error" id="searchError" style="display:none"></p>
+      <details id="paid" class="paid-panel" hidden>
+        <summary>Optional paid infrastructure — sandbox</summary>
+        <p id="paidStatus" role="status" aria-live="polite">Disabled. No measured paid rates are approved. Free scans are unchanged.</p>
+        <label class="toggle-label"><input type="checkbox" id="paidOptIn" disabled> Allow sandbox paid checks under the terms below (off by default)</label>
+        <p id="paidTerms">AUD daily postpaid, with earlier credit-threshold collection. Authoritative provider-billable usage plus disclosed margin can cost money even when inconclusive. PROBE errors and duplicate attempts are absorbed. Revocation stops new spending, not existing debt. Stripe may retain identity/payment records; PROBE stores pseudonymous references, consent and a ledger.</p>
+        <p id="paidRates">Rates unavailable — paid execution disabled.</p>
+        <div id="paidControls" hidden>
+          <button type="button" class="btn" id="paidSetup">Save sandbox payment method with Stripe</button>
+          <label>Optional lifetime cap (AUD) <input type="text" id="paidCap" inputmode="decimal" maxlength="12" placeholder="No customer cap"></label>
+          <button type="button" class="btn" id="paidSaveCap">Save cap</button>
+          <label>Approved source <select id="paidSource"></select></label>
+          <button type="button" class="btn" id="paidRun" disabled>Paid check this username</button>
+          <button type="button" class="btn" id="paidRefresh">Refresh meter</button>
+          <button type="button" class="btn" id="paidRevoke">Revoke new spending</button>
+        </div>
+        <div id="turnstileContainerPaid"></div>
+        <p id="paidMeter">No paid usage.</p>
+        <ul id="paidJobs" aria-label="Separate paid check results"></ul>
+      </details>
       <!-- Turnstile security widget (invisible mode — only shows UI if challenge needed) -->
       <div id="turnstileContainer" style="margin-top:0.25rem;"></div>
     </div>
@@ -378,6 +397,6 @@
     </div>
   </div>
 
-  <script src="script.min.js?v=17" defer></script>
+  <script src="script.min.js?v=19" defer></script>
 </body>
 </html>

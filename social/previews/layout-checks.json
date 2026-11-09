@@ -27,8 +27,8 @@
       "x": 1000,
       "y": 50
     },
-    "sourceSha256": "c9fadb82dc3058361e4832b3348e9824ab7b2343ba8a912802d80f898488e6f6",
-    "imageSha256": "59ab0957a69aa7a49a49bc1ce78c58e7f2750adb4bad71fb27655ad806093630"
+    "sourceSha256": "d50f57b97ffe733b16c81553fa98cd07e2f8cdf403cf3f2b4f289831a475cda1",
+    "imageSha256": "e11229173283ada6fff26902d26f1b058576fafab9ca92e810e79ec23eb726a2"
   },
   {
     "slug": "probe-roadmap",
@@ -213,8 +213,8 @@
       "x": 1000,
       "y": 50
     },
-    "sourceSha256": "a2587f4e8f05af88ea41f9e8f27b2d144634a69d61639df65d98b4569c44838f",
-    "imageSha256": "c5fe9a6fbfd0cd4bc683c88ecea2030fc0b3cb61bd11736cd250ebb6298bdef2"
+    "sourceSha256": "f6e7d89bab09c1340f86a37f8e60b65c1014835201a3d1ce75f4fae6fc968c2a",
+    "imageSha256": "03667193954e670011d58cd09f3982276693c50644f731a35522caac5cd5d857"
   },
   {
     "slug": "what-your-username-doesnt-hide",
