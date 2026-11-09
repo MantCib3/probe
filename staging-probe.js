@@ -60,6 +60,8 @@ function createStagingHandler(options) {
   let billingHealthNext = 0;
   let billingAccountingActive = false;
   let billingAccountingNext = 0;
+  let stripeSetupActive = false;
+  let stripeSetupNext = 0;
 
   return async function handleStaging(pathname, req, res) {
     const send = (status, payload, headers = {}) => {
@@ -96,6 +98,38 @@ function createStagingHandler(options) {
           'Database readiness check failed. Check staging database and CA settings.' });
       } finally {
         billingHealthActive = false;
+      }
+    }
+    if (pathname === '/api/staging-billing-stripe-setup') {
+      if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });
+      if (!options.stripeSetup) return send(404, { ok: false, error: 'Not found.' });
+      if (stripeSetupActive || Date.now() < stripeSetupNext) {
+        return send(429, { ok: false, error: 'Sandbox setup rate limited.' }, { 'Retry-After': '10' });
+      }
+      stripeSetupActive = true;
+      try {
+        let input;
+        try {
+          req.setTimeout(5000, () => req.destroy());
+          input = JSON.parse(await readBody(req, 256));
+        } catch (error) {
+          return send(error.code === 'BODY_TOO_LARGE' ? 413 : 400, { ok: false, error: 'Invalid bounded setup confirmation.' });
+        } finally {
+          req.setTimeout(0);
+        }
+        if (!input || input.confirmation !== 'stripe-test-setup-only-v1' ||
+            !['start', 'status'].includes(input.action) ||
+            !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.guestId || '') ||
+            Object.keys(input).length !== 3) {
+          return send(400, { ok: false, error: 'Explicit sandbox setup confirmation and fixture UUID required.' });
+        }
+        stripeSetupNext = Date.now() + 10000;
+        return send(200, { ok: true, setup: await options.stripeSetup(input) });
+      } catch (error) {
+        console.error('[staging-billing-stripe-setup] sandbox setup failed; details withheld.');
+        return send(error.status || 503, { ok: false, error: error.publicCode || 'Sandbox setup failed; operator review required before retry.' });
+      } finally {
+        stripeSetupActive = false;
       }
     }
     if (pathname === '/api/staging-billing-accounting') {

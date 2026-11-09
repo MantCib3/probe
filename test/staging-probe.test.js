@@ -146,6 +146,34 @@ test('Stripe readiness requires authentication and shares the bounded database r
   assert.equal(JSON.stringify(failure.payload).includes('private account details'), false);
 });
 
+test('sandbox setup requires authenticated explicit bounded confirmation and excludes concurrent calls', async () => {
+  const route = '/api/staging-billing-stripe-setup';
+  const body = JSON.stringify({ action: 'start', guestId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    confirmation: 'stripe-test-setup-only-v1' });
+  let calls = 0;
+  let finish;
+  const fixture = setup({ stripeSetup: async input => {
+    calls++;
+    assert.equal(input.action, 'start');
+    return new Promise(resolve => { finish = resolve; });
+  } });
+  assert.equal((await fixture.request({ route, body, authorization: '' })).status, 401);
+  assert.equal((await fixture.request({ route, body, method: 'GET' })).status, 405);
+  for (const invalid of ['null', '{}', '[1]', '{', body.replace('start', 'collect'),
+    body.replace('aaaaaaaa-aaaa', 'invalid')]) {
+    assert.equal((await fixture.request({ route, body: invalid })).status, 400);
+  }
+  assert.equal(calls, 0);
+  const first = fixture.request({ route, body });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal((await fixture.request({ route, body })).status, 429);
+  finish({ sandbox: true });
+  assert.equal((await first).status, 200);
+  assert.equal((await fixture.request({ route, body })).status, 429);
+  assert.equal(calls, 1);
+  assert.equal((await setup().request({ route, body })).status, 404);
+});
+
 test('oversized bodies are rejected explicitly', async () => {
   const fixture = setup({ readBody: async () => { throw Object.assign(new Error('large'), { code: 'BODY_TOO_LARGE' }); } });
   assert.equal((await fixture.request()).status, 413);

@@ -25,8 +25,10 @@ payment has been performed. Render secrets are not locally available.
 Rates remain unmeasured. Keep `PAID_INFRA_ENABLED=0`
 and `PAID_WORKER_ENABLED=0`. This is not an approved production money path.
 `PAID_MONEY_PATH_VERIFIED` is an additional unresolved acceptance gate, not a
-default activation. A missing/invalid setting locks setup, execution and payment
-webhooks. The web process never starts a worker or makes startup provider calls.
+default activation. A missing/invalid setting locks public setup, execution and
+payment webhooks. Only the isolated, zero-cap operator setup acceptance
+exception documented below admits its own signed setup webhooks while locked.
+The web process never starts a worker or makes startup provider calls.
 
 ## Private environment
 
@@ -126,6 +128,30 @@ only safe configuration flags, not account identity or credentials; it creates
 no customer, setup, payment or database record and calls no supplier. Database
 and Stripe readiness share the 30-second limit. Presence of a webhook secret
 is **not** proof of signature delivery or successful payment acceptance.
+
+### Isolated hosted Stripe setup acceptance
+
+With the three spending switches still exactly `0`, a configured test key and
+webhook signing secret, operators can POST to
+`/api/staging-billing-stripe-setup` using the staging Bearer key and
+`{"action":"start","guestId":"<operator-generated-v4-uuid>","confirmation":"stripe-test-setup-only-v1"}`.
+The UUID is a durable retry key, not a public guest token. The response contains
+a Stripe-hosted test setup URL. Use only a Stripe test card and fictional
+details; never enter a real card. This creates a test customer/Checkout setup
+and private acceptance guest with a **zero spending cap**, not a supplier job,
+usage debt or charge. Public session/setup/jobs routes remain locked.
+Repeat with `action:"status"` and the same UUID to inspect signed setup
+confirmation; no card, customer reference or identity is returned.
+
+While paid billing is locked, `/api/paid/webhook` admits only correctly signed
+test Checkout setup events matching that acceptance terms hash, exact saved
+Checkout ID, guest token hash and zero cap. It uses the normal authoritative
+Stripe retrieval/ownership/confirmation path. Nonfixture events and payment
+events are rejected; production cannot enable this exception.
+The acceptance fixture is deliberately retained across restarts/webhook retries
+until explicit cleanup after testing. An uncertain setup is not blindly
+re-created. Hosted setup and signed delivery do **not** prove payment recovery
+or provider billing; `PAID_MONEY_PATH_VERIFIED` must remain `0`.
 
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 

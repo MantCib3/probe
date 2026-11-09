@@ -228,6 +228,42 @@ test('webhook consumes signed raw bytes; invalid signatures and live events neve
   assert.equal((await request('webhook', { method: 'POST', headers: { 'stripe-signature': liveSignature }, body: live })).status, 400);
   assert.equal(retrieved, 0);
 });
+test('locked billing accepts real signatures only for isolated sandbox setup fixtures', async t => {
+  const guestId = randomUUID();
+  const setupId = randomUUID();
+  const sdk = new Stripe('sk_test_fixture');
+  const env = { PROBE_STAGING: '1', PAID_INFRA_ENABLED: '0', PAID_WORKER_ENABLED: '0',
+    PAID_MONEY_PATH_VERIFIED: '0', STRIPE_SECRET_KEY: 'sk_test_fixture', STRIPE_WEBHOOK_SECRET: 'whsec_fixture' };
+  const event = { id: 'evt_acceptance', type: 'checkout.session.completed', livemode: false,
+    data: { object: { id: 'cs_test_fixture', metadata: { probe_setup: setupId } } } };
+  let confirms = 0;
+  let reads = 0;
+  const pool = { async query(sql) {
+    reads++;
+    return { rows: sql.includes('FROM probe_billing.setups') ?
+      [{ guest_id: guestId, checkout_id: 'cs_test_fixture' }] : [{ id: guestId }] };
+  } };
+  sdk.checkout.sessions.retrieve = async () => ({ id: 'cs_test_fixture', livemode: false,
+    mode: 'setup', status: 'complete', setup_intent: 'seti_fixture',
+    metadata: { probe_setup: setupId, probe_guest: guestId } });
+  sdk.setupIntents.retrieve = async () => ({ livemode: false, status: 'succeeded', usage: 'off_session', payment_method: 'pm_fixture' });
+  sdk.paymentMethods.retrieve = async () => ({ livemode: false, type: 'card' });
+  const store = { async setupForCheckout() { return { id: setupId }; }, async confirmSetup() { confirms++; } };
+  const request = await fixtureServer(t, createBillingHandler({ env, config: { ...config, enabled: false },
+    store, stripe: sdk, acceptancePool: pool }));
+  assert.equal((await request('webhook', { method: 'POST', headers: { 'stripe-signature': 'bad' }, body: event })).status, 400);
+  assert.equal(reads, 0);
+  const signature = sdk.webhooks.generateTestHeaderString({ payload: JSON.stringify(event), secret: env.STRIPE_WEBHOOK_SECRET });
+  assert.equal((await request('webhook', { method: 'POST', headers: { 'stripe-signature': signature }, body: event })).status, 200);
+  assert.equal(confirms, 1);
+  const payment = { ...event, type: 'payment_intent.succeeded' };
+  const paymentSignature = sdk.webhooks.generateTestHeaderString({ payload: JSON.stringify(payment), secret: env.STRIPE_WEBHOOK_SECRET });
+  assert.equal((await request('webhook', { method: 'POST', headers: { 'stripe-signature': paymentSignature }, body: payment })).status, 400);
+  for (const route of ['session', 'setup', 'jobs']) {
+    assert.equal((await request(route, { method: 'POST', body: {} })).status, 503);
+  }
+  assert.equal(confirms, 1);
+});
 test('verified SetupIntent must be succeeded off-session test card before confirmation', async () => {
   const setupId = randomUUID();
   const guestId = randomUUID();
