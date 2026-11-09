@@ -87,7 +87,8 @@ test('payment acceptance reuses durable collection and simulates unknown respons
   for (const scenario of ['success', 'decline', 'authentication', 'unknown']) {
     const id = randomUUID();
     const guest = { id, state: 'active', debt_micros: '0', paid_micros: '0',
-      customer_id: 'cus_fixture', payment_method_id: 'pm_fixture', cap_micros: '0' };
+      customer_id: scenario === 'success' ? 'cus_fixture' : null,
+      payment_method_id: scenario === 'success' ? 'pm_fixture' : null, cap_micros: '0' };
     let collection;
     let ledger = 0;
     let creates = 0;
@@ -102,6 +103,8 @@ test('payment acceptance reuses durable collection and simulates unknown respons
       if (sql.includes('INSERT INTO probe_billing.collections')) collection = {
         id, guest_id: id, amount_cents: '100', state: 'claimed', created_at: new Date() };
       if (sql.includes('SET debt_micros=1000000')) guest.debt_micros = '1000000';
+      if (sql.includes('SET customer_id=$2')) guest.customer_id = values[1];
+      if (sql.includes('SET payment_method_id=$2')) guest.payment_method_id = values[1];
       if (sql.includes('INSERT INTO probe_billing.ledger')) ledger++;
       if (sql.includes('debt_micros=debt_micros-$2')) { guest.debt_micros = '0'; guest.paid_micros = '1000000'; }
       if (sql.includes("SET state='succeeded'")) { collection.state = 'succeeded'; collection.payment_intent_id = values[1]; }
@@ -114,10 +117,21 @@ test('payment acceptance reuses durable collection and simulates unknown respons
     }, release() {} };
     const pool = { connect: async () => client, query: (sql, values) => client.query(sql, values) };
     const intent = { id: 'pi_fixture', livemode: false, amount: 100, amount_received: 100,
-      currency: 'aud', customer: guest.customer_id, payment_method: guest.payment_method_id,
+      currency: 'aud', customer: 'cus_fixture', payment_method: 'pm_fixture',
       metadata: { probe_collection: id, probe_guest: id },
       status: ['success', 'unknown'].includes(scenario) ? 'succeeded' : scenario === 'decline' ? 'requires_payment_method' : 'requires_action' };
     const stripe = { accounts: { retrieve: async () => ({ country: 'AU', default_currency: 'aud' }) },
+      customers: { async create(params, options) {
+        assert.equal(options.idempotencyKey, `probe-acceptance-customer-${id}`);
+        return { id: 'cus_fixture' };
+      } },
+      paymentMethods: { async attach(method, params, options) {
+        assert.equal(method, scenario === 'decline' ? 'pm_card_chargeCustomerFail' :
+          scenario === 'authentication' ? 'pm_card_authenticationRequired' : 'pm_card_visa');
+        assert.equal(params.customer, 'cus_fixture');
+        assert.match(options.idempotencyKey, /probe-acceptance-method-/);
+        return { id: 'pm_fixture', type: 'card', livemode: false, customer: 'cus_fixture' };
+      } },
       paymentMethodConfigurations: { async list() { return { has_more: false, data: [{
         id: 'pmc_fixture', name: 'PROBE sandbox card-only setup v1', active: true, livemode: false,
         card: { available: true, display_preference: { value: 'on' } },

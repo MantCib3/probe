@@ -170,6 +170,9 @@ The success UUID must be the signed, hosted setup fixture. `decline`,
 `authentication` and `unknown` require fresh UUIDs and fixed Stripe test
 PaymentMethods, never user-supplied card information. Each scenario is durably
 bound in a cancelled `StripeAcceptanceFixture` job; it is never provider work.
+The attached decline scenario uses Stripe's documented
+`pm_card_chargeCustomerFail`; ordinary issuer-decline test cards cannot be
+attached to customers. Authentication uses `pm_card_authenticationRequired`.
 These actions seed a **synthetic AUD 1.00 balance** and one collection whose ID
 is the fixture UUID. This is not supplier usage or a customer invoice.
 They call the normal `collect`/`paymentResult` path with test credentials only.
