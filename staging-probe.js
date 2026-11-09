@@ -165,9 +165,11 @@ function createStagingHandler(options) {
         stripeSetupActive = false;
       }
     }
-    if (pathname === '/api/staging-billing-accounting') {
+    if (['/api/staging-billing-accounting', '/api/staging-billing-recovery'].includes(pathname)) {
+      const recoveryCheck = pathname === '/api/staging-billing-recovery';
+      const check = recoveryCheck ? options.billingRecovery : options.billingAccounting;
       if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });
-      if (!options.billingAccounting) return send(404, { ok: false, error: 'Not found.' });
+      if (!check) return send(404, { ok: false, error: 'Not found.' });
       if (billingAccountingActive || Date.now() < billingAccountingNext) {
         return send(429, { ok: false, error: 'Accounting check rate limited.' }, { 'Retry-After': '300' });
       }
@@ -183,15 +185,17 @@ function createStagingHandler(options) {
         } finally {
           req.setTimeout(0);
         }
-        if (!input || input.confirmation !== 'uuid-owned-accounting-fixtures-v1' ||
+        if (!input || input.confirmation !== (recoveryCheck ? 'migrate-and-uuid-owned-recovery-fixtures-v1' : 'uuid-owned-accounting-fixtures-v1') ||
             Object.keys(input).length !== 1) {
           return send(400, { ok: false, error: 'Explicit accounting fixture confirmation required.' });
         }
         billingAccountingNext = Date.now() + 300000;
-        return send(200, { ok: true, accounting: await options.billingAccounting() });
+        return send(200, { ok: true, [recoveryCheck ? 'recovery' : 'accounting']: await check() });
       } catch (_) {
-        console.error('[staging-billing-accounting] accounting verification or fixture cleanup failed; details withheld.');
-        return send(503, { ok: false, error: 'Accounting verification failed. Check disabled gates, empty guest ledger, database and CA settings.' });
+        console.error(`[staging-billing-${recoveryCheck ? 'recovery' : 'accounting'}] verification or fixture cleanup failed; details withheld.`);
+        return send(503, { ok: false, error: recoveryCheck
+          ? 'Recovery migration/verification failed. Check disabled gates, database, CA and fixture cleanup.'
+          : 'Accounting verification failed. Check disabled gates, empty guest ledger, database and CA settings.' });
       } finally {
         billingAccountingActive = false;
       }

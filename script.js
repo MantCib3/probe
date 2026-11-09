@@ -21,11 +21,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   let csrf;
   let state = 'new';
   let busy = false;
+  let collectibleDebt = false;
+  let recoveryComplete = false;
   const sync = () => {
     element('paidRun').disabled = busy || !optIn.checked || state !== 'active';
     element('paidSetup').disabled = busy || !optIn.checked || !['new', 'consent_required'].includes(state);
     element('paidRevoke').disabled = busy || !csrf || state === 'revoked';
     element('paidSaveCap').disabled = busy || !csrf;
+    const recoveryConsent = element('paidRecoveryConsent').checked;
+    element('paidReplace').disabled = busy || !csrf || !recoveryConsent || state !== 'action_required';
+    element('paidSettle').disabled = busy || !csrf || !recoveryConsent || !collectibleDebt ||
+      !['action_required', 'revoked'].includes(state);
+    element('paidResume').disabled = busy || !optIn.checked || state !== 'action_required' || !recoveryComplete;
   };
   async function api(path, body) {
     const response = await fetch(`/api/paid/${path}`, {
@@ -45,6 +52,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const status = await api('status');
     csrf = status.csrf;
     state = status.state === 'active' && status.termsHash !== config.termsHash ? 'consent_required' : status.state;
+    collectibleDebt = BigInt(status.debtMicros) >= 10000n;
+    recoveryComplete = !collectibleDebt && BigInt(status.reservedMicros) === 0n &&
+      !status.collections?.length && !['creating', 'ready', 'uncertain'].includes(status.recovery?.state);
+    element('paidRecovery').hidden = !['action_required', 'revoked'].includes(state);
+    element('paidRecoveryStatus').textContent = status.recovery
+      ? `Hosted recovery: ${status.recovery.state}; ${paidAud(BigInt(status.recovery.amount_cents) * 10000n)}. Refresh after Stripe finishes. New spending stays paused until explicitly resumed; revoked spending cannot resume.`
+      : 'Replace a declined card, or review the fixed debt amount in Stripe checkout. Unknown payments require operator review; do not pay twice.';
     notice.textContent = `Sandbox: ${state}. A return from Stripe never authorizes spending by itself.`;
     element('paidMeter').textContent = `Confirmed debt ${paidAud(status.debtMicros)}; reserved pending usage ${paidAud(status.reservedMicros)}; collected ${paidAud(status.paidMicros)}. Lifetime cap: ${status.capMicros === null ? 'none (credit limit still applies)' : paidAud(status.capMicros)}. Sub-cent balances carry forward.`;
     element('paidJobs').replaceChildren();
@@ -67,18 +81,48 @@ document.addEventListener('DOMContentLoaded', async () => {
       busy = true;
       sync();
       try { await callback(); }
-      catch (error) { notice.textContent = `Sandbox: ${error.message}. No automatic paid retry.`; }
+      catch (error) {
+        const messages = {
+          recovery_pending_operator_review: 'Recovery is pending or uncertain. Refresh; if unresolved, contact the operator before another payment.',
+          payment_uncertain_operator_review: 'The earlier payment outcome is unresolved. Contact the operator; do not pay twice.',
+          recovery_not_complete: 'Debt, pending usage or a hosted checkout still needs resolution before spending can resume.',
+          debt_below_stripe_minimum: 'This debt is below Stripe’s AUD 0.50 minimum. It remains owed; contact the operator rather than attempting another payment.',
+          payment_already_settled_refresh: 'Stripe already settled this payment. Refresh the meter; no second payment was created.',
+          spending_suspended: 'Spending cannot resume for this session. Revocation cannot be reversed.',
+        };
+        notice.textContent = `Sandbox: ${messages[error.message] || error.message}. No automatic paid retry.`;
+      }
       finally { busy = false; sync(); }
     });
   }
   optIn.addEventListener('change', sync);
+  element('paidRecoveryConsent').addEventListener('change', sync);
+  const consent = () => ({ consent: true, consentVersion: config.consentVersion, termsHash: config.termsHash });
+  function goToStripe(value) {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.hostname !== 'checkout.stripe.com' || url.username || url.password) {
+      throw new Error('Invalid Stripe checkout URL.');
+    }
+    window.location.assign(url.href);
+  }
   action('paidSetup', async () => {
     if (!optIn.checked) throw new Error('Explicit consent required.');
     await session();
-    const setup = await api('setup', { consent: true, consentVersion: config.consentVersion, termsHash: config.termsHash });
-    const url = new URL(setup.url);
-    if (url.protocol !== 'https:' || url.hostname !== 'checkout.stripe.com') throw new Error('Invalid Stripe checkout URL.');
-    window.location.assign(url.href);
+    const setup = await api('setup', consent());
+    goToStripe(setup.url);
+  });
+  for (const [id, endpoint] of [['paidReplace', 'replacement'], ['paidSettle', 'recovery']]) {
+    action(id, async () => {
+      if (!element('paidRecoveryConsent').checked) throw new Error('Explicit recovery consent required.');
+      const result = await api(endpoint, { ...consent(), ...(endpoint === 'recovery' ? { settleDebt: true } : {}) });
+      goToStripe(result.url);
+    });
+  }
+  action('paidResume', async () => {
+    if (!optIn.checked) throw new Error('Explicit consent to new spending required.');
+    await api('resume', consent());
+    element('paidRecoveryConsent').checked = false;
+    await refresh();
   });
   action('paidSaveCap', async () => {
     await session();

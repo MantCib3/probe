@@ -68,12 +68,50 @@ test('disabled and non-staging endpoints never initialize dependencies or spend'
   const request = await fixtureServer(t, createBillingHandler({ env: { PROBE_STAGING: '1' }, store, stripe: {} }));
   assert.equal((await request('config')).body.enabled, false);
   assert.equal((await request('jobs', { method: 'POST', body: {} })).status, 503);
+  for (const endpoint of ['replacement','recovery','resume']) {
+    assert.equal((await request(endpoint, { method: 'POST', body: {} })).status, 503);
+  }
   assert.equal((await request('webhook', { method: 'POST' })).status, 503);
   assert.equal(calls, 0);
   const other = await fixtureServer(t, createBillingHandler({ env: {}, store, stripe: {} }));
   assert.equal((await other('config')).status, 404);
   assert.equal(loadConfig({ PROBE_STAGING: '1', PAID_INFRA_ENABLED: '1' }, [site]).enabled, false);
   assert.throws(() => createStripe({ STRIPE_SECRET_KEY: 'sk_live_fixture' }), /sandbox_key/);
+});
+test('recovery routes require the owning cookie, same origin, CSRF and explicit current consent; settlement and resume are separate actions', async t => {
+  const token = 'r'.repeat(43);
+  const owner = { ...guest(), state: 'action_required', csrf_hash: hash(csrfFor(token)) };
+  let resumed = 0;
+  let prepared = 0;
+  const store = {
+    async authenticate(value) { return value === hash(token) ? owner : null; },
+    async prepareRecovery(id) {
+      assert.equal(id, owner.id); prepared++;
+      return { state: 'ready', checkout_url: 'https://checkout.stripe.com/c/pay/fixture#intact' };
+    },
+    async resume(id, terms) { assert.equal(id, owner.id); assert.equal(terms.termsHash, config.termsHash); resumed++; },
+  };
+  const request = await fixtureServer(t, createBillingHandler({ config, store, stripe: {} }));
+  const headers = { origin: config.origin, 'content-type': 'application/json',
+    cookie: `${COOKIE}=${token}`, 'x-probe-csrf': csrfFor(token) };
+  const body = { consent: true, consentVersion: CONSENT_VERSION, termsHash: config.termsHash, settleDebt: true };
+  for (const endpoint of ['recovery','resume','replacement']) {
+    assert.equal((await request(endpoint, { method: 'GET', headers })).status, 405);
+    assert.equal((await request(endpoint, { method: 'POST', headers: { ...headers, cookie: '' }, body })).status, 401);
+    assert.equal((await request(endpoint, { method: 'POST', headers: { ...headers, origin: 'https://foreign.test' }, body })).status, 403);
+    assert.equal((await request(endpoint, { method: 'POST', headers: { ...headers, 'x-probe-csrf': '' }, body })).status, 403);
+    assert.equal((await request(endpoint, { method: 'POST', headers, body: { ...body, consent: false } })).status, 403);
+    assert.equal((await request(endpoint, { method: 'POST', headers, body: { ...body, termsHash: 'b'.repeat(64) } })).status, 403);
+  }
+  assert.equal((await request('recovery', { method: 'POST', headers, body: { ...body, settleDebt: false } })).status, 403);
+  const recovery = await request('recovery', { method: 'POST', headers, body });
+  assert.equal(recovery.status, 200);
+  assert.equal(recovery.body.url, 'https://checkout.stripe.com/c/pay/fixture#intact');
+  assert.equal(recovery.body.authorized, false);
+  assert.equal(prepared, 1);
+  assert.equal(resumed, 0);
+  assert.equal((await request('resume', { method: 'POST', headers, body })).status, 200);
+  assert.equal(resumed, 1);
 });
 test('real rate parser requires explicit gates, measured per-source AUD rates, private storage and test keys', t => {
   const directory = path.join(__dirname, '..', 'billing-private', `fixture-${randomUUID()}`);

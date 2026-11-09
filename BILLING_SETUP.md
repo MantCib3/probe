@@ -510,12 +510,73 @@ financial/consent references are not automatically deleted. In-flight
 reconciliation inputs remain until resolved. Configure lawful financial
 retention and incident procedures before public paid use.
 
+### Accountless hosted recovery
+
+Recovery keeps the same opaque HttpOnly guest cookie, same-origin/CSRF checks,
+current explicit consent and sandbox gates. No PROBE customer account, email
+lookup, client secret or card details are introduced. Losing/expiring that
+cookie still requires operator assistance; never silently create a replacement
+money-bearing guest.
+
+- `POST /api/paid/replacement` saves a new card with the existing Stripe-hosted
+  setup flow. The guest stays paused. It cannot run alongside an open debt
+  recovery checkout.
+- `POST /api/paid/recovery` additionally requires `settleDebt:true`. A durable
+  private recovery record owns one fixed collection amount, customer, prior
+  PaymentIntent, current terms and hosted checkout. It retrieves the old intent
+  authoritatively; an already-succeeded payment is reconciled, not charged
+  again. A definitively failed/action-required intent must be canceled before
+  another payment can be created. Processing/missing/uncertain outcomes block
+  checkout and require operator review. No blind payment retry is permitted.
+- Stripe-hosted payment checkout handles card entry/authentication and saves the
+  card for later off-session collection. Only authoritative paid Checkout,
+  succeeded AUD PaymentIntent and owned test card retrieval can settle debt.
+  Checkout and early PaymentIntent events use the same atomic ledger path.
+  Response loss freezes recovery; a signed success can still recover ownership.
+  A signed authoritative expiry releases an abandoned checkout. Returning via
+  `/#paid` or refreshing never authorizes spending.
+- `POST /api/paid/resume` is a separate current-consent action. It requires a
+  non-revoked paused guest, no whole-cent debt, no reservations or unresolved
+  collections/setups/recovery. It preserves the lifetime cap and sub-cent debt.
+  A revoked guest may pay existing debt but can never resume.
+- Collection payment-method snapshots preserve ownership of old payments after
+  a replacement card is saved. Known canceled superseded intents are safely
+  acknowledged without adding another ledger entry.
+
+Hosted debt amounts below Stripe's AUD 0.50 minimum are refused before checkout.
+They are not forgiven or rounded up; operator resolution is required if that
+balance prevents resuming. Later reconciled debt can require another fixed
+checkout. Neither fees nor extra supplier use are added by recovery.
+
+Migration `002-hosted-recovery.sql` adds private recovery records and backfills
+collection payment-method snapshots without changing debt/paid/cap balances.
+Apply using the existing gated migration command, or authenticated
+`POST /api/staging-billing-recovery` with exactly:
+
+```json
+{"confirmation":"migrate-and-uuid-owned-recovery-fixtures-v1"}
+```
+
+That staging-only operator check requires all three spending gates exactly `0`,
+verified database TLS, a bounded body and the existing bearer. It applies
+checksum-verified migrations and runs eight UUID-owned synthetic SQL checks,
+then removes/verifies only those fixtures. Existing acceptance guests are
+preserved. It makes zero Stripe or supplier requests. It does **not** prove a
+real hosted recovery checkout/authentication; that sandbox acceptance remains
+required before activation.
+
+The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
+per request on average). Currency, transport assumptions and actual per-request
+costs are not verified; use this for planning, not customer ledger ingestion.
+
 Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
 paths passed. Four authorized Zyte HTTP controls also passed with supplier
 references. Remaining blockers: automated authoritative per-request cost
 ingestion (including precision/currency/FX policy), approved paid-source
-detection/transport, browser-side supplier isolation and customer authentication/
-debt recovery. Therefore public paid execution remains locked.
+detection/transport, browser-side supplier isolation and actual hosted recovery
+checkout/authentication acceptance (plus small-debt/expired-session operator
+resolution). The recovery implementation alone is not payment acceptance.
+Therefore public paid execution remains locked.
 
 The lab's existing `config/paid-tier-hints.json` contains conditional metadata
 extraction rules proven on captured browser pages/API documentation. These are

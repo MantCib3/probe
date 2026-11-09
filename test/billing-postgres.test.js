@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const { createPool } = require('../lib/billing/db');
 const { migrate } = require('../scripts/billing-migrate');
 const { checkAccounting, accountingCheckAllowed } = require('../scripts/billing-accounting-check');
+const { runRecoveryFixtures } = require('../scripts/billing-recovery-check');
 
 test('hosted accounting fixtures require exact staging identity and all spending gates off', () => {
   const env = { PROBE_STAGING: '1', PAID_INFRA_ENABLED: '0',
@@ -58,6 +59,9 @@ test('real local PostgreSQL: cap race, durable recovery, reconciliation and webh
     assert.equal(result.fixturesRemoved, true);
     assert.equal(result.database.readOnly, true);
     assert.equal(result.readOnly, undefined);
+    const recovery = await runRecoveryFixtures(pool);
+    assert.equal(recovery.checks.length, 8);
+    assert.equal(recovery.fixturesRemoved, true);
   } finally {
     await pool.end();
   }

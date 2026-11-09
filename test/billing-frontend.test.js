@@ -27,6 +27,11 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
     creditMicros: 1000000, thresholdMicros: 500000, minimumCents: 1,
     rates: [{ source: 'Fixture', mode: 'http', supplierMicros: 2000, marginMicros: 1000, maximumMicros: 3000 }] };
   let jobs = [];
+  let guestState = 'active';
+  let debtMicros = '2000';
+  let reservedMicros = '3000';
+  let collections = [];
+  let recovery = null;
   // Every request, including apparent provider/navigation URLs, is intercepted locally.
   await page.route('**/*', async route => {
     const request = route.request();
@@ -39,9 +44,14 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
     const endpoint = url.pathname.split('/').pop();
     calls.push({ endpoint, method: request.method(), body: request.postDataJSON(), headers: request.headers() });
     if (endpoint === 'config') return route.fulfill({ json: { ...config, enabled } });
-    if (endpoint === 'status') return route.fulfill({ json: { state: 'active', termsHash: config.termsHash,
-      csrf: 'b'.repeat(64), debtMicros: '2000', reservedMicros: '3000', paidMicros: '10000', capMicros: null,
-      jobs, usage: [] } });
+    if (endpoint === 'status') return route.fulfill({ json: { state: guestState, termsHash: config.termsHash,
+      csrf: 'b'.repeat(64), debtMicros, reservedMicros, paidMicros: '10000', capMicros: null,
+      jobs, usage: [], collections, recovery } });
+    if (endpoint === 'recovery') return route.fulfill({ json: { url: 'https://foreign.test/not-stripe', authorized: false } });
+    if (endpoint === 'resume') {
+      guestState = 'active';
+      return route.fulfill({ json: { state: 'active' } });
+    }
     if (endpoint === 'jobs') {
       jobs = [{ source: 'Fixture', state: 'reconcile', reservation_micros: '3000',
         result: { status: 'unknown', reasonCodes: ['<script>unsafe</script>'] } }];
@@ -83,4 +93,51 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   assert.equal(await page.locator('#resultsGrid').textContent(), '');
   assert.match(await page.locator('#paidMeter').textContent(), /AUD 0\.002000/);
   assert.equal(calls.some(call => call.endpoint === 'setup'), false);
+  guestState = 'action_required';
+  debtMicros = '1000000';
+  reservedMicros = '0';
+  collections = [{ state: 'failed', amount_cents: '100' }];
+  await page.reload();
+  await page.locator('#paid').evaluate(element => { element.open = true; });
+  await page.waitForFunction(() => !document.getElementById('paidRecovery').hidden);
+  assert.equal(await page.locator('#paidRun').isDisabled(), true);
+  assert.equal(await page.locator('#paidSettle').isDisabled(), true);
+  await page.locator('#paidRecoveryConsent').check();
+  assert.equal(await page.locator('#paidSettle').isEnabled(), true);
+  assert.equal(await page.locator('#paidReplace').isEnabled(), true);
+  await page.locator('#paidOptIn').check();
+  assert.equal(await page.locator('#paidResume').isDisabled(), true);
+  await page.locator('#paidSettle').click();
+  await page.waitForFunction(() => document.getElementById('paidStatus').textContent.includes('Invalid Stripe checkout URL'));
+  assert.equal(page.url(), `${origin}/`);
+  const settlements = calls.filter(call => call.endpoint === 'recovery');
+  assert.equal(settlements.length, 1);
+  assert.equal(settlements[0].body.settleDebt, true);
+  assert.equal(settlements[0].body.consent, true);
+  assert.equal(settlements[0].headers['x-probe-csrf'], 'b'.repeat(64));
+  assert.equal(calls.some(call => call.endpoint === 'resume'), false);
+  debtMicros = '7';
+  collections = [];
+  recovery = { state: 'confirmed', amount_cents: '100' };
+  await page.reload();
+  await page.locator('#paid').evaluate(element => { element.open = true; });
+  await page.waitForFunction(() => document.getElementById('paidRecoveryStatus').textContent.includes('confirmed'));
+  assert.equal(await page.locator('#paidRun').isDisabled(), true);
+  assert.equal(await page.locator('#paidResume').isDisabled(), true);
+  await page.locator('#paidOptIn').check();
+  assert.equal(await page.locator('#paidResume').isEnabled(), true);
+  await page.locator('#paidResume').click();
+  await page.waitForFunction(() => document.getElementById('paidRecovery').hidden);
+  assert.equal(await page.locator('#paidRun').isEnabled(), true);
+  assert.equal(calls.filter(call => call.endpoint === 'jobs').length, 1);
+  guestState = 'revoked';
+  debtMicros = '1000000';
+  await page.reload();
+  await page.locator('#paid').evaluate(element => { element.open = true; });
+  await page.waitForFunction(() => !document.getElementById('paidRecovery').hidden);
+  await page.locator('#paidRecoveryConsent').check();
+  await page.locator('#paidOptIn').check();
+  assert.equal(await page.locator('#paidSettle').isEnabled(), true);
+  assert.equal(await page.locator('#paidReplace').isDisabled(), true);
+  assert.equal(await page.locator('#paidResume').isDisabled(), true);
 });

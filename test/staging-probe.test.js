@@ -87,6 +87,30 @@ test('invalid JSON, arbitrary URLs, manual sources and invalid usernames are rej
   assert.equal(fixture.calls(), 0);
 });
 
+test('recovery migration/check is authenticated, bounded, separately confirmed and does not invoke accounting or providers', async () => {
+  let checks = 0;
+  const fixture = setup({ billingRecovery: async () => {
+    checks++;
+    return { migrations: 2, checks: ['fixture'], fixturesRemoved: true, providerRequests: 0, paymentRequests: 0 };
+  }, billingAccounting: async () => assert.fail('Original accounting must not run.') });
+  const route = '/api/staging-billing-recovery';
+  const body = '{"confirmation":"migrate-and-uuid-owned-recovery-fixtures-v1"}';
+  assert.equal((await fixture.request({ route, body, authorization: '' })).status, 401);
+  assert.equal((await fixture.request({ route, method: 'GET' })).status, 405);
+  for (const invalid of ['{}','{"confirmation":"uuid-owned-accounting-fixtures-v1"}',
+    '{"confirmation":"migrate-and-uuid-owned-recovery-fixtures-v1","extra":true}']) {
+    assert.equal((await fixture.request({ route, body: invalid })).status, 400);
+  }
+  const result = await fixture.request({ route, body });
+  assert.equal(result.status, 200);
+  assert.equal(result.payload.recovery.fixturesRemoved, true);
+  assert.equal(result.payload.recovery.paymentRequests, 0);
+  assert.equal(checks, 1);
+  assert.equal((await fixture.request({ route, body })).status, 429);
+  assert.equal((await setup().request({ route, body })).status, 404);
+  assert.equal(fixture.calls(), 0);
+});
+
 test('accounting writes require authentication, POST, explicit confirmation and a bounded body', async () => {
   let checks = 0;
   const fixture = setup({ billingAccounting: async () => { checks++; return { fixtureWrites: true, fixturesRemoved: true }; } });

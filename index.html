@@ -109,6 +109,14 @@
           <button type="button" class="btn" id="paidRun" disabled>Paid check this username</button>
           <button type="button" class="btn" id="paidRefresh">Refresh meter</button>
           <button type="button" class="btn" id="paidRevoke">Revoke new spending</button>
+          <div id="paidRecovery" hidden>
+            <p>Spending is paused. Stripe can authenticate a debt payment or save a replacement card. Paying never resumes spending or reverses revocation. Keep this browser's session cookie; there is no customer account or email recovery.</p>
+            <label><input type="checkbox" id="paidRecoveryConsent"> Agree to the terms above to save a replacement card or pay the disclosed outstanding debt through Stripe</label>
+            <button type="button" class="btn" id="paidReplace">Replace sandbox card only</button>
+            <button type="button" class="btn" id="paidSettle">Review and pay sandbox debt with Stripe</button>
+            <button type="button" class="btn" id="paidResume">Explicitly resume new spending</button>
+            <p id="paidRecoveryStatus" role="status" aria-live="polite"></p>
+          </div>
         </div>
         <div id="turnstileContainerPaid"></div>
         <p id="paidMeter">No paid usage.</p>
@@ -397,6 +405,6 @@
     </div>
   </div>
 
-  <script src="script.min.js?v=20" defer></script>
+  <script src="script.min.js?v=21" defer></script>
 </body>
 </html>
