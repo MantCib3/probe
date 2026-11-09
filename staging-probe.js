@@ -131,7 +131,8 @@ function createStagingHandler(options) {
         return send(200, { ok: true, setup: await options.stripeSetup(input) });
       } catch (error) {
         console.error('[staging-billing-stripe-setup] sandbox setup failed; details withheld.');
-        return send(error.status || 503, { ok: false, error: error.publicCode || 'Sandbox setup failed; operator review required before retry.' });
+        return send(error.status || 503, { ok: false, error: error.publicCode || 'Sandbox setup failed; operator review required before retry.',
+          ...(error.safeDiagnostic ? { diagnostic: error.safeDiagnostic } : {}) });
       } finally {
         stripeSetupActive = false;
       }
