@@ -694,6 +694,15 @@ exercises small-debt refusal, expired-session restoration, credential rotation/
 response-loss retry and revocation preservation with UUID-owned SQL fixtures.
 It makes no Stripe or supplier requests.
 
+Private recovery deployment `b0f776c` was verified on staging, then the hosted
+check passed **12/12** against PostgreSQL 17 with trusted TLS. All three
+migrations are applied, UUID-owned fixtures were removed and both supplier/
+payment request counts were zero. Local validation passed **73 tests** including
+offline browser recovery/save acknowledgement/small-debt controls; the separate
+dedicated-local-PostgreSQL test was skipped because no local TLS database was
+provided. Asset rebuild, syntax checks and whitespace checks passed. Public paid
+configuration remained disabled; production was not changed.
+
 ### Supplier pricing evidence and reporting limits
 
 Official [pricing](https://www.zyte.com/pricing/) and
