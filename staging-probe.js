@@ -118,7 +118,7 @@ function createStagingHandler(options) {
           req.setTimeout(0);
         }
         const payment = input?.confirmation === 'stripe-test-payments-v1' &&
-          ['pay', 'payment-status'].includes(input.action) &&
+          ['pay', 'payment-status', 'repair-rejected'].includes(input.action) &&
           ['success', 'decline', 'authentication', 'unknown'].includes(input.scenario) && Object.keys(input).length === 4;
         const setup = input?.confirmation === 'stripe-test-setup-only-v1' &&
           ['start', 'status'].includes(input.action) && Object.keys(input).length === 3;

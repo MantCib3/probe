@@ -187,6 +187,14 @@ collections owned by zero-cap acceptance guests may pass the locked webhook
 exception; all other payment events remain rejected. Fixtures/test customers
 are retained for webhook retries and explicit later cleanup.
 
+`repair-rejected` is restricted to the original success acceptance fixture
+when Stripe has definitively rejected its old request key after parameter
+correction (`StripeIdempotencyError`). It requires no saved PaymentIntent, no
+payments, an uncertain collection and a complete customer-scoped Stripe lookup
+with no matching intent. Only then is a corrected request key durably recorded.
+This is not a production/unknown-outcome retry policy and cannot be used for
+arbitrary collections or repeatedly change keys.
+
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 
 ```powershell

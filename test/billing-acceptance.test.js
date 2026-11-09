@@ -154,3 +154,25 @@ test('sandbox payment acceptance refuses concurrent runs and arbitrary scenarios
   await assert.rejects(runPaymentAcceptance(pool, {}, input), /acceptance_in_progress/);
   await assert.rejects(runPaymentAcceptance(pool, {}, { ...input, scenario: 'custom' }), /invalid_acceptance_confirmation/);
 });
+
+test('rejected-request repair refuses an existing Stripe payment or incomplete lookup', async () => {
+  for (const page of [{ has_more: true, data: [] }, { has_more: false, data: [{ metadata: {} }] }]) {
+    const id = randomUUID();
+    if (page.data.length) page.data[0].metadata.probe_collection = id;
+    let writes = 0;
+    const client = { async query(sql) {
+      if (sql.includes('pg_try_advisory_lock')) return { rows: [{ locked: true }] };
+      if (sql.includes('FROM probe_billing.guests')) return { rows: [{ id, customer_id: 'cus_fixture', paid_micros: '0' }] };
+      if (sql.includes('FROM probe_billing.jobs')) return { rows: [{ rate: {
+        scenario: 'success', rejectedRequest: { type: 'StripeIdempotencyError' } } }] };
+      if (sql.includes('FROM probe_billing.collections')) return { rows: [{ state: 'uncertain', payment_intent_id: null }] };
+      if (sql.includes('UPDATE')) writes++;
+      return { rows: [] };
+    }, release() {} };
+    const pool = { connect: async () => client, query: sql => client.query(sql) };
+    await assert.rejects(runSetupAcceptance(pool, { paymentIntents: { list: async () => page } },
+      { action: 'repair-rejected', guestId: id, scenario: 'success', confirmation: 'stripe-test-payments-v1' }),
+    /payment_exists_or_lookup_incomplete/);
+    assert.equal(writes, 0);
+  }
+});
