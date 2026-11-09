@@ -159,7 +159,8 @@ configuration named `PROBE sandbox card-only setup v1`, leaving the account's
 default configuration unchanged. The adapter creates it idempotently when
 absent, turns every listed non-card method off, and verifies effective card-only
 settings before creating Checkout. An altered configuration fails closed.
-PaymentIntent collection still uses its separately supported card restriction.
+PaymentIntent collection uses the same verified configuration; the current
+Stripe API removed `payment_method_types` for PaymentIntents as well.
 
 ### Isolated Stripe test-payment acceptance
 

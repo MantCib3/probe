@@ -118,9 +118,15 @@ test('payment acceptance reuses durable collection and simulates unknown respons
       metadata: { probe_collection: id, probe_guest: id },
       status: ['success', 'unknown'].includes(scenario) ? 'succeeded' : scenario === 'decline' ? 'requires_payment_method' : 'requires_action' };
     const stripe = { accounts: { retrieve: async () => ({ country: 'AU', default_currency: 'aud' }) },
+      paymentMethodConfigurations: { async list() { return { has_more: false, data: [{
+        id: 'pmc_fixture', name: 'PROBE sandbox card-only setup v1', active: true, livemode: false,
+        card: { available: true, display_preference: { value: 'on' } },
+      }] }; } },
       paymentIntents: { async create(params, options) {
         creates++;
         assert.equal(params.amount, 100);
+        assert.equal(params.payment_method_configuration, 'pmc_fixture');
+        assert.equal(Object.hasOwn(params, 'payment_method_types'), false);
         assert.equal(options.idempotencyKey, `probe-collection-${id}`);
         return intent;
       }, retrieve: async () => intent } };

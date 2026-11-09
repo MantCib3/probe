@@ -464,9 +464,11 @@ test('collection retries are keyed to durable claims, cents leave remainder, sta
     customer_id: 'cus_fixture', payment_method_id: 'pm_fixture', created_at: new Date() };
   const keys = [];
   let results = 0; let frozen = 0;
-  const stripe = { accounts, paymentIntents: { async create(params, opts) {
+  const stripe = { accounts, paymentMethodConfigurations, paymentIntents: { async create(params, opts) {
     keys.push(opts.idempotencyKey);
     assert.equal(params.off_session, true); assert.equal(params.confirm, true); assert.equal(params.currency, 'aud');
+    assert.equal(params.payment_method_configuration, 'pmc_fixture');
+    assert.equal(Object.hasOwn(params, 'payment_method_types'), false);
     return { id: 'pi_fixture', status: 'succeeded' };
   } } };
   const store = { async paymentResult() { results++; }, async freezeCollection() { frozen++; } };
@@ -504,7 +506,7 @@ test('payment failure and uncertainty suspend spending; succeeded webhook cannot
   assert.equal(pool.queries.some(q => q.sql.includes("ELSE 'action_required'")), true);
   let frozen = 0; let uncertain = 0;
   await assert.rejects(collect({ async collectionUncertain() { uncertain++; }, async freezeCollection() { frozen++; } },
-    { accounts, paymentIntents: { async create() { throw new Error('network'); } } },
+    { accounts, paymentMethodConfigurations, paymentIntents: { async create() { throw new Error('network'); } } },
     { ...collection, created_at: new Date() }), /payment_uncertain/);
   assert.equal(uncertain, 1); assert.equal(frozen, 1);
 });
