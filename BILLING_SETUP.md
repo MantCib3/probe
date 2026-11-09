@@ -2,6 +2,17 @@
 
 ## Implemented, but locked
 
+Operators can verify the deployed client-to-pooler TLS connection via
+`GET /api/staging-billing-health` with the existing staging Bearer key.
+It is staging-only, performs a read-only check, returns no credentials, makes
+no Stripe/Zyte calls and is limited to one check per 30 seconds.
+The default health endpoint does not open database connections.
+
+Connection and migration checks inspect the client's encrypted, authorized
+TLS socket. With Supavisor, `pg_stat_ssl` describes the pooler-to-database
+connection, not our client-to-pooler connection. Certificate verification
+remains mandatory; it is not disabled to accommodate the pooler.
+
 This checkout includes a private PostgreSQL guest ledger, budget reservations,
 durable leased jobs, Zyte adapter, Stripe-hosted card setup, signed webhooks,
 authoritative usage reconciliation and daily/threshold test collection. The
@@ -90,7 +101,26 @@ Set-Location C:\dev\probe\probe-staging
 ```
 
 Each invocation prompts for the Supabase staging session-pooler URI with
-hidden input (password placeholder replaced privately). The URI is not written
+hidden input. Prefer copying the original URI with `[YOUR-PASSWORD]` unchanged:
+the helper then prompts separately for the exact project database password,
+percent-encodes it and inserts it without altering Supabase's username. Do not
+pre-encode the separately entered password. Completed URIs are still accepted.
+The URI is not written
+to the terminal while pasting: hidden input still accepts paste. Enter the
+entire `postgresql://...` URI, not just the password. The database password is
+the one created for the Supabase project, not an API key. Reserved password
+characters must be percent-encoded without encoding the rest of the URI.
+For example, `@` becomes `%40`, `#` becomes `%23`, and `%` becomes `%25`;
+do not encode an already encoded password twice. Authentication errors
+identify code `28P01`, while TLS and URI errors have separate sanitized
+diagnostics. Do not repeatedly retry a password without checking the exact
+pooler username and connection string.
+The helper displays only the input character count to help identify failed
+paste operations. Outer straight quotes and surrounding whitespace are
+accepted; command wrappers (`psql`, `DATABASE_URL=`, `jdbc:`) and embedded
+whitespace are rejected before opening a connection.
+
+The URI is not written
 to disk or command history; it exists temporarily in process memory and the
 child Node process environment. The helper restores previous environment
 settings afterward. Do not run with a terminal transcript/recording active,

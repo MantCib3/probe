@@ -4,13 +4,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { createPool, transaction } = require('../lib/billing/db');
+const { hasVerifiedTls } = require('./billing-check');
 
 async function migrate(pool) {
   return transaction(pool, async client => {
     await client.query("SELECT pg_advisory_xact_lock(724196381)");
-    const tls = await client.query(`SELECT ssl,current_setting('server_version_num')::integer AS version
-      FROM pg_stat_ssl WHERE pid=pg_backend_pid()`);
-    if (!tls.rows[0]?.ssl || tls.rows[0].version < 140000) throw new Error('Verified database TLS and PostgreSQL 14+ required.');
+    const version = await client.query("SELECT current_setting('server_version_num')::integer AS version");
+    if (!hasVerifiedTls(client) || version.rows[0]?.version < 140000) throw new Error('Verified database TLS and PostgreSQL 14+ required.');
     await client.query('CREATE SCHEMA IF NOT EXISTS probe_billing');
     await client.query('REVOKE ALL ON SCHEMA probe_billing FROM PUBLIC');
     await client.query(`CREATE TABLE IF NOT EXISTS probe_billing.migrations

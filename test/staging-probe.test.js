@@ -60,6 +60,25 @@ test('health exposes fingerprints and commit only after authentication', async (
   assert.equal(fixture.calls(), 0);
 });
 
+test('billing health requires authentication, is bounded and reports failures explicitly', async () => {
+  let checks = 0;
+  const fixture = setup({ billingHealth: async () => { checks++; return { tls: true, readOnly: true }; } });
+  const route = '/api/staging-billing-health';
+  assert.equal((await fixture.request({ route, method: 'GET', authorization: '' })).status, 401);
+  assert.equal(checks, 0);
+  assert.equal((await fixture.request({ route })).status, 405);
+  const result = await fixture.request({ route, method: 'GET' });
+  assert.equal(result.status, 200);
+  assert.equal(result.payload.database.readOnly, true);
+  assert.equal((await fixture.request({ route, method: 'GET' })).status, 429);
+  assert.equal(checks, 1);
+  const failed = setup({ billingHealth: async () => { throw new Error('private connection details'); } });
+  const failure = await failed.request({ route, method: 'GET' });
+  assert.equal(failure.status, 503);
+  assert.equal(JSON.stringify(failure.payload).includes('private connection details'), false);
+  assert.equal((await setup().request({ route, method: 'GET' })).status, 404);
+});
+
 test('invalid JSON, arbitrary URLs, manual sources and invalid usernames are rejected', async () => {
   const fixture = setup();
   for (const body of ['null', '{', '{"site":"https://example.com","username":"alice"}', '{"site":"Manual","username":"alice"}', '{"site":"Example","username":"a/b"}']) {

@@ -2,12 +2,21 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { checkDatabase, connectionOptions, validateEnvironment } = require('../scripts/billing-check');
+const { checkDatabase, connectionOptions, validateEnvironment, safeDatabaseError, hasVerifiedTls } = require('../scripts/billing-check');
 
 const env = () => ({
   PROBE_STAGING: '1', PAID_INFRA_ENABLED: '0',
   DATABASE_URL: 'postgresql://postgres.project:example%21@pooler.example.test:5432/postgres',
   STRIPE_SECRET_KEY: 'sk_test_example', ZYTE_API_KEY: 'example',
+});
+
+test('operator diagnostics identify failures without echoing connection credentials', () => {
+  assert.match(safeDatabaseError({ code: '28P01', message: 'secret-password' }), /authentication failed/);
+  assert.match(safeDatabaseError({ code: 'SELF_SIGNED_CERT_IN_CHAIN', message: 'secret-host' }), /official Supabase CA/);
+  assert.match(safeDatabaseError({ code: '3F000' }), /which service/);
+  assert.equal(safeDatabaseError(new Error('secret-password')).includes('secret-password'), false);
+  assert.throws(() => connectionOptions({ DATABASE_URL: 'my-password-only' }), /connection URI/);
+  assert.throws(() => connectionOptions({ DATABASE_URL: 'postgresql://u:%5BYOUR-PASSWORD%5D@host/db' }), /placeholder/);
 });
 
 test('readiness refuses production, live keys, missing secrets and activation', () => {
@@ -17,6 +26,29 @@ test('readiness refuses production, live keys, missing secrets and activation', 
     assert.throws(() => validateEnvironment({ ...env(), ...patch }));
   }
   assert.equal(validateEnvironment(env()).max, 1);
+});
+
+test('pasted connection formatting is handled without exposing the input', () => {
+  const uri = 'postgresql://fixture:example-password@pooler.example.test:5432/postgres';
+  const expected = connectionOptions({ DATABASE_URL: uri }).connectionString;
+  for (const value of [` ${uri}\r\n`, `"${uri}"`, `'${uri}'`]) {
+    assert.equal(connectionOptions({ DATABASE_URL: value }).connectionString, expected);
+  }
+  for (const value of ['*', 'example-password', `DATABASE_URL=${uri}`, `psql "${uri}"`,
+    `jdbc:${uri}`, uri.replace('example-password', 'secret password'),
+    uri.replace(':5432', ':not-a-port')]) {
+    assert.throws(() => connectionOptions({ DATABASE_URL: value }), error =>
+      !error.message.includes('example-password') && !error.message.includes('secret password') &&
+      error.message.startsWith('DATABASE_URL '));
+  }
+});
+
+test('client TLS requires encryption and certificate authorization regardless of backend TLS', () => {
+  assert.equal(hasVerifiedTls({ connection: { stream: { encrypted: true, authorized: true } } }), true);
+  for (const stream of [{ encrypted: true, authorized: false }, { encrypted: false, authorized: true }, {}]) {
+    assert.equal(hasVerifiedTls({ connection: { stream } }), false);
+  }
+  assert.equal(hasVerifiedTls({}), false);
 });
 
 test('connection uses session pooler with mandatory verified TLS and bounded timeouts', () => {
@@ -38,6 +70,7 @@ test('database check uses only a read-only transaction and releases the connecti
   let released = false;
   const pool = { async connect() {
     return {
+      connection: { stream: { encrypted: true, authorized: true } },
       async query(sql) {
         queries.push(sql);
         return { rows: [{ version: 170000, read_only: true, tls: true }] };
@@ -56,7 +89,8 @@ test('insecure or failed database checks fail explicitly and release connections
     { version: 170000, read_only: true, tls: false }, { version: 170000, read_only: false, tls: true }]) {
     let released = false;
     await assert.rejects(checkDatabase({ async connect() {
-      return { async query() { return { rows: [row] }; }, release() { released = true; } };
+      return { connection: { stream: { encrypted: row.tls, authorized: row.tls } },
+        async query() { return { rows: [row] }; }, release() { released = true; } };
     } }), /requires/);
     assert.equal(released, true);
   }
