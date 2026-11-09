@@ -19,9 +19,10 @@ authoritative usage reconciliation and daily/threshold test collection. The
 optional panel beside the free search is off by default; paid results stay
 separate and never overwrite free evidence.
 
-**No provider trial, payment, database migration, remote connection, deployment,
-commit or push has been performed by implementing this code.** Render secrets
-are not locally available. Rates remain unmeasured. Keep `PAID_INFRA_ENABLED=0`
+The private schema has been migrated on staging and the deployed read-only
+connection check has passed with verified client TLS. No provider trial or
+payment has been performed. Render secrets are not locally available.
+Rates remain unmeasured. Keep `PAID_INFRA_ENABLED=0`
 and `PAID_WORKER_ENABLED=0`. This is not an approved production money path.
 `PAID_MONEY_PATH_VERIFIED` is an additional unresolved acceptance gate, not a
 default activation. A missing/invalid setting locks setup, execution and payment
@@ -92,6 +93,23 @@ dedicated **local TLS PostgreSQL**. To run it, privately set
 refuses remote hosts, uses migrations twice and deletes only its UUID-owned
 fixtures. It leaves the test schema/migration history for repeatability.
 Mock SQL/unit assertions do **not** prove Postgres concurrency safety.
+
+When local PostgreSQL and Render Shell are unavailable, an authorized operator
+can run the same accounting fixtures through
+`POST /api/staging-billing-accounting` using the existing staging Bearer key
+and exactly `{"confirmation":"uuid-owned-accounting-fixtures-v1"}`.
+Unlike the health check, this **writes temporary ledger fixtures**. It requires
+the exact staging service, `PAID_INFRA_ENABLED=0`, `PAID_WORKER_ENABLED=0`,
+`PAID_MONEY_PATH_VERIFIED=0`, verified TLS and an already-migrated **empty guest
+ledger**. A database session advisory lock excludes concurrent fixture runs
+across app instances; HTTP calls are also limited to one per five minutes.
+It does not migrate, change settings, send provider requests or call Stripe.
+Cleanup targets only this invocation's UUID-owned records, and cleanup failure
+is an explicit failed check. An interrupted run can leave fixtures behind;
+subsequent runs refuse to proceed rather than deleting unfamiliar records.
+This proves real database accounting behavior with simulated payment/provider
+objects, **not** Stripe webhook signatures or supplier invoice linkage.
+
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 
 ```powershell

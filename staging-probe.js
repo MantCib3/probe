@@ -58,6 +58,8 @@ function createStagingHandler(options) {
   let windowStarted = Date.now();
   let billingHealthActive = false;
   let billingHealthNext = 0;
+  let billingAccountingActive = false;
+  let billingAccountingNext = 0;
 
   return async function handleStaging(pathname, req, res) {
     const send = (status, payload, headers = {}) => {
@@ -90,6 +92,37 @@ function createStagingHandler(options) {
         return send(503, { ok: false, error: 'Database readiness check failed. Check staging database and CA settings.' });
       } finally {
         billingHealthActive = false;
+      }
+    }
+    if (pathname === '/api/staging-billing-accounting') {
+      if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });
+      if (!options.billingAccounting) return send(404, { ok: false, error: 'Not found.' });
+      if (billingAccountingActive || Date.now() < billingAccountingNext) {
+        return send(429, { ok: false, error: 'Accounting check rate limited.' }, { 'Retry-After': '300' });
+      }
+      billingAccountingActive = true;
+      try {
+        let input;
+        try {
+          req.setTimeout(5000, () => req.destroy());
+          input = JSON.parse(await readBody(req, 256));
+        } catch (error) {
+          const tooLarge = error.code === 'BODY_TOO_LARGE';
+          return send(tooLarge ? 413 : 400, { ok: false, error: 'Invalid bounded accounting confirmation.' });
+        } finally {
+          req.setTimeout(0);
+        }
+        if (!input || input.confirmation !== 'uuid-owned-accounting-fixtures-v1' ||
+            Object.keys(input).length !== 1) {
+          return send(400, { ok: false, error: 'Explicit accounting fixture confirmation required.' });
+        }
+        billingAccountingNext = Date.now() + 300000;
+        return send(200, { ok: true, accounting: await options.billingAccounting() });
+      } catch (_) {
+        console.error('[staging-billing-accounting] accounting verification or fixture cleanup failed; details withheld.');
+        return send(503, { ok: false, error: 'Accounting verification failed. Check disabled gates, empty guest ledger, database and CA settings.' });
+      } finally {
+        billingAccountingActive = false;
       }
     }
     if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });

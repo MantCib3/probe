@@ -41,6 +41,7 @@ test('static routes expose only required frontend bundles, not source scripts or
     '/server.js', '/worker.js', '/build-assets.js', '/source-request-adapter.js',
     '/script.min.js.map', '/test/card-rendering.test.js',
     '/migrations/billing/001-private-ledger.sql', '/billing-private/rates.json',
+    '/scripts/billing-accounting-check.js',
   ]) {
     for (const method of ['GET', 'HEAD']) {
       const response = await fetch(`${origin}${route}`, { method });

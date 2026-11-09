@@ -87,6 +87,44 @@ test('invalid JSON, arbitrary URLs, manual sources and invalid usernames are rej
   assert.equal(fixture.calls(), 0);
 });
 
+test('accounting writes require authentication, POST, explicit confirmation and a bounded body', async () => {
+  let checks = 0;
+  const fixture = setup({ billingAccounting: async () => { checks++; return { fixtureWrites: true, fixturesRemoved: true }; } });
+  const route = '/api/staging-billing-accounting';
+  const body = '{"confirmation":"uuid-owned-accounting-fixtures-v1"}';
+  assert.equal((await fixture.request({ route, body, authorization: '' })).status, 401);
+  assert.equal((await fixture.request({ route, body, method: 'GET' })).status, 405);
+  for (const invalid of ['null', '{', '[]', '{}', '{"confirmation":"other"}',
+    '{"confirmation":"uuid-owned-accounting-fixtures-v1","url":"https://example.com"}']) {
+    assert.equal((await fixture.request({ route, body: invalid })).status, 400);
+  }
+  assert.equal(checks, 0);
+  assert.equal((await fixture.request({ route, body })).status, 200);
+  assert.equal((await fixture.request({ route, body })).status, 429);
+  assert.equal(checks, 1);
+  assert.equal((await setup().request({ route, body })).status, 404);
+  const large = setup({ billingAccounting: async () => { checks++; },
+    readBody: async () => { throw Object.assign(new Error('large'), { code: 'BODY_TOO_LARGE' }); } });
+  assert.equal((await large.request({ route, body })).status, 413);
+  assert.equal(checks, 1);
+});
+
+test('accounting checks exclude concurrent invocations and report cleanup failures without secrets', async () => {
+  let finish;
+  const route = '/api/staging-billing-accounting';
+  const body = '{"confirmation":"uuid-owned-accounting-fixtures-v1"}';
+  const fixture = setup({ billingAccounting: () => new Promise(resolve => { finish = resolve; }) });
+  const first = fixture.request({ route, body });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal((await fixture.request({ route, body })).status, 429);
+  finish({ fixturesRemoved: true });
+  assert.equal((await first).status, 200);
+  const failed = setup({ billingAccounting: async () => { throw new Error('private connection details'); } });
+  const result = await failed.request({ route, body });
+  assert.equal(result.status, 503);
+  assert.equal(JSON.stringify(result.payload).includes('private connection details'), false);
+});
+
 test('oversized bodies are rejected explicitly', async () => {
   const fixture = setup({ readBody: async () => { throw Object.assign(new Error('large'), { code: 'BODY_TOO_LARGE' }); } });
   assert.equal((await fixture.request()).status, 413);

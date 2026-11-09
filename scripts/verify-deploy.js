@@ -49,7 +49,11 @@ const get = (route, init = {}) => fetch(new URL(route, origin), { signal: AbortS
     if (status !== 200) failures.push(`${route} HTTP ${status}, expected 200`);
   }
   // Without the staging key, staging routes must never answer successfully.
-  if ((await get('/api/staging-health')).status === 200) failures.push('/api/staging-health answered without authentication');
+  for (const route of ['/api/staging-health', '/api/staging-billing-health', '/api/staging-billing-accounting']) {
+    const method = route.endsWith('-accounting') ? 'POST' : 'GET';
+    const status = (await get(route, { method })).status;
+    if (![401, 404].includes(status)) failures.push(`${route} HTTP ${status} without authentication, expected 401/404`);
+  }
 
   console.log(JSON.stringify({ origin, commit: identity.commit, node: identity.node, sources: identity.sources, failures }, null, 2));
   if (failures.length) process.exit(1);
