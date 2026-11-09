@@ -81,6 +81,29 @@ dedicated **local TLS PostgreSQL**. To run it, privately set
 refuses remote hosts, uses migrations twice and deletes only its UUID-owned
 fixtures. It leaves the test schema/migration history for repeatability.
 Mock SQL/unit assertions do **not** prove Postgres concurrency safety.
+If Render has no Shell tab, use your own private VS Code PowerShell terminal:
+
+```powershell
+Set-Location C:\dev\probe\probe-staging
+.\scripts\billing-local.ps1 -Action Check
+.\scripts\billing-local.ps1 -Action Migrate
+```
+
+Each invocation prompts for the Supabase staging session-pooler URI with
+hidden input (password placeholder replaced privately). The URI is not written
+to disk or command history; it exists temporarily in process memory and the
+child Node process environment. The helper restores previous environment
+settings afterward. Do not run with a terminal transcript/recording active,
+and clear the credential from your clipboard after pasting. No Stripe or Zyte
+keys are needed for these commands, and neither service is contacted.
+`Migrate` requires explicit project-name confirmation and a successful
+read-only TLS connection check before writing tables. This confirmation cannot
+verify project identity: use the URI from `probe-billing-staging`, not production.
+If Node requires Supabase's official CA chain, pass
+`-CaCertificatePath C:\private\supabase-ca.crt`; never disable TLS verification.
+These operator commands verify connectivity/migrations, not accounting
+concurrency or payment acceptance. Share sanitized status only, never the URI.
+
 `npm run billing:check` remains a separate, operator-authorized read-only
 remote readiness check: it verifies DB TLS without Stripe/Zyte requests or
 migrations. Its `billingImplemented` flag describes code presence, not
