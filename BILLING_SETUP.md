@@ -400,6 +400,16 @@ authoritative Zyte usage evidence. An immediate HTTP 200/request reference or
 echoed attempt ID never substitutes for invoice evidence. Missing reference
 linkage blocks customer-billing activation.
 
+Observed trial on 2026-11-09 at 07:30 UTC: exactly four Zyte HTTP requests,
+no retries. HackerOne `born2hack` and Tellonym `jane` returned target HTTP 200
+and classified `found`; the missing control returned target HTTP 404 and
+classified `not_found` on both. All four supplier responses were HTTP 200
+with persisted supplier request references and matching attempt echoes.
+No customer debt, Stripe calls or public activation occurred.
+The trial demonstrates these two sources' positive/negative contrast, **not**
+broader challenged/manual-source support, measured prices or invoice matching.
+Authoritative per-request supplier cost and reconciliation remain pending.
+
 Only after measurement, acceptance verification and separate execution
 authorization, set the gates explicitly, enable reconciliation, then run the
 worker in a **separate controlled process**:
