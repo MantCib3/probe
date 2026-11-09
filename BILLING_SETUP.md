@@ -153,6 +153,14 @@ until explicit cleanup after testing. An uncertain setup is not blindly
 re-created. Hosted setup and signed delivery do **not** prove payment recovery
 or provider billing; `PAID_MONEY_PATH_VERIFIED` must remain `0`.
 
+The current Stripe Checkout API no longer accepts `payment_method_types` on
+session creation. Setup instead uses a dedicated test-only payment method
+configuration named `PROBE sandbox card-only setup v1`, leaving the account's
+default configuration unchanged. The adapter creates it idempotently when
+absent, turns every listed non-card method off, and verifies effective card-only
+settings before creating Checkout. An altered configuration fails closed.
+PaymentIntent collection still uses its separately supported card restriction.
+
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 
 ```powershell

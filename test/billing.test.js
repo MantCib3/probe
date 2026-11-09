@@ -11,7 +11,7 @@ const { randomUUID } = require('node:crypto');
 const { loadConfig, CONSENT_VERSION, CONSENT_TEXT } = require('../lib/billing/config');
 const { transaction } = require('../lib/billing/db');
 const { Store, reserveAllowed, centsForDebt } = require('../lib/billing/store');
-const { startSetup, processWebhook, collect, createStripe, assertAustralianAccount, checkSandboxConfiguration } = require('../lib/billing/stripe');
+const { startSetup, processWebhook, collect, createStripe, assertAustralianAccount, checkSandboxConfiguration, cardOnlyConfiguration } = require('../lib/billing/stripe');
 const { execute, targetFor, classifyResponse } = require('../lib/billing/zyte');
 const { createBillingHandler, COOKIE, csrfFor, hash, readRaw } = require('../lib/routes/billing');
 const { tick } = require('../scripts/billing-worker');
@@ -24,6 +24,11 @@ const config = { staging: true, enabled: true, origin: 'https://staging.example.
 const site = { name: 'Fixture', category: 'developer', url: 'https://example.com/{}',
   checkMethod: 'message', positiveMsg: 'profile-marker', errorMsg: 'user not found' };
 const accounts = { async retrieve() { return { country: 'AU', default_currency: 'aud' }; } };
+const paymentMethodConfigurations = { async list() {
+  return { has_more: false, data: [{ id: 'pmc_fixture', name: 'PROBE sandbox card-only setup v1',
+    active: true, livemode: false, card: { available: true, display_preference: { value: 'on' } },
+    link: { display_preference: { value: 'off' } } }] };
+} };
 const guest = () => ({ id: randomUUID(), state: 'active', customer_id: 'cus_fixture',
   payment_method_id: 'pm_fixture', consent_version: CONSENT_VERSION, terms_hash: config.termsHash,
   consent_at: new Date(), expires_at: new Date(Date.now() + 3600000),
@@ -163,11 +168,14 @@ test('hosted setup creation uses durable ownership metadata and distinct idempot
   };
   const stripe = {
     accounts,
+    paymentMethodConfigurations,
     customers: { async create(params, opts) { calls.push({ params, opts }); return { id: 'cus_fixture' }; } },
     checkout: { sessions: { async create(params, opts) {
       calls.push({ params, opts });
       assert.equal(params.mode, 'setup');
       assert.equal(params.currency, 'aud');
+      assert.equal(params.payment_method_configuration, 'pmc_fixture');
+      assert.equal(Object.hasOwn(params, 'payment_method_types'), false);
       assert.equal(params.customer, 'cus_fixture');
       assert.equal(params.setup_intent_data.metadata.probe_setup, setup.id);
       assert.equal(params.success_url.includes('?'), false);
@@ -184,7 +192,7 @@ test('uncertain setup is persisted rather than silently re-created', async () =>
   let uncertain = 0;
   const store = { async prepareSetup() { return { id: randomUUID(), state: 'creating', customer_id: 'cus_fixture' }; },
     async setupUncertain() { uncertain++; } };
-  await assert.rejects(startSetup(store, { accounts, checkout: { sessions: { async create() { throw new Error('network'); } } } },
+  await assert.rejects(startSetup(store, { accounts, paymentMethodConfigurations, checkout: { sessions: { async create() { throw new Error('network'); } } } },
     randomUUID(), config), /setup_uncertain/);
   assert.equal(uncertain, 1);
 });
@@ -210,6 +218,34 @@ test('sandbox readiness retrieves only AU/AUD configuration and never exposes id
   await assert.rejects(checkSandboxConfiguration({ accounts: { async retrieve() {
     return { country: 'US', default_currency: 'usd' };
   } } }, {}), /australian_aud_account_required/);
+});
+test('current Checkout uses a verified dedicated card-only configuration, not removed payment_method_types', async () => {
+  assert.equal(await cardOnlyConfiguration({ paymentMethodConfigurations }), 'pmc_fixture');
+  let created;
+  const defaults = { id: 'pmc_default', is_default: true, livemode: false,
+    card: { available: true, display_preference: { value: 'on' } },
+    link: { available: true, display_preference: { value: 'on' } } };
+  const api = { async list() { return { data: [defaults], has_more: false }; },
+    async create(params, opts) {
+      created = { params, opts };
+      return { ...defaults, id: 'pmc_new', active: true, name: params.name,
+        link: { available: true, display_preference: { value: 'off' } } };
+    } };
+  assert.equal(await cardOnlyConfiguration({ paymentMethodConfigurations: api }), 'pmc_new');
+  assert.equal(created.params.card.display_preference.preference, 'on');
+  assert.equal(created.params.link.display_preference.preference, 'off');
+  assert.equal(created.opts.idempotencyKey, 'probe-sandbox-card-only-setup-config-v1');
+  for (const override of [{ active: false }, { livemode: true },
+    { link: { display_preference: { value: 'on' } } }]) {
+    const base = (await paymentMethodConfigurations.list()).data[0];
+    const invalid = { ...base, ...override };
+    await assert.rejects(cardOnlyConfiguration({ paymentMethodConfigurations: {
+      async list() { return { data: [invalid], has_more: false }; },
+    } }), /card_configuration_required/);
+  }
+  await assert.rejects(cardOnlyConfiguration({ paymentMethodConfigurations: {
+    async list() { return { data: [], has_more: true }; },
+  } }), /payment_configuration_operator_review/);
 });
 test('webhook consumes signed raw bytes; invalid signatures and live events never authorize', async t => {
   const sdk = new Stripe('sk_test_fixture');
