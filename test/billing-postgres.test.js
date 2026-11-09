@@ -56,6 +56,8 @@ test('real local PostgreSQL: cap race, durable recovery, reconciliation and webh
     const result = await checkAccounting(pool);
     assert.equal(result.checks.length, 17);
     assert.equal(result.fixturesRemoved, true);
+    assert.equal(result.database.readOnly, true);
+    assert.equal(result.readOnly, undefined);
   } finally {
     await pool.end();
   }

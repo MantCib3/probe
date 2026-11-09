@@ -125,6 +125,27 @@ test('accounting checks exclude concurrent invocations and report cleanup failur
   assert.equal(JSON.stringify(result.payload).includes('private connection details'), false);
 });
 
+test('Stripe readiness requires authentication and shares the bounded database readiness budget', async () => {
+  let checks = 0;
+  const fixture = setup({ stripeHealth: async () => { checks++; return { mode: 'test', paymentRequests: 0 }; },
+    billingHealth: async () => { throw new Error('Shared budget should prevent this call.'); } });
+  const route = '/api/staging-billing-stripe-health';
+  assert.equal((await fixture.request({ route, method: 'GET', authorization: '' })).status, 401);
+  assert.equal((await fixture.request({ route })).status, 405);
+  assert.equal(checks, 0);
+  const response = await fixture.request({ route, method: 'GET' });
+  assert.equal(response.status, 200);
+  assert.equal(response.payload.stripe.mode, 'test');
+  assert.equal((await fixture.request({ route: '/api/staging-billing-health', method: 'GET' })).status, 429);
+  assert.equal((await fixture.request({ route, method: 'GET' })).status, 429);
+  assert.equal(checks, 1);
+  assert.equal((await setup().request({ route, method: 'GET' })).status, 404);
+  const failed = setup({ stripeHealth: async () => { throw new Error('private account details'); } });
+  const failure = await failed.request({ route, method: 'GET' });
+  assert.equal(failure.status, 503);
+  assert.equal(JSON.stringify(failure.payload).includes('private account details'), false);
+});
+
 test('oversized bodies are rejected explicitly', async () => {
   const fixture = setup({ readBody: async () => { throw Object.assign(new Error('large'), { code: 'BODY_TOO_LARGE' }); } });
   assert.equal((await fixture.request()).status, 413);

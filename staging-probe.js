@@ -77,19 +77,23 @@ function createStagingHandler(options) {
       if (req.method !== 'GET') return send(405, { ok: false, error: 'GET required.' }, { Allow: 'GET' });
       return send(200, { ok: true, runtimeFingerprint, deployment: options.deployment, credentialsConfigured: options.credentialsConfigured || {} });
     }
-    if (pathname === '/api/staging-billing-health') {
+    if (['/api/staging-billing-health', '/api/staging-billing-stripe-health'].includes(pathname)) {
+      const stripeCheck = pathname === '/api/staging-billing-stripe-health';
+      const check = stripeCheck ? options.stripeHealth : options.billingHealth;
       if (req.method !== 'GET') return send(405, { ok: false, error: 'GET required.' }, { Allow: 'GET' });
-      if (!options.billingHealth) return send(404, { ok: false, error: 'Not found.' });
+      if (!check) return send(404, { ok: false, error: 'Not found.' });
       if (billingHealthActive || Date.now() < billingHealthNext) {
-        return send(429, { ok: false, error: 'Database check rate limited.' }, { 'Retry-After': '30' });
+        return send(429, { ok: false, error: 'Readiness check rate limited.' }, { 'Retry-After': '30' });
       }
       billingHealthActive = true;
       billingHealthNext = Date.now() + 30000;
       try {
-        return send(200, { ok: true, database: await options.billingHealth() });
+        return send(200, { ok: true, [stripeCheck ? 'stripe' : 'database']: await check() });
       } catch (_) {
-        console.error('[staging-billing-health] read-only database verification failed; details withheld.');
-        return send(503, { ok: false, error: 'Database readiness check failed. Check staging database and CA settings.' });
+        console.error(`[staging-billing-health] ${stripeCheck ? 'Stripe sandbox' : 'read-only database'} verification failed; details withheld.`);
+        return send(503, { ok: false, error: stripeCheck ?
+          'Stripe sandbox readiness failed. Check staging test key and AU/AUD account settings.' :
+          'Database readiness check failed. Check staging database and CA settings.' });
       } finally {
         billingHealthActive = false;
       }

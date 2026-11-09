@@ -24,7 +24,7 @@ async function checkAccounting(pool) {
     // Global worker claims/recovery are safe only in an unused, disabled staging ledger.
     const existing = await guard.query('SELECT EXISTS(SELECT 1 FROM probe_billing.guests) AS populated');
     if (existing.rows[0].populated) throw new Error('Accounting check requires an empty guest ledger.');
-    return { ...database, ...await runFixtures(pool), fixturesRemoved: true };
+    return { database, ...await runFixtures(pool), fixturesRemoved: true };
   } finally {
     try {
       if (locked) await guard.query('SELECT pg_advisory_unlock(724196382)');

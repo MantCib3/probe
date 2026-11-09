@@ -109,6 +109,23 @@ is an explicit failed check. An interrupted run can leave fixtures behind;
 subsequent runs refuse to proceed rather than deleting unfamiliar records.
 This proves real database accounting behavior with simulated payment/provider
 objects, **not** Stripe webhook signatures or supplier invoice linkage.
+The response nests the read-only TLS preflight under `database`; the accounting
+fixtures themselves are writable and are explicitly marked `fixtureWrites`.
+
+On 2026-11-09 UTC, the hosted PostgreSQL 17 check passed all 17 accounting
+checks, including concurrent cap/collection claims, duplicate/out-of-order
+payment events, cent remainders, recovery without redispatch, absorbed defects/
+unknown outcomes, billable inconclusive results and payment-failure suspension.
+UUID-owned fixtures were removed. No Stripe/Zyte requests occurred in that run.
+Keep `PAID_MONEY_PATH_VERIFIED=0`: Stripe and supplier acceptance remain open.
+
+`GET /api/staging-billing-stripe-health`, authenticated with the staging Bearer
+key and the same disabled-spending gates as accounting, performs one Stripe
+account retrieval with the test key to verify AU/AUD configuration. It reports
+only safe configuration flags, not account identity or credentials; it creates
+no customer, setup, payment or database record and calls no supplier. Database
+and Stripe readiness share the 30-second limit. Presence of a webhook secret
+is **not** proof of signature delivery or successful payment acceptance.
 
 If Render has no Shell tab, use your own private VS Code PowerShell terminal:
 
@@ -162,7 +179,7 @@ Before the operator sets `PAID_MONEY_PATH_VERIFIED=1`, require passing real
 PostgreSQL tests and separately authorized Stripe sandbox acceptance (setup,
 off-session authentication/failure, duplicate/out-of-order webhook and unknown
 payment recovery), and approved per-source supplier/redirect/identity/billing
-tests. None of those remote trials are authorized by this implementation task.
+tests. Supplier trials still require separate authorization.
 In particular, supplier browser subrequests and remote DNS resolution cannot
 be fully controlled by the local SSRF guard; browser mode must remain locked
 until supplier-side isolation is approved. Do not open public paid jobs based

@@ -11,7 +11,7 @@ const { randomUUID } = require('node:crypto');
 const { loadConfig, CONSENT_VERSION, CONSENT_TEXT } = require('../lib/billing/config');
 const { transaction } = require('../lib/billing/db');
 const { Store, reserveAllowed, centsForDebt } = require('../lib/billing/store');
-const { startSetup, processWebhook, collect, createStripe, assertAustralianAccount } = require('../lib/billing/stripe');
+const { startSetup, processWebhook, collect, createStripe, assertAustralianAccount, checkSandboxConfiguration } = require('../lib/billing/stripe');
 const { execute, targetFor, classifyResponse } = require('../lib/billing/zyte');
 const { createBillingHandler, COOKIE, csrfFor, hash, readRaw } = require('../lib/routes/billing');
 const { tick } = require('../scripts/billing-worker');
@@ -193,6 +193,23 @@ test('Stripe account must be Australian with AUD settlement before new hosted se
   await assert.rejects(assertAustralianAccount({ accounts: { async retrieve() {
     return { country: 'US', default_currency: 'usd' };
   } } }), /australian_aud_account_required/);
+});
+test('sandbox readiness retrieves only AU/AUD configuration and never exposes identity or secrets', async () => {
+  let calls = 0;
+  const stripe = { accounts: { async retrieve() {
+    calls++;
+    return { country: 'AU', default_currency: 'aud', id: 'acct_private', email: 'private@example.com' };
+  } } };
+  const result = await checkSandboxConfiguration(stripe, { STRIPE_WEBHOOK_SECRET: 'whsec_private' });
+  assert.deepEqual(result, { country: 'AU', currency: 'aud', mode: 'test', webhookSecretConfigured: true,
+    stripeRequests: 1, paymentRequests: 0, providerRequests: 0, acceptanceVerified: false });
+  assert.equal(calls, 1);
+  assert.equal(JSON.stringify(result).includes('private'), false);
+  assert.equal((await checkSandboxConfiguration(stripe, {})).webhookSecretConfigured, false);
+  assert.throws(() => createStripe({ STRIPE_SECRET_KEY: 'sk_live_private' }), /sandbox_key_required/);
+  await assert.rejects(checkSandboxConfiguration({ accounts: { async retrieve() {
+    return { country: 'US', default_currency: 'usd' };
+  } } }, {}), /australian_aud_account_required/);
 });
 test('webhook consumes signed raw bytes; invalid signatures and live events never authorize', async t => {
   const sdk = new Stripe('sk_test_fixture');
