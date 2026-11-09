@@ -744,9 +744,49 @@ reservation/credit limits and absorb PROBE errors and duplicate attempts.
 This decision does not authorize further supplier requests or public paid
 activation.
 
+#### Confirmed four-request USD batch
+
+On 2026-11-09 the operator supplied the dashboard records below and explicitly
+confirmed that **USD 0.000532 covers exactly these four requests**, not a
+larger reporting window. This is operator-confirmed aggregate supplier evidence,
+not an independently retrieved invoice or four full-precision individual costs.
+All four requested `httpResponseBody`, `httpResponseHeaders` and
+`customHttpRequestHeaders`; no browser/residential pricing is established.
+
+| UTC timestamp (2026-11-09) | Supplier request ID | Target | Zyte / target status | Displayed USD row cost |
+| --- | --- | --- | --- | --- |
+| 07:30:05.507000 | `307b39bbb3f8418bf271a8d7d81ce4c1` | `hackerone.com/born2hack` | 200 / 200 | 0.0001 |
+| 07:30:07.846000 | `089c9a46b30de316fb9426f948276a6c` | `hackerone.com/prbad7f0291ab` | 200 / 404 | 0.0001 |
+| 07:30:09.559000 | `e1a7b966f0f33e8db8c101942f149779` | `tellonym.me/jane` | 200 / 200 | 0.0001 |
+| 07:30:14.204000 | `dad53365fffa63076d291e50d0edf2f6` | `tellonym.me/prbad7f0291ab` | 200 / 404 | 0.0001 |
+
+The batch totals **532 USD millionths**. Equal allocation is **133 USD
+millionths (USD 0.000133) per request**, or USD 0.133 per 1,000 at this observed
+batch average. The four displayed rows sum to USD 0.000400, which understates
+the confirmed aggregate by USD 0.000132; do not ingest that displayed sum.
+Both missing-profile controls are included in the billable batch despite
+target 404s.
+
+Timestamps and request IDs identify the members of this batch. Durations are
+not a verified price formula, and a single aggregate cannot establish unequal
+individual costs. Equal allocation is a planning/validation estimate only.
+It is not evidence that all sites share a rate or that this batch predicts
+future costs. No new supplier requests are needed for this calculation.
+
+The customer ledger uses **AUD**, so these USD millionths must never be passed
+directly as `supplierMicros` to `billing:reconcile`. The controls have no
+identified customer job ownership, and allocating an aggregate across customers
+would require an explicitly approved policy. This evidence therefore does not
+alter customer debt, reservations or enable paid execution. Before customer
+reconciliation, document the USD-to-AUD conversion source/date, applicable fees,
+rounding/remainder handling and whether supplier credits/discounts change the
+cost basis. Until individual evidence or an approved allocation policy exists,
+retain the current fail-closed customer reconciliation path.
+
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
-per request on average). Currency, transport assumptions and actual per-request
-costs are not verified; use this for planning, not customer ledger ingestion.
+per request on average). Its currency and transport assumptions remain
+unverified independently of the confirmed USD batch above; use the calculator
+for planning, not customer ledger ingestion.
 
 Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
 paths passed. Four authorized Zyte HTTP controls also passed with supplier
