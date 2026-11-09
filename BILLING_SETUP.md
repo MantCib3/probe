@@ -565,8 +565,8 @@ verified database TLS, a bounded body and the existing bearer. It applies
 checksum-verified migrations and runs eight UUID-owned synthetic SQL checks,
 then removes/verifies only those fixtures. Existing acceptance guests are
 preserved. It makes zero Stripe or supplier requests. It does **not** prove a
-real hosted recovery checkout/authentication; that sandbox acceptance remains
-required before activation.
+real hosted recovery checkout/authentication by itself; the separate observed
+hosted payment acceptance is recorded below.
 
 Hosted verification on 2026-11-09 passed **8/8 real PostgreSQL 17 recovery
 checks**, with verified client TLS and both migrations present. UUID-owned
@@ -593,6 +593,20 @@ still apply. Signed success leaves spending paused; the separate operator
 resume action exercises the normal resume guard with cap zero, never public
 paid execution. Status reports safe state/counts only. No supplier calls occur.
 
+On 2026-11-09 the operator completed the real Stripe-hosted recovery checkout
+after receiving Stripe's documented 3DS-required test card instructions
+(`4000000000003220`). The signed `payment_intent.succeeded` notification triggered
+authoritative Checkout/PaymentIntent/card retrieval and confirmed recovery.
+The returned acceptance status proved collection `succeeded`, debt zero,
+paid AUD 1.00 and exactly one payment ledger entry, with one signed payment
+event. The guest remained `action_required`: payment did not resume spending.
+The separate explicit resume action then succeeded, preserving cap zero,
+debt zero and the single ledger entry. Public paid config was verified disabled.
+No supplier requests or real funds were involved. Checkout event count was
+zero at verification; the signed payment-event recovery path was sufficient.
+These safe status checks do not independently expose/verify the card's 3DS
+authentication details or prove standalone card-replacement checkout acceptance.
+
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Currency, transport assumptions and actual per-request
 costs are not verified; use this for planning, not customer ledger ingestion.
@@ -601,9 +615,10 @@ Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
 paths passed. Four authorized Zyte HTTP controls also passed with supplier
 references. Remaining blockers: automated authoritative per-request cost
 ingestion (including precision/currency/FX policy), approved paid-source
-detection/transport, browser-side supplier isolation and actual hosted recovery
-checkout/authentication acceptance (plus small-debt/expired-session operator
-resolution). The recovery implementation alone is not payment acceptance.
+detection/transport, browser-side supplier isolation, standalone card-replacement
+checkout acceptance and small-debt/expired-session operator resolution.
+Hosted recovery payment and explicit resume have now passed sandbox acceptance;
+live activation and remaining launch gates are still separate.
 Therefore public paid execution remains locked.
 
 The lab's existing `config/paid-tier-hints.json` contains conditional metadata
