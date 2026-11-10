@@ -36,6 +36,12 @@ test routes return 404.
   Requests over those limits return 429 with `Retry-After`.
 - Results are returned with no-store headers. The harness does not persist
   profile fields, usernames, response bodies or authorization headers.
+- Nightly lab view: `POST /api/staging-lab-report` (same bearer key, JSON up to
+  256 KB) stores the lab's nightly summary in the separate `probe_lab` schema of
+  `DATABASE_URL` (kept in memory if the database is unavailable). `GET /lab`
+  shows it behind HTTP Basic auth: any username, password `LAB_VIEW_PASSWORD`.
+  Both return 404 unless `PROBE_STAGING=1` and `LAB_VIEW_PASSWORD` is set.
+  Ten wrong passwords from one address lock it out for 15 minutes.
 - The original `/api/lab-probe` stays disabled in production. Public scans
   still fail closed without a separately configured Turnstile secret.
 

@@ -24,19 +24,6 @@ https://usernameprobe.com/blog/choosing-a-private-username
 Short version:
 Birth years, real names and reused handles link your accounts together. How to choose a username that does not give you away: https://usernameprobe.com/blog/choosing-a-private-username
 
-HONEST BY DEFAULT: WHY PROBE SAYS WHO IT IS
-Image: honest-by-default.png
-
-Every request PROBE sends says who it is.
-
-No browser disguise, no borrowed search-crawler identity, and no workaround when a platform says no. Some sources stay manual on purpose, even when a check would technically work.
-
-What that costs, and why it is worth it:
-https://usernameprobe.com/blog/honest-by-default
-
-Short version:
-PROBE names itself in every request and keeps sources manual when their terms prohibit automated checks. Fewer answers, better evidence: https://usernameprobe.com/blog/honest-by-default
-
 WHAT WE’RE BUILDING NEXT
 Image: what-were-building-next.png
 

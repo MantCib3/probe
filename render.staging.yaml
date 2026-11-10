@@ -22,6 +22,9 @@ services:
       # Set in the dashboard only; never commit values.
       - key: GITHUB_TOKEN
         sync: false
+      # Password for the nightly lab report at /lab (any username).
+      - key: LAB_VIEW_PASSWORD
+        sync: false
       - key: LASTFM_API_KEY
         sync: false
       - key: OSU_API_KEY

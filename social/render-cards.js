@@ -128,14 +128,6 @@ const cards = [
     stats: [['Present', 'LIVE EVIDENCE'], ['Past', 'UNPROVEN ABSENCE']],
   },
   {
-    slug: 'honest-by-default', kicker: 'HOW PROBE WORKS', accent: STYLE.green,
-    title: 'HONEST<br>BY DEFAULT',
-    deck: 'Every request says who it is.<br>Some sources stay manual on purpose.',
-    side: '<div class="panel"><strong class="words">NO<br>MASKS</strong><span>IDENTIFIED REQUESTS</span></div>',
-    foot: 'usernameprobe.com/blog/honest-by-default',
-    stats: [['Named', 'EVERY REQUEST'], ['Terms', 'BEFORE COVERAGE']],
-  },
-  {
     slug: 'what-were-building-next', kicker: 'BUILD IN PUBLIC', accent: STYLE.blue,
     title: 'WHAT WE’RE<br>BUILDING<br>NEXT',
     deck: 'Every unanswered source,<br>mapped to the reason why.',

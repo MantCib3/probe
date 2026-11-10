@@ -35,7 +35,7 @@ const {
 } = require('./lib/routes/page-tools');
 const { handleDorkSearch } = require('./lib/routes/dork-search');
 const { handleNameCheck } = require('./lib/routes/name-check');
-const { handleStaging } = require('./lib/routes/staging');
+const { handleStaging, handleLabView } = require('./lib/routes/staging');
 const { createBillingHandler } = require('./lib/routes/billing');
 const handleBilling = createBillingHandler();
 
@@ -64,6 +64,17 @@ const server = http.createServer((req, res) => {
       if (!res.destroyed && !res.writableEnded) {
         res.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
         res.end(JSON.stringify({ ok: false, error: 'Staging handler failed.' }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/lab' || pathname === '/api/staging-lab-report') {
+    handleLabView(pathname, req, res).catch(error => {
+      console.error(`[lab-view] handler failed (${error.code || error.name || 'Error'})`);
+      if (!res.destroyed && !res.writableEnded) {
+        res.writeHead(500, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
+        res.end('Lab view failed.');
       }
     });
     return;

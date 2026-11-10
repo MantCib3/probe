@@ -434,37 +434,6 @@
     "imageSha256": "6eaab883d9dea028b7f8f4b15c932033aeefae6de8b994e70060ad65726ea7a3"
   },
   {
-    "slug": "honest-by-default",
-    "overflow": [],
-    "headline": {
-      "fontSize": "72px",
-      "fontWeight": "700",
-      "lineHeight": "61.92px"
-    },
-    "deck": {
-      "fontSize": "29px",
-      "fontWeight": "400",
-      "lineHeight": "34.8px"
-    },
-    "kicker": {
-      "fontSize": "20px",
-      "fontWeight": "700",
-      "lineHeight": "normal"
-    },
-    "stats": {
-      "x": 830,
-      "y": 501,
-      "width": 300,
-      "height": 76
-    },
-    "brand": {
-      "x": 1000,
-      "y": 50
-    },
-    "sourceSha256": "155e4bfaf553e01c8744cd7573715a431bf64fd66c9cd3523da01d5cde802287",
-    "imageSha256": "5cbef5326e84e39c822cd138998c5da1d584cddef6dc7aca63941eb8313b1435"
-  },
-  {
     "slug": "what-were-building-next",
     "overflow": [],
     "headline": {
