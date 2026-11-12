@@ -49,7 +49,8 @@ test routes return 404.
 
 Run `node --test test/staging-probe.test.js` for harness regressions.
 CI separates offline regression/embedded SQL, a required Playwright browser
-job, and a dedicated TLS PostgreSQL 17 job. Set `PROBE_REQUIRE_BROWSER=1` or
+job, and a dedicated TLS PostgreSQL 17 job. The browser job pins Ubuntu 24.04,
+supported by the locked Playwright release. Set `PROBE_REQUIRE_BROWSER=1` or
 `PROBE_REQUIRE_POSTGRES=1` to make missing local prerequisites fail rather than
 skip the respective test. Embedded SQL does not certify PostgreSQL
 client/pooler/concurrency behavior. New CI jobs must actually run before they
