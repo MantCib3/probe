@@ -3812,8 +3812,26 @@
     "urlMain": "https://archive.org",
     "category": "misc",
     "checkMethod": "message",
-    "errorMsg": "\"archived_snapshots\": {}",
-    "expectedStatus": 200
+    "expectedStatus": 200,
+    "requestAdapter": {
+      "method": "GET",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "response": {
+        "json": {
+          "positive": {
+            "path": "/archived_snapshots/closest/available",
+            "op": "equals",
+            "value": true
+          },
+          "negative": {
+            "path": "/archived_snapshots",
+            "op": "empty"
+          }
+        }
+      }
+    }
   },
   {
     "name": "freeCodeCamp",

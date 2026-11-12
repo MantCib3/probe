@@ -90,6 +90,53 @@ test('JSON evidence is explicit and conflicting or absent predicates abstain', (
   });
 });
 
+test('Fotolog archive availability requires snapshot evidence, not an echoed username or JSON spacing', () => {
+  const site = require('../sites.json').find(item => item.name === 'Fotolog Archived Profile');
+  validateCatalog([site]);
+  const username = 'x_zudex_x';
+  const url = site.url.replace('{}', username);
+  const cases = [
+    [{ url, archived_snapshots: {} }, 'not_found', 'adapter_json_negative'],
+    [{ url, archived_snapshots: { closest: { available: true, status: '200', url: 'http://web.archive.org/web/20170930080751/http://www.fotolog.com:80/x_zudex_x/' } } }, 'found', 'adapter_json_positive'],
+    [{ url, archived_snapshots: { closest: { available: false } } }, 'unknown', 'adapter_json_inconclusive'],
+    [{ url, archived_snapshots: { closest: { available: 'true' } } }, 'unknown', 'adapter_json_inconclusive'],
+    [{ url, archived_snapshots: null }, 'unknown', 'adapter_json_inconclusive'],
+    [{ url }, 'unknown', 'adapter_json_inconclusive'],
+  ];
+  for (const [payload, status, reason] of cases) {
+    for (const body of [JSON.stringify(payload), JSON.stringify(payload, null, 2)]) {
+      const result = classify(site, username, url, 200, {}, body);
+      assert.equal(result.status, status);
+      assert.deepEqual(result.reasonCodes, [reason]);
+    }
+  }
+  for (const body of ['{"archived_snapshots":', `<html>${username}</html>`]) {
+    const result = classify(site, username, url, 200, {}, body);
+    assert.equal(result.status, 'unknown');
+    assert.deepEqual(result.reasonCodes, ['adapter_json_invalid']);
+  }
+  assert.equal(classify(site, username, url, 403, {}, username).status, 'blocked');
+});
+
+test('Fotolog archive adapter uses the same JSON evidence through the actual probe engine', async t => {
+  const catalogSite = require('../sites.json').find(item => item.name === 'Fotolog Archived Profile');
+  const upstream = http.createServer((request, response) => {
+    assert.equal(request.headers.accept, 'application/json');
+    const username = request.url.slice(1);
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify({ url: `https://www.fotolog.com/${username}`, archived_snapshots:
+      username === 'archived' ? { closest: { available: true, status: '200' } } : {} }));
+  });
+  await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => upstream.close(resolve)));
+  const site = { ...catalogSite, url: `http://127.0.0.1:${upstream.address().port}/{}` };
+  for (const [username, expected] of [['archived', 'found'], ['absent', 'not_found']]) {
+    const result = await probe(site, username);
+    assert.equal(result.status, expected);
+    assert.deepEqual(result.reasonCodes, [expected === 'found' ? 'adapter_json_positive' : 'adapter_json_negative']);
+  }
+});
+
 test('POST adapter sends its reviewed method, headers, username body, and uses JSON evidence', async t => {
   let observed;
   const upstream = http.createServer((req, res) => {
