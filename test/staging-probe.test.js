@@ -34,6 +34,31 @@ function setup(overrides = {}) {
   return { request, calls: () => calls };
 }
 
+test('supplier allocation acceptance requires authentication, POST, bounded input and a configured callback', async () => {
+  const route = '/api/staging-billing-supplier-acceptance';
+  let calls = 0;
+  const fixture = setup({ supplierAcceptance: async input => {
+    calls++;
+    assert.equal(input.action, 'status');
+    return { maximumRequests: 2, paidExecutionEnabled: false };
+  } });
+  assert.equal((await fixture.request({ route, authorization: '' })).status, 401);
+  assert.equal((await fixture.request({ route, method: 'GET' })).status, 405);
+  assert.equal(calls, 0);
+  assert.equal((await fixture.request({ route, body: '{invalid' })).status, 400);
+  const result = await fixture.request({ route, body: '{"action":"status"}' });
+  assert.equal(result.status, 200);
+  assert.equal(result.payload.acceptance.maximumRequests, 2);
+  assert.equal(calls, 1);
+  assert.equal((await setup().request({ route })).status, 404);
+  const oversized = setup({ supplierAcceptance: async () => assert.fail('must not execute'),
+    readBody: async (req, limit) => {
+      assert.equal(limit, 16384);
+      throw Object.assign(new Error('large'), { code: 'BODY_TOO_LARGE' });
+    } });
+  assert.equal((await oversized.request({ route })).status, 413);
+});
+
 test('staging is opt-in and refuses a missing or short key', async () => {
   assert.throws(() => setup({ secret: '' }), /at least 32 bytes/);
   assert.throws(() => setup({ secret: 'short' }), /at least 32 bytes/);

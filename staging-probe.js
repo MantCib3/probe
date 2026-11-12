@@ -101,6 +101,25 @@ function createStagingHandler(options) {
         billingHealthActive = false;
       }
     }
+    if (pathname === '/api/staging-billing-supplier-acceptance') {
+      if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });
+      if (!options.supplierAcceptance) return send(404, { ok: false, error: 'Not found.' });
+      if (supplierTrialActive) return send(429, { ok: false, error: 'Supplier acceptance in progress.' });
+      supplierTrialActive = true;
+      try {
+        let input;
+        try {
+          req.setTimeout(5000, () => req.destroy());
+          input = JSON.parse(await readBody(req, 16384));
+        } catch (error) {
+          return send(error.code === 'BODY_TOO_LARGE' ? 413 : 400, { ok: false, error: 'Invalid bounded supplier acceptance input.' });
+        } finally { req.setTimeout(0); }
+        return send(200, { ok: true, acceptance: await options.supplierAcceptance(input) });
+      } catch (error) {
+        console.error('[supplier-acceptance] stopped; inspect durable status before retrying. Details withheld.');
+        return send(error.status || 503, { ok: false, error: error.publicCode || 'Supplier acceptance held for operator review; do not retry requests.' });
+      } finally { supplierTrialActive = false; }
+    }
     if (pathname === '/api/staging-billing-supplier-trial') {
       if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });
       if (!options.supplierTrial) return send(404, { ok: false, error: 'Not found.' });

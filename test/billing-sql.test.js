@@ -11,6 +11,8 @@ const { CONSENT_VERSION } = require('../lib/billing/config');
 const { saveStats } = require('../lib/billing/zyte-stats');
 const { POLICY, saveAllocation } = require('../lib/billing/usage-allocation');
 const { postAllocation } = require('../lib/billing/allocation-posting');
+const { runSupplierAcceptance, CONFIRMATION } = require('../lib/billing/supplier-acceptance');
+const { TERMS_HASH } = require('../lib/billing/acceptance');
 
 const hash = value => createHash('sha256').update(value).digest('hex');
 const pricing = { mode: 'http', ipType: 'automatic',
@@ -23,7 +25,10 @@ test('embedded PostgreSQL executes migration, legacy freeze and exact allocation
     release() {},
     async query(sql, values) {
       const result = await db.query(sql, values);
-      return { rows: result.rows, rowCount: result.affectedRows ?? result.rows.length };
+      const bigints = result.fields.filter(field => field.dataTypeID === 20).map(field => field.name);
+      const rows = result.rows.map(row => Object.fromEntries(Object.entries(row)
+        .map(([key, value]) => [key, bigints.includes(key) && value !== null ? String(value) : value])));
+      return { rows, rowCount: /^\s*SELECT/i.test(sql) ? rows.length : result.affectedRows ?? rows.length };
     },
   };
   const pool = { query: client.query, async connect() { return client; } };
@@ -117,5 +122,69 @@ test('embedded PostgreSQL executes migration, legacy freeze and exact allocation
     const temporary = await new Store(pool).createGuest(hash(randomUUID()), hash(randomUUID()));
     await db.query('DELETE FROM probe_billing.guests WHERE id=$1', [temporary]);
     assert.equal((await db.query('SELECT count(*)::int AS n FROM probe_billing.guests WHERE id=$1', [temporary])).rows[0].n, 0);
+  });
+
+  await t.test('private acceptance dispatches only two owned controls and posts/replays the same batch without Stripe', async () => {
+    const guestId = randomUUID();
+    const env = { PROBE_STAGING: '1', PAID_INFRA_ENABLED: '0', PAID_WORKER_ENABLED: '0',
+      PAID_MONEY_PATH_VERIFIED: '0', PAID_USD_MONEY_PATH_VERIFIED: '0', ZYTE_API_KEY: 'test-only' };
+    const sites = [{ name: 'HackerOne', url: 'https://hackerone.com/{}' }];
+    await db.query(`INSERT INTO probe_billing.guests
+      (id,token_hash,csrf_hash,state,consent_version,terms_hash,consent_at,customer_id,payment_method_id,cap_micros,paid_micros)
+      VALUES($1,$2,$2,'active',$3,$4,now(),'cus_acceptance_fixture','pm_acceptance_fixture',0,1000000)`,
+    [guestId, hash(`probe-stripe-acceptance:${guestId}`), CONSENT_VERSION, TERMS_HASH]);
+    await db.query(`INSERT INTO probe_billing.setups
+      (id,guest_id,state,consent_version,terms_hash,customer_id,checkout_id)
+      VALUES($1,$1,'confirmed',$2,$3,'cus_acceptance_fixture','cs_acceptance_fixture')`,
+    [guestId, CONSENT_VERSION, TERMS_HASH]);
+    await db.query(`INSERT INTO probe_billing.payment_events(id,event_type,object_id)
+      VALUES('evt_acceptance_fixture','checkout.session.completed','cs_acceptance_fixture')`);
+    let calls = 0;
+    const executor = async (job, site, key, fetchImpl, dns, authorize) => {
+      await authorize({ domain: 'hackerone.com', pricing, requestBytes: 123 });
+      await assert.rejects(authorize({ domain: 'hackerone.com', pricing }), /attempt_already_dispatched/);
+      calls++;
+      return { state: 'response', providerStatus: 200, targetStatus: calls === 1 ? 200 : 404,
+        providerRef: String(calls + 10).padStart(32, '0'),
+        result: { status: calls === 1 ? 'found' : 'not_found', reasonCodes: ['test-only'],
+          profile: { mustNotPersist: true } } };
+    };
+    const start = { action: 'start', confirmation: CONFIRMATION, guestId };
+    await assert.rejects(runSupplierAcceptance(pool, sites, { ...env, PAID_WORKER_ENABLED: '1' }, start, executor), /disabled/);
+    await assert.rejects(runSupplierAcceptance(pool, sites, env, { ...start, supplierMicros: 999 }, executor), /confirmation/);
+    const result = await runSupplierAcceptance(pool, sites, env, start, executor);
+    assert.equal(calls, 2);
+    assert.equal(result.requests.length, 2);
+    assert.ok(result.requests.every(request => request.result.profile === undefined));
+    await assert.rejects(runSupplierAcceptance(pool, sites, env, start, executor), /already_started_no_retries/);
+    assert.equal(calls, 2);
+    const postInput = {
+      action: 'post', confirmation: CONFIRMATION,
+      page: { page: 1, page_size: 500, total_result_count: 1, results: [{
+        organization_id: 1053513, domain: 'hackerone.com', request_count: 2,
+        cost_microusd_total: '1', cost_microusd_avg: '0.5', cost_microusd_p80: '0.5',
+        status_codes: [{ code: 200, count: 2 }],
+      }] },
+      manifest: { schemaVersion: 1, policy: POLICY, organizationId: 1053513,
+        startTime: '2026-11-12T02:30:00Z', endTime: '2026-11-12T02:31:00Z',
+        windowMembershipVerified: true, pricingConditionsVerified: true,
+        costBasis: 'pre-credit', costBasisVerified: true, evidenceReference: 'test-only-dashboard-verified',
+        requests: result.requests.map(request => ({ providerReference: request.providerReference, domain: 'hackerone.com',
+          supplierTimestamp: '2026-11-12T02:30:10Z', providerStatus: 200, purpose: 'customer',
+          pricing, currency: 'usd', guestId, jobId: request.jobId, result: request.result.status })),
+      },
+    };
+    await assert.rejects(runSupplierAcceptance(pool, sites, env,
+      { ...postInput, manifest: { ...postInput.manifest, costBasisVerified: false } }), /verified_manifest/);
+    const posted = await runSupplierAcceptance(pool, sites, env, postInput);
+    assert.equal(posted.replayVerified, true);
+    assert.equal(posted.guest.debtMicros, '1');
+    assert.equal(posted.guest.paidMicros, '1000000');
+    assert.equal(posted.guest.reservedMicros, '0');
+    assert.deepEqual(posted.guest.remainder, { numerator: '0', denominator: '1' });
+    const repeated = await runSupplierAcceptance(pool, sites, env, postInput);
+    assert.equal(repeated.posting.duplicate, true);
+    assert.deepEqual(repeated.guest, posted.guest);
+    assert.equal(calls, 2);
   });
 });

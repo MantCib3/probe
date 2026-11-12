@@ -58,7 +58,7 @@ const server = http.createServer((req, res) => {
     console.warn(`[http] ${req.method} ${pathname} ${res.statusCode}${ray ? ` cf-ray=${ray}` : ''}`);
   });
 
-  if (['/api/staging-probe', '/api/staging-health', '/api/staging-billing-health', '/api/staging-billing-accounting', '/api/staging-billing-recovery', '/api/staging-billing-stripe-health', '/api/staging-billing-stripe-setup', '/api/staging-billing-supplier-trial'].includes(pathname)) {
+  if (['/api/staging-probe', '/api/staging-health', '/api/staging-billing-health', '/api/staging-billing-accounting', '/api/staging-billing-recovery', '/api/staging-billing-stripe-health', '/api/staging-billing-stripe-setup', '/api/staging-billing-supplier-trial', '/api/staging-billing-supplier-acceptance'].includes(pathname)) {
     handleStaging(pathname, req, res).catch(error => {
       console.error(`[staging-probe] handler failed (${error.code || error.name || 'Error'})`);
       if (!res.destroyed && !res.writableEnded) {

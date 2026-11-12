@@ -2,20 +2,78 @@
 
 ## Implemented, but locked
 
-**Current USD implementation:** migrations 005 and 006 and the USD application
-changes are local, not deployed or applied to staging. Migration 004 and the
-532-microusd Stats import were applied by the operator. New customer records,
+**Current USD implementation:** the operator reported completing migrations
+005/006, and commit `85b716c` was pushed and verified deployed on staging.
+Migration 004 and the 532-microusd Stats import were applied by the operator. New customer records,
 reservations, ledger amounts, caps and Stripe presentment now use USD.
 Migration 006 labels all existing financial/session records AUD and freezes
 them without conversion; historical AUD Stripe acceptance below is not USD
 acceptance. Use a separate browser profile for fresh USD sessions.
 
 The equal-share policy, pre-credit consent, exact per-guest fractional carry
-and atomic allocation posting are implemented. They remain locked pending
-authorized migration/deployment and fresh USD sandbox acceptance. Keep both
+and atomic allocation posting are implemented. Public execution remains locked
+pending the remaining supplier/customer-batch and launch gates. Keep both
 `PAID_MONEY_PATH_VERIFIED=0` and `PAID_USD_MONEY_PATH_VERIFIED=0`. An old AUD
 verification setting alone cannot enable the new money path. No new supplier
 requests or payments are authorized by these code changes.
+
+### Observed USD sandbox acceptance (2026-11-12 UTC)
+
+The operator separately authorized these test-mode actions after deployment:
+
+| Scenario | Verified result |
+|---|---|
+| Hosted USD card setup | Confirmed, active zero-cap fixture, one signed setup event |
+| Synthetic USD 1.00 success | Succeeded, zero remaining debt, exactly one payment ledger entry and one signed payment event |
+| Decline | `card_declined`, failed collection, USD 1.00 debt retained, zero payment ledger entries, one signed event, spending paused |
+| Authentication required | `authentication_required`, failed collection, USD 1.00 debt retained, zero payment ledger entries, one signed event, spending paused |
+| Lost response | Initially uncertain with no payment entry; signed webhook reconciled the succeeded USD 1.00 test payment, zero debt and exactly one payment entry; spending stayed paused |
+| Hosted USD debt recovery | Existing authentication fixture's USD 1.00 debt settled; recovery confirmed, collection succeeded, zero debt, exactly one payment ledger entry and one signed payment event; guest remained `action_required` |
+| Explicit USD recovery resume | Separately authorized resume changed only the fixture to `active`; zero spending cap, zero debt, USD 1.00 paid and exactly one payment entry were preserved; public execution remained disabled |
+| Hosted USD card replacement | Setup confirmed with one signed setup event and a changed card; zero debt, USD 1.00 paid and exactly one existing payment entry were preserved; guest stayed `action_required`, zero cap and public execution disabled |
+| Explicit USD replacement resume | Separately authorized resume returned the verified fixture to `active`; changed card, zero debt, USD 1.00 paid, exactly one existing payment entry and zero cap were preserved; public execution remained disabled |
+
+Stripe retrieval verified test mode, USD, amount, customer, method and guest
+ownership for all payment scenarios. No real money moved and no supplier
+requests occurred. Public paid execution was independently verified disabled.
+All listed USD Stripe sandbox acceptance paths are now verified, including
+hosted recovery, replacement and their separate explicit resumes. This does
+not verify customer-owned supplier allocation or authorize public paid execution.
+Historical AUD results were not substituted for USD proof. The authentication
+fixture is `7604ef47-7cb3-4d65-8d48-0ca2f879becd`; recover only its existing
+synthetic debt, never create a second payment claim.
+
+### Bounded customer-owned supplier acceptance
+
+The operator authorized one campaign of **two real HTTP requests**, HackerOne
+`born2hack` and missing control `prbad7f0291ab`, no retries/browser, with a
+10,000-microusd (USD 0.01) supplier-share ceiling per request and zero PROBE
+margin. This is a customer-ledger ceiling, **not a hard Zyte account spending
+cap**. Supplier credit can be consumed; over-ceiling evidence stays held.
+
+The private Bearer-authenticated
+`POST /api/staging-billing-supplier-acceptance` endpoint accepts:
+
+- `start`: confirmation `two-http-usd-allocation-no-retries-v1` and the existing
+  signed, zero-cap USD success fixture's `guestId`. The operator-owned fixture
+  accepts the new terms and reserves USD 0.02 for these two requests only.
+  Its lifetime cap includes the previously paid synthetic USD 1.00.
+  Fixed job UUIDs and a database advisory lock prevent restarting the campaign,
+  even after interruption. Production/public worker execution remains disabled.
+- `status`: same confirmation, no guest ID or other parameters. No extraction.
+- `post`: same confirmation, one raw Stats API `page` and operator-verified
+  `manifest`. Exactly two HackerOne requests in organization 1053513 must match
+  the actual jobs, provider references, successful positive/missing outcomes,
+  supplier timestamps, comparable HTTP features and pre-credit cost basis.
+  Dashboard membership/pricing verification is still required: local timestamps
+  or matching counts alone are not substituted for supplier evidence.
+
+Posting reuses the normal Stats import, allocation, ledger/remainder and
+idempotency code, then replays the saved allocation and compares the guest's
+complete status before/after. Both jobs must be settled, reservations zero
+and replay unchanged. It neither contacts Stripe nor makes another supplier
+request. Public execution and both verification switches must stay off.
+An interrupted or uncertain dispatch is held for review, never reissued.
 
 Operators can verify the deployed client-to-pooler TLS connection via
 `GET /api/staging-billing-health` with the existing staging Bearer key.
