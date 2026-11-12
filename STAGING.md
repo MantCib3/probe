@@ -55,6 +55,10 @@ supported by the locked Playwright release. Set `PROBE_REQUIRE_BROWSER=1` or
 skip the respective test. Embedded SQL does not certify PostgreSQL
 client/pooler/concurrency behavior. New CI jobs must actually run before they
 count as verified gates; their presence in this checkout is not a pass.
+Redirect-identity and metadata HTTP fixtures use the production probe deadline,
+not shorter three-to-five-second deadlines that turn slow local scheduling into
+unrelated classification failures. Explicit deadline/cancellation tests remain
+separate; no production request budget is increased by those fixture changes.
 
 Post-deploy verification accepts `--report <new-file.json>` and retains its
 timestamp, expected/observed commit, catalog hash, runtime-code hash, source

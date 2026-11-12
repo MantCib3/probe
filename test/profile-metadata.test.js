@@ -5,6 +5,7 @@ const http = require('node:http');
 const { test } = require('node:test');
 const metadata = require('../profile-metadata');
 const { probeWithDeadline } = require('../server');
+const { PROBE_DEADLINE_MS } = require('../lib/config');
 
 const SITE = { name: 'Example', category: 'test', url: 'https://example.com/u/{}' };
 const ogPage = tags => `<html><head><title>alice</title>${tags}</head><body>alice</body></html>`;
@@ -134,7 +135,7 @@ test('a found result keeps reading past 32 KB to reach profile tags', async t =>
   const site = { name: 'Local', category: 'test', url: `http://127.0.0.1:${port}/u/{}` };
   withHints(t, { Local: { fields: { name: [{ schema: 'open_graph' }], picture: [{ schema: 'open_graph' }] }, headOnly: true, maxBytes: 131072 } });
 
-  const result = await probeWithDeadline(site, 'alice', 5000).promise;
+  const result = await probeWithDeadline(site, 'alice', PROBE_DEADLINE_MS).promise;
   assert.equal(result.status, 'found');
   assert.deepEqual(result.profile, { picture: 'https://cdn.example.com/alice.jpg', name: 'Alice Smith' });
 });
@@ -151,7 +152,7 @@ test('a not-found result never reads past the classification window or gets a pr
   const site = { name: 'Local', category: 'test', url: `http://127.0.0.1:${port}/u/{}` };
   withHints(t, { Local: { fields: { name: [{ schema: 'open_graph' }] }, maxBytes: 524288 } });
 
-  const result = await probeWithDeadline(site, 'alice', 4000).promise;
+  const result = await probeWithDeadline(site, 'alice', PROBE_DEADLINE_MS).promise;
   assert.equal(result.status, 'not_found');
   assert.equal(result.profile, undefined);
   assert.ok(written < 400000, `upstream wrote ${written} bytes before the probe closed`);
@@ -176,7 +177,7 @@ test('a found API check keeps its verdict when the follow-up cannot be used', as
     },
   });
 
-  const result = await probeWithDeadline(site, 'alice', 4000).promise;
+  const result = await probeWithDeadline(site, 'alice', PROBE_DEADLINE_MS).promise;
   assert.equal(result.status, 'found');
   assert.deepEqual(result.profile, { name: 'Alice Smith' });
   assert.equal(followUps, 0, 'plain-http follow-up must be refused');
