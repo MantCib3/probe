@@ -61,12 +61,13 @@ unrelated classification failures. Explicit deadline/cancellation tests remain
 separate; no production request budget is increased by those fixture changes.
 
 Fotolog Archived Profile checks historical Wayback availability, not whether
-an account exists today. Its JSON adapter requires an explicit
-`archived_snapshots.closest.available: true`; an empty `archived_snapshots`
-object means no available snapshot. Missing/malformed fields abstain, and an
-echoed request URL or username is not positive evidence. Reviewed absence
-labels that disagree with a returned historical snapshot need human
-adjudication; do not silently relabel them or clear their campaign alerts.
+an account exists today. An empty `archived_snapshots` object means no
+available snapshot. Nonempty snapshots abstain: even an available HTTP-200
+snapshot can contain a closed/deactivated-account page. The API alone cannot
+prove a profile exists; no positive predicate is configured until snapshot
+contents can be verified. Missing/malformed fields also abstain, and an echoed
+request URL or username is not positive evidence. Reviewed labels and past
+campaign alerts remain unchanged.
 
 Post-deploy verification accepts `--report <new-file.json>` and retains its
 timestamp, expected/observed commit, catalog hash, runtime-code hash, source

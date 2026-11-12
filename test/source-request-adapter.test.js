@@ -90,14 +90,14 @@ test('JSON evidence is explicit and conflicting or absent predicates abstain', (
   });
 });
 
-test('Fotolog archive availability requires snapshot evidence, not an echoed username or JSON spacing', () => {
+test('Fotolog cannot infer a profile from snapshot availability, username reflection or JSON spacing', () => {
   const site = require('../sites.json').find(item => item.name === 'Fotolog Archived Profile');
   validateCatalog([site]);
   const username = 'x_zudex_x';
   const url = site.url.replace('{}', username);
   const cases = [
     [{ url, archived_snapshots: {} }, 'not_found', 'adapter_json_negative'],
-    [{ url, archived_snapshots: { closest: { available: true, status: '200', url: 'http://web.archive.org/web/20170930080751/http://www.fotolog.com:80/x_zudex_x/' } } }, 'found', 'adapter_json_positive'],
+    [{ url, archived_snapshots: { closest: { available: true, status: '200', url: 'http://web.archive.org/web/20170930080751/http://www.fotolog.com:80/x_zudex_x/' } } }, 'unknown', 'adapter_json_inconclusive'],
     [{ url, archived_snapshots: { closest: { available: false } } }, 'unknown', 'adapter_json_inconclusive'],
     [{ url, archived_snapshots: { closest: { available: 'true' } } }, 'unknown', 'adapter_json_inconclusive'],
     [{ url, archived_snapshots: null }, 'unknown', 'adapter_json_inconclusive'],
@@ -130,10 +130,10 @@ test('Fotolog archive adapter uses the same JSON evidence through the actual pro
   await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => upstream.close(resolve)));
   const site = { ...catalogSite, url: `http://127.0.0.1:${upstream.address().port}/{}` };
-  for (const [username, expected] of [['archived', 'found'], ['absent', 'not_found']]) {
+  for (const [username, expected] of [['archived', 'unknown'], ['absent', 'not_found']]) {
     const result = await probe(site, username);
     assert.equal(result.status, expected);
-    assert.deepEqual(result.reasonCodes, [expected === 'found' ? 'adapter_json_positive' : 'adapter_json_negative']);
+    assert.deepEqual(result.reasonCodes, [expected === 'unknown' ? 'adapter_json_inconclusive' : 'adapter_json_negative']);
   }
 });
 

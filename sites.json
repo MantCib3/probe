@@ -3820,11 +3820,6 @@
       },
       "response": {
         "json": {
-          "positive": {
-            "path": "/archived_snapshots/closest/available",
-            "op": "equals",
-            "value": true
-          },
           "negative": {
             "path": "/archived_snapshots",
             "op": "empty"
