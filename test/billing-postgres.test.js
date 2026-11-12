@@ -45,10 +45,17 @@ test('accounting preflight refuses populated ledgers and competing runs without 
 const localUri = process.env.PROBE_BILLING_TEST_DATABASE_URL;
 test('real local PostgreSQL: cap race, durable recovery, reconciliation and webhook accounting', {
   skip: !localUri && 'No dedicated local TLS PostgreSQL provided; hosted acceptance is separate.',
-}, async () => {
+}, async t => {
   const url = new URL(localUri);
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname), 'Remote databases are forbidden in this test.');
   assert.match(url.pathname, /^\/probe_billing_test_[a-z0-9_]+$/, 'Use a dedicated test database.');
+  const settings = { PROBE_STAGING: '1', PAID_INFRA_ENABLED: '0', PAID_WORKER_ENABLED: '0',
+    PAID_MONEY_PATH_VERIFIED: '0', PAID_USD_MONEY_PATH_VERIFIED: '0' };
+  const previous = Object.fromEntries(Object.keys(settings).map(name => [name, process.env[name]]));
+  Object.assign(process.env, settings);
+  t.after(() => Object.entries(previous).forEach(([name, value]) => {
+    if (value === undefined) delete process.env[name]; else process.env[name] = value;
+  }));
   const pool = createPool({ DATABASE_URL: localUri,
     DATABASE_CA_CERT_PATH: process.env.PROBE_BILLING_TEST_CA_PATH });
   try {

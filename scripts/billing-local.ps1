@@ -1,7 +1,10 @@
 param(
-    [ValidateSet('Check', 'Migrate')]
+    [ValidateSet('Check', 'Migrate', 'Allocate', 'Post')]
     [string]$Action = 'Check',
-    [string]$CaCertificatePath
+    [string]$CaCertificatePath,
+    [string]$StatsImportId,
+    [string]$AllocationManifest,
+    [string]$AllocationId
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,8 +25,31 @@ if ($Action -eq 'Migrate') {
         throw 'Migration not confirmed. Nothing changed.'
     }
 }
+if ($Action -eq 'Allocate') {
+    if ($StatsImportId -notmatch '^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$' -or
+        -not $AllocationManifest -or -not (Test-Path -LiteralPath $AllocationManifest -PathType Leaf)) {
+        throw 'Allocation requires a Stats import UUID and an existing private manifest JSON file.'
+    }
+    $AllocationManifest = (Resolve-Path -LiteralPath $AllocationManifest).Path
+    if ($env:PAID_WORKER_ENABLED -and $env:PAID_WORKER_ENABLED -ne '0') {
+        throw 'Stop paid execution before allocating supplier evidence.'
+    }
+    $confirmation = Read-Host 'This writes USD allocation evidence only, not customer charges. Type probe-allocation-staging to confirm'
+    if ($confirmation -ne 'probe-allocation-staging') {
+        throw 'Allocation not confirmed. Nothing changed.'
+    }
+}
 
-$names = @('DATABASE_URL', 'DATABASE_CA_CERT_PATH', 'PROBE_STAGING', 'PAID_INFRA_ENABLED')
+if ($Action -eq 'Post') {
+    if ($AllocationId -notmatch '^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$') {
+        throw 'Posting requires a saved allocation UUID.'
+    }
+    $confirmation = Read-Host 'This posts verified customer usage in USD, but makes no payments. Type probe-usd-post-staging to confirm'
+    if ($confirmation -ne 'probe-usd-post-staging') { throw 'Posting not confirmed. Nothing changed.' }
+}
+
+$names = @('DATABASE_URL', 'DATABASE_CA_CERT_PATH', 'PROBE_STAGING', 'PAID_INFRA_ENABLED',
+    'PAID_WORKER_ENABLED', 'PAID_ALLOCATION_ENABLED', 'PAID_RECONCILIATION_ENABLED')
 $previous = @{}
 foreach ($name in $names) {
     $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
@@ -79,6 +105,20 @@ const { checkDatabase, safeDatabaseError } = require('./scripts/billing-check');
         & node scripts\billing-migrate.js
         if ($LASTEXITCODE -ne 0) {
             throw 'Migration failed. Review sanitized output; no provider or payment requests were made.'
+        }
+    }
+    if ($Action -eq 'Allocate') {
+        $env:PAID_WORKER_ENABLED = '0'
+        $env:PAID_ALLOCATION_ENABLED = '1'
+        & node scripts\billing-allocate.js $StatsImportId $AllocationManifest
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Allocation held for review. No customer charges or payments were posted.'
+        }
+        if ($Action -eq 'Post') {
+            $env:PAID_WORKER_ENABLED = '0'
+            $env:PAID_RECONCILIATION_ENABLED = '1'
+            & node scripts\billing-reconcile.js $AllocationId
+            if ($LASTEXITCODE -ne 0) { throw 'USD posting failed. No payments or supplier requests were made.' }
         }
     }
 }

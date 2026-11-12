@@ -99,7 +99,7 @@
         <summary>Optional paid infrastructure — sandbox</summary>
         <p id="paidStatus" role="status" aria-live="polite">Disabled. No measured paid rates are approved. Free scans are unchanged.</p>
         <label class="toggle-label"><input type="checkbox" id="paidOptIn" disabled> Allow sandbox paid checks under the terms below (off by default)</label>
-        <p id="paidTerms">AUD daily postpaid, with earlier credit-threshold collection. Authoritative provider-billable usage plus disclosed margin can cost money even when inconclusive. PROBE errors and duplicate attempts are absorbed. Revocation stops new spending, not existing debt. Stripe may retain identity/payment records; PROBE stores pseudonymous references, consent and a ledger.</p>
+        <p id="paidTerms">USD daily postpaid, with earlier credit-threshold collection. Measured supplier usage before promotional credits is shared equally across comparable requests, plus a separately disclosed margin, including inconclusive results. PROBE test, duplicate and error shares are absorbed, not redistributed. Fractional usage carries forward without per-request rounding up. Your card issuer may charge conversion fees. Revocation stops new spending, not existing debt. Stripe may retain identity/payment records; PROBE stores pseudonymous references, consent and a ledger.</p>
         <p id="paidRates">Rates unavailable — paid execution disabled.</p>
         <div id="paidControls" hidden>
           <details id="paidSessionHelp">
@@ -118,7 +118,7 @@
             <p id="paidSessionStatus" role="status" aria-live="polite"></p>
           </details>
           <button type="button" class="btn" id="paidSetup">Save sandbox payment method with Stripe</button>
-          <label>Optional lifetime cap (AUD) <input type="text" id="paidCap" inputmode="decimal" maxlength="12" placeholder="No customer cap"></label>
+          <label>Optional lifetime cap (USD) <input type="text" id="paidCap" inputmode="decimal" maxlength="12" placeholder="No customer cap"></label>
           <button type="button" class="btn" id="paidSaveCap">Save cap</button>
           <label>Approved source <select id="paidSource"></select></label>
           <button type="button" class="btn" id="paidRun" disabled>Paid check this username</button>
@@ -420,6 +420,6 @@
     </div>
   </div>
 
-  <script src="script.min.js?v=22" defer></script>
+  <script src="script.min.js?v=23" defer></script>
 </body>
 </html>

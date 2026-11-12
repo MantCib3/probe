@@ -43,8 +43,8 @@ async function runRecoveryFixtures(pool) {
       probe_collection: recovery.collection_id, probe_terms: recovery.terms_hash };
     const checkout = { id: `cs_recovery_${recovery.id}`, customer: recovery.customer_id, metadata,
       amount_total: Number(recovery.amount_cents), livemode: false, mode: 'payment', status: 'complete',
-      payment_status: 'paid', currency: 'aud', payment_intent: `pi_recovery_${recovery.id}` };
-    const intent = { id: `pi_recovery_${recovery.id}`, livemode: false, status: 'succeeded', currency: 'aud',
+      payment_status: 'paid', currency: 'usd', payment_intent: `pi_recovery_${recovery.id}` };
+    const intent = { id: `pi_recovery_${recovery.id}`, livemode: false, status: 'succeeded', currency: 'usd',
       customer: recovery.customer_id, amount: Number(recovery.amount_cents), amount_received: Number(recovery.amount_cents),
       payment_method: `pm_recovery_${recovery.id}`, setup_future_usage: 'off_session', metadata };
     const method = { id: intent.payment_method, customer: recovery.customer_id, livemode: false, type: 'card' };

@@ -2,6 +2,21 @@
 
 ## Implemented, but locked
 
+**Current USD implementation:** migrations 005 and 006 and the USD application
+changes are local, not deployed or applied to staging. Migration 004 and the
+532-microusd Stats import were applied by the operator. New customer records,
+reservations, ledger amounts, caps and Stripe presentment now use USD.
+Migration 006 labels all existing financial/session records AUD and freezes
+them without conversion; historical AUD Stripe acceptance below is not USD
+acceptance. Use a separate browser profile for fresh USD sessions.
+
+The equal-share policy, pre-credit consent, exact per-guest fractional carry
+and atomic allocation posting are implemented. They remain locked pending
+authorized migration/deployment and fresh USD sandbox acceptance. Keep both
+`PAID_MONEY_PATH_VERIFIED=0` and `PAID_USD_MONEY_PATH_VERIFIED=0`. An old AUD
+verification setting alone cannot enable the new money path. No new supplier
+requests or payments are authorized by these code changes.
+
 Operators can verify the deployed client-to-pooler TLS connection via
 `GET /api/staging-billing-health` with the existing staging Bearer key.
 It is staging-only, performs a read-only check, returns no credentials, makes
@@ -19,10 +34,11 @@ authoritative usage reconciliation and daily/threshold test collection. The
 optional panel beside the free search is off by default; paid results stay
 separate and never overwrite free evidence.
 
-The private schema has been migrated on staging and the deployed read-only
-connection check has passed with verified client TLS. No provider trial or
-payment has been performed. Render secrets are not locally available.
-Rates remain unmeasured. Keep `PAID_INFRA_ENABLED=0`
+The private schema through migration 004 has been migrated on staging and the
+deployed read-only connection check passed with verified client TLS. Historical
+AUD sandbox payments and the four-request supplier trial are recorded below;
+they are not new USD acceptance. Render secrets are not locally available.
+One batch is measured, not universal future launch rates. Keep `PAID_INFRA_ENABLED=0`
 and `PAID_WORKER_ENABLED=0`. This is not an approved production money path.
 `PAID_MONEY_PATH_VERIFIED` is an additional unresolved acceptance gate, not a
 default activation. A missing/invalid setting locks public setup, execution and
@@ -40,6 +56,7 @@ Configure **probe-staging only**, never the production service:
 - `PAID_INFRA_ENABLED=0`
 - `PAID_WORKER_ENABLED=0`
 - `PAID_MONEY_PATH_VERIFIED=0`
+- `PAID_USD_MONEY_PATH_VERIFIED=0` (fresh USD acceptance required)
 - `PAID_BROWSER_ENABLED=0` (separate default-off browser isolation gate)
 - `PAID_RECONCILIATION_ENABLED=0`
 - `PAID_ORIGIN`: exact HTTPS browser origin, no trailing slash/path, e.g.
@@ -69,11 +86,14 @@ After an operator separately authorizes staging database writes:
 
 ```powershell
 Set-Location C:\dev\probe\probe-staging
-npm run billing:migrate
+.\scripts\billing-local.ps1 -Action Migrate `
+  -CaCertificatePath "$env:USERPROFILE\Downloads\prod-ca-2021.crt"
 ```
 
-The operator command requires staging, `PAID_INFRA_ENABLED=0`, PostgreSQL 14+
-and TLS. It takes a transaction-scoped advisory lock, verifies the immutable
+The local helper prompts for an explicit staging-project confirmation and
+secure database credentials. It first verifies the connection read-only, then
+requires staging, `PAID_INFRA_ENABLED=0`, PostgreSQL 14+ and TLS for migration.
+The migration takes a transaction-scoped advisory lock, verifies the immutable
 SHA-256 of previously applied versioned SQL, and atomically applies new
 migrations. Never edit an applied migration: add another version. The
 digest uses canonical LF endings. Legacy Windows CRLF digests are accepted
@@ -83,10 +103,175 @@ All substantive changes still fail checksum validation. The
 access; use a controlled dedicated database role and do not expose it through
 Supabase's API. Migrations are not run on web startup.
 
+Migration `004-zyte-stats-evidence.sql` adds private domain-aggregate evidence
+tables only. To import a Zyte Stats API time window after that migration has
+been separately authorized and applied, run this from the local staging
+checkout:
+
+```powershell
+.\scripts\zyte-stats-import.ps1 -StartTime '2026-11-09T07:30:00Z' -EndTime '2026-11-09T07:31:00Z'
+```
+
+The helper loads the DPAPI-protected
+`%LOCALAPPDATA%\PROBE\secrets\zyte-dashboard-key.clixml`, asks for an explicit
+USD-evidence confirmation and staging Session-pooler credentials, then uses
+read-only, paginated GET requests to the Zyte Stats API. It requires the
+separate stats migration, verified PostgreSQL TLS, and
+`PAID_INFRA_ENABLED=0`. Reimporting an identical snapshot is idempotent; if
+the provider returns different data for an already-imported organization and
+window, import stops for review instead of replacing evidence.
+
+The imported response and exact decimal cost fields are stored only in
+`probe_billing.zyte_stats_imports` and `probe_billing.zyte_stats_domains`.
+These records contain organization/window/domain aggregates, have no customer
+or job identifiers, and are never passed to `billing:reconcile`. The stats
+endpoint's status-code aggregates describe Zyte responses, not target-site
+HTTP statuses. Stats aggregation does not provide exact per-request prices.
+
+### USD equal-share allocation policy (approved 2026-11-11)
+
+The operator approved allocating measured domain/window totals equally across
+comparable requests, rather than requiring unavailable full-precision
+individual supplier prices. This supersedes the earlier exact-per-request
+requirement for this allocation policy. It does not establish a universal
+fixed rate: each batch uses its own imported supplier total.
+
+`domain-window-equal-share-usd-v1` requires complete supplier-request membership,
+matching request and supplier-status counts, and operator verification that the
+pricing conditions are comparable. Matching counts alone do not prove membership:
+an external dashboard user/test request can replace a missing local request
+without changing the count. The supplier request IDs and reporting-window
+membership must be checked against the dashboard. Local dispatch timestamps
+are not substituted for supplier timestamps.
+
+The initial allocator supports only the verified HTTP feature set
+(`httpResponseBody`, `httpResponseHeaders`, `customHttpRequestHeaders`), with
+one IP selection per domain/window. Browser or additional features, mixed
+pricing conditions, missing members/status evidence, duplicate IDs and
+conflicting snapshots stop allocation for review.
+
+Each request receives an exact rational share in **USD millionths**. Customer
+shares remain `customer_candidate`; PROBE's tests, duplicates, PROBE errors,
+provider failures and uncertain outcomes remain `probe_absorbed`. Absorbed
+shares stay with PROBE and are never redistributed to customers. Successful
+supplier responses to target 404s can be customer candidates; target status is
+not supplier billability. No per-request rounding is performed.
+
+Migration `005-usage-allocation-evidence.sql` adds allocation evidence tables
+and dispatch metadata to attempts. Future worker/trial dispatches retain the
+domain, transport/IP selection, features, request-byte count and dispatch time
+before calling Zyte, without retaining the URL, username or credentials in
+that metadata. Existing attempts have null metadata; do not fabricate it.
+Applying migration 005 is required before deploying the updated dispatch code.
+It does not change existing AUD balances or reinterpret their currency.
+
+An operator manifest contains:
+
+```json
+{
+  "schemaVersion": 1,
+  "policy": "domain-window-equal-share-usd-v1",
+  "organizationId": 1053513,
+  "startTime": "2026-11-09T07:30:00Z",
+  "endTime": "2026-11-09T07:31:00Z",
+  "windowMembershipVerified": true,
+  "pricingConditionsVerified": true,
+  "costBasis": "pre-credit",
+  "costBasisVerified": true,
+  "evidenceReference": "private-dashboard-membership-reference",
+  "requests": [
+    {
+      "providerReference": "dad53365fffa63076d291e50d0edf2f6",
+      "domain": "tellonym.me",
+      "supplierTimestamp": "2026-11-09T07:30:14.204Z",
+      "providerStatus": 200,
+      "purpose": "test",
+      "pricing": {
+        "mode": "http",
+        "ipType": "automatic",
+        "features": ["httpResponseBody", "httpResponseHeaders", "customHttpRequestHeaders"]
+      }
+    }
+  ]
+}
+```
+
+This shows the format only: the confirmed four-request batch needs **all four
+members**, not this one-row example. Do not set the verification flags before
+actually checking membership, pricing conditions and the supplier's pre-credit
+usage basis. A net payment or credit-adjusted total must not be relabeled as
+pre-credit evidence. Customer candidates
+add `currency: "usd"`, pseudonymous `guestId`, `jobId`, and `result`; other
+purposes must not carry customer ownership. These are evidence labels, not
+proof of current consent or permission to post debt. Save manifests under
+`billing-private` or outside the web root, never include emails or credentials.
+
+After separately authorizing and applying migration 005, an operator can save
+the plan using the existing local secure credential helper:
+
+```powershell
+.\scripts\billing-local.ps1 -Action Allocate `
+  -StatsImportId '8f90c4ba-cbf2-4606-868e-bac982c84d2a' `
+  -AllocationManifest 'C:\private\zyte-membership.json' `
+  -CaCertificatePath "$env:USERPROFILE\Downloads\prod-ca-2021.crt"
+```
+
+This requires confirmation `probe-allocation-staging`, disabled worker/spending,
+and verified database TLS. Identical replays return the same allocation ID;
+conflicts stop without overwriting evidence. Each supplier ID can belong to
+only one saved allocation per organization, preventing double allocation
+across overlapping Stats windows. Evidence inserts are atomic.
+
+The allocation command makes **no supplier API calls, no payments, and no
+customer-ledger writes**. The persisted plan remains `evidence_only`. A separate
+posting transaction consumes its saved allocation UUID, not raw Stats totals.
+
+Customer wording for the USD path must describe the rule honestly:
+"Your share of measured supplier usage before promotional credits, allocated
+equally across comparable requests, plus the separately disclosed PROBE margin.
+All charges are in USD." This is reflected in the new consent version and
+fingerprint, browser meter and Stripe setup disclosure. Fresh consent and
+USD sandbox acceptance are required; old consent/proof is not reused.
+The operator chose to preserve/freeze existing AUD records, not convert them.
+
+After applying migration 006, post a saved allocation with:
+
+```powershell
+.\scripts\billing-local.ps1 -Action Post `
+  -AllocationId '<allocation UUID returned by Allocate>' `
+  -CaCertificatePath "$env:USERPROFILE\Downloads\prod-ca-2021.crt"
+```
+
+Confirmation is `probe-usd-post-staging`. This changes verified customer debt
+but makes **no Stripe or supplier requests**. All guest locks are acquired in
+UUID order. Each customer label must match the actual USD job, current USD
+consent and terms hash, successful attempt, supplier ID, result, dispatch
+domain and pricing features. Over-cap, missing or conflicting evidence rolls
+back the entire allocation. Revocation does not erase already-incurred usage.
+
+Posting floors only the combined exact share and that guest's prior remainder,
+carries the reduced fraction forward on that same guest, adds the authorized
+integer margin and releases the reservation in one transaction. Zero-whole-micro
+usage is recorded as usage, not falsely marked absorbed. Replays return the
+saved receipt without advancing debt or remainder twice. JSONB key reordering
+does not invalidate the evidence digest.
+
+PROBE-absorbed shares never move to customers. A matching local USD error or
+uncertain job releases its reservation without customer debt or margin. Missing
+supplier IDs cannot be guessed; unmatched local work stays held for review.
+The confirmed four controls were operator tests, so their entire 532 microusd
+stays with PROBE and cannot become customer debt. Legacy AUD records are not
+modified by posting.
+
+`billing:reconcile` now accepts **only a saved allocation UUID**. The old
+arbitrary whole-cost JSON path is disabled. `Store.reconcileFixture` is limited
+to explicitly synthetic accounting fixtures with execution disabled; it is
+not a customer-reconciliation API.
+
 Local tests require no secrets or remote services:
 
 ```powershell
-node --test test\billing.test.js test\billing-check.test.js test\billing-postgres.test.js test\billing-frontend.test.js test\classifier.test.js test\static-scripts.test.js
+node --test test\allocation-posting.test.js test\usage-allocation.test.js test\zyte-stats.test.js test\billing*.test.js
 npm run build:assets
 npm run check
 ```
@@ -98,6 +283,10 @@ dedicated **local TLS PostgreSQL**. To run it, privately set
 refuses remote hosts, uses migrations twice and deletes only its UUID-owned
 fixtures. It leaves the test schema/migration history for repeatability.
 Mock SQL/unit assertions do **not** prove Postgres concurrency safety.
+The development-only PGlite test also executes the actual migration/trigger,
+JSONB, zero-whole-micro usage, rollback and posting/replay SQL on embedded
+PostgreSQL without credentials. It does not replace pooler/TLS, multi-process
+concurrency or real USD Stripe acceptance.
 
 When local PostgreSQL and Render Shell are unavailable, an authorized operator
 can run the same accounting fixtures through
@@ -176,7 +365,7 @@ bound in a cancelled `StripeAcceptanceFixture` job; it is never provider work.
 The attached decline scenario uses Stripe's documented
 `pm_card_chargeCustomerFail`; ordinary issuer-decline test cards cannot be
 attached to customers. Authentication uses `pm_card_authenticationRequired`.
-These actions seed a **synthetic AUD 1.00 balance** and one collection whose ID
+These actions now seed a **synthetic USD 1.00 balance** and one collection whose ID
 is the fixture UUID. This is not supplier usage or a customer invoice.
 They call the normal `collect`/`paymentResult` path with test credentials only.
 Repeated calls reuse that collection, PaymentIntent or original idempotency
@@ -188,7 +377,7 @@ normal signed webhook or original collection key to recover without another
 payment. This is a simulated network fault against a real sandbox PaymentIntent,
 not proof of every real outage case or the full 20-hour recovery window.
 Use `action:"payment-status"` with the same scenario/UUID to inspect ledger,
-Stripe outcome and actual signed event counts. Only fixed AUD 100-cent
+Stripe outcome and actual signed event counts. Only fixed USD 100-cent
 collections owned by zero-cap acceptance guests may pass the locked webhook
 exception; all other payment events remain rejected. Fixtures/test customers
 are retained for webhook retries and explicit later cleanup.
@@ -208,6 +397,8 @@ foreign methods still fail. Failed-payment accounting errors freeze collection
 and spending rather than leaving an active guest after an unrecorded decline.
 
 ### Observed sandbox acceptance results (2026-11-09 UTC)
+
+Historical **AUD** proof only. None of these results verifies the new USD path.
 
 | Check | Observed result |
 |---|---|
@@ -295,29 +486,32 @@ The JSON object must contain:
 
 | Field | Required value |
 |---|---|
-| `currency` | `"aud"` |
+| `currency` | `"usd"` |
 | `billability` | `"authoritative-reconciliation"` |
+| `allocationPolicy` | `"domain-window-equal-share-usd-v1"` |
+| `costBasis` | `"pre-credit"` |
 | `measured` | `true`, only after an authorized measurement |
 | `measurementReference` | Nonempty private reference to measured supplier evidence |
 | `creditMicros` | Positive safe integer maximum outstanding debt + reservations |
-| `thresholdMicros` | Integer >= 500,000 (AUD 0.50) and <= credit; earlier collection threshold |
+| `thresholdMicros` | Integer >= 500,000 (USD 0.50) and <= credit; earlier collection threshold |
 | `minimumCents` | Explicit integer >= 50, <= threshold in whole cents; may be higher for operator fee requirements |
 | `sources` | Nonempty array of individually approved sources |
 
-Each source requires `source` (exact catalog name), `mode` (`http` or `browser`),
+Each source requires `source` (exact catalog name), `mode` (`http` only for this policy),
 `hosts` (exact lowercase approved public hosts, no wildcard/IP/private host),
-`supplierMicros` (measured maximum supplier AUD per attempt) and `marginMicros`
-(explicit nonnegative AUD margin). Reservation is their sum, <= credit limit.
+`supplierMicros` (authorized maximum supplier USD share per attempt) and `marginMicros`
+(explicit nonnegative USD margin). Reservation is their sum, <= credit limit.
+The maximum is a safety ceiling, not the eventual billed price; each window
+uses its own measured total. One observed batch does not establish a universal rate.
 Optional `ipType` is exactly `datacenter` or `residential`; omission retains
 Zyte's automatic IP selection. This choice is persisted in the rate/job and
 consent fingerprint, displayed with prices and passed explicitly to Zyte.
 Changing it requires renewed consent. Supplier price measurements must cover
 the chosen mode/IP type; the HTTP trial did not verify explicit residential
 pricing. Invalid transport values fail before dispatch.
-Browser sources additionally require `browserIsolationVerified: true`, a
-nonempty `browserApprovalReference` and `PAID_BROWSER_ENABLED=1`; approving
-HTTP money-path tests alone never unlocks browser requests.
-One AUD = 1,000,000 micro-units; one cent = 10,000 micro-units. These are units,
+Browser sources remain rejected by this allocation policy even if a historical
+browser flag is set; additional features/pricing need a separate approved policy.
+One USD = 1,000,000 micro-units; one cent = 10,000 micro-units. These are units,
 not prices. No currency conversion, hidden fee, inferred billability or
 invented rate is implemented. Operator-set collection minimums are a batching
 floor, never an added guest fee.
@@ -346,7 +540,7 @@ exempt. Webhooks are signed-buffer exempt, not browser-authorized.
   ledger entries, and CSRF value. No arbitrary guest-id query.
 - `POST /api/paid/setup`: explicit `consent: true`, `consentVersion` and
   `termsHash` from config; returns a validated Stripe-hosted URL. Setup is
-  AUD, card-only and test-only. There is no charge for this setup action.
+  USD, card-only and test-only. There is no charge for this setup action.
   Before a new hosted setup or new collection creation, the SDK retrieves only
   to validate the operator Stripe account's AU country/AUD default currency;
   its identity fields are neither stored nor logged.
@@ -404,8 +598,8 @@ are retained. The zero-cap fixture creates no guest debt or payment.
 
 All spending switches stay `0`. This uses the operator's supplier account/trial
 credit: four requests is a request-count limit, **not** a guaranteed dollar cap.
-Actual billability and AUD supplier cost remain unverified until matched to
-authoritative Zyte usage evidence. An immediate HTTP 200/request reference or
+Trial billability was subsequently verified by the USD Stats aggregate recorded
+below; there is no AUD conversion for the new path. An immediate HTTP 200/request reference or
 echoed attempt ID never substitutes for invoice evidence. Missing reference
 linkage blocks customer-billing activation.
 
@@ -417,7 +611,8 @@ with persisted supplier request references and matching attempt echoes.
 No customer debt, Stripe calls or public activation occurred.
 The trial demonstrates these two sources' positive/negative contrast, **not**
 broader challenged/manual-source support, measured prices or invoice matching.
-Authoritative per-request supplier cost and reconciliation remain pending.
+Full-precision individual supplier prices are unavailable. The approved USD
+equal-share policy uses verified domain/window totals instead.
 
 Only after measurement, acceptance verification and separate execution
 authorization, set the gates explicitly, enable reconciliation, then run the
@@ -465,20 +660,16 @@ The request carries only a pseudonymous attempt UUID in the documented
 request reference cannot be charged; an operator-supplied reference alone
 cannot turn it into guest debt.
 
-Use a private evidence JSON file with `jobId`, `supplierMicros` (actual AUD
-supplier cost), `providerReference`, `evidenceReference`, `authoritative: true`
-and `disposition` (`billed`, `not_billed`, or `probe_error`):
+Use a saved USD allocation UUID after membership/pricing/pre-credit verification:
 
 ```powershell
-npm run billing:reconcile -- .\billing-private\verified-usage.json
+npm run billing:reconcile -- '<saved allocation UUID>'
 ```
 
-This explicit operator DB command makes no provider/payment request. It is
-idempotent, rejects conflicting evidence/rate overrun, releases reservation
-and books actual supplier cost plus the disclosed margin only when chargeable.
-`not_billed` requires zero supplier cost. Unknown/duplicate/PROBE-error work is
-absorbed; zero ledger entries are not a claim of zero supplier charges.
-Unmatched/over-rate usage remains reserved for review; no automatic guesses.
+The secure helper above sets the required staging and disabled-execution gates.
+This DB-only command uses exact shares and per-customer remainder, rejects
+conflicting ownership/consent/rate evidence and posts atomically. Raw cost JSON
+is no longer accepted. Unmatched/over-rate work stays reserved for review.
 
 Collection claims an immutable amount/key in PostgreSQL before contacting
 Stripe. Test off-session PaymentIntents use that claim's idempotency key and
@@ -533,7 +724,7 @@ never silently create a replacement money-bearing guest.
   checkout and require operator review. No blind payment retry is permitted.
 - Stripe-hosted payment checkout handles card entry/authentication and saves the
   card for later off-session collection. Only authoritative paid Checkout,
-  succeeded AUD PaymentIntent and owned test card retrieval can settle debt.
+  succeeded USD PaymentIntent and owned test card retrieval can settle debt.
   Checkout and early PaymentIntent events use the same atomic ledger path.
   Response loss freezes recovery; a signed success can still recover ownership.
   A signed authoritative expiry releases an abandoned checkout. Returning via
@@ -546,7 +737,7 @@ never silently create a replacement money-bearing guest.
   a replacement card is saved. Known canceled superseded intents are safely
   acknowledged without adding another ledger entry.
 
-Hosted debt amounts below Stripe's AUD 0.50 minimum are refused before checkout.
+Hosted debt amounts below the configured USD 0.50 floor are refused before checkout.
 They are not forgiven or rounded up; operator resolution is required if that
 balance prevents resuming. Later reconciled debt can require another fixed
 checkout. Neither fees nor extra supplier use are added by recovery.
@@ -579,7 +770,8 @@ billing/browser/operator suite passed 68 tests (one local-only database test
 skipped); dedicated migration compatibility tests also passed.
 
 The bounded hosted recovery acceptance reuses only the existing authentication
-fixture `bd9c7b44-b2af-4ba9-b855-086f878662ed` and its synthetic AUD 1.00 debt.
+new USD fixture `7604ef47-7cb3-4d65-8d48-0ca2f879becd` and its synthetic USD 1.00 debt.
+The old AUD fixture is frozen and must not be reused.
 Authenticated `POST /api/staging-billing-stripe-setup` accepts exactly
 `action` (`recovery-start`, `recovery-status` or `recovery-resume`), that
 `guestId`, and `confirmation:"stripe-test-recovery-one-checkout-v1"`.
@@ -588,7 +780,7 @@ ready checkout; any other existing recovery record blocks another start.
 The standard recovery adapter cancels the owned failed PaymentIntent before
 creating the one checkout. Use only Stripe test cards and fictional details.
 The locked webhook exception admits only this zero-cap synthetic fixture's
-owned AUD 1.00 recovery; standard authoritative retrieval and atomic accounting
+owned USD 1.00 recovery; standard authoritative retrieval and atomic accounting
 still apply. Signed success leaves spending paused; the separate operator
 resume action exercises the normal resume guard with cap zero, never public
 paid execution. Status reports safe state/counts only. No supplier calls occur.
@@ -666,7 +858,7 @@ access. Save it in a password manager and keep it out of messages/screenshots.
 Losing both cookie and code has no automatic email/account recovery.
 
 Small balances carry forward. Automatic rate cards must set a collection
-minimum of at least 50 AUD cents and threshold at least AUD 0.50, avoiding
+minimum of at least 50 USD cents and threshold at least USD 0.50, avoiding
 invalid sub-minimum Stripe charges. Paused guests with whole-cent debt below
 that minimum cannot checkout or resume; no round-up, forgiveness or added
 supplier requests are used to force a charge. Existing sub-cent settlement
@@ -724,6 +916,8 @@ explicit residential request.
 The public extraction OpenAPI, inspected directly from the official
 [reference](https://docs.zyte.com/zyte-api/usage/reference.html), does not document
 a per-response price field/header or a per-request billing-export endpoint.
+The operator verified a read-only Stats API endpoint that reports cost
+aggregates by domain and time window; it is not per-request attribution.
 The pricing page advertises monthly reports and dashboard cost estimation.
 This is not proof that private dashboard exports or support-provided reporting
 are unavailable. Do not require the operator to keep searching for a specific
@@ -736,10 +930,12 @@ still do not determine supplier costs.
 
 On 2026-11-09 the operator explicitly retained **actual supplier cost plus the
 disclosed margin**, rejecting a fixed per-attempt pricing substitution.
-Retain authoritative operator reconciliation until an exact supported cost
-source can be automated. Calculator estimates and rounded dashboard values
-must not be substituted for exact reconciled costs. Unresolved attempts remain
-pending reconciliation, not collectible customer debt; preserve existing
+This earlier exact-individual-price requirement was superseded by the explicitly
+approved equal-share policy above. Verified domain/window totals plus complete
+membership and comparable pricing are the supported allocation basis. Calculator
+estimates and rounded dashboard rows still cannot replace the measured total.
+Unresolved attempts remain pending reconciliation, not collectible customer
+debt; preserve existing
 reservation/credit limits and absorb PROBE errors and duplicate attempts.
 This decision does not authorize further supplier requests or public paid
 activation.
@@ -769,21 +965,18 @@ target 404s.
 
 Timestamps and request IDs identify the members of this batch. Durations are
 not a verified price formula, and a single aggregate cannot establish unequal
-individual costs. Equal allocation is a planning/validation estimate only.
+individual costs. Equal allocation is the explicitly approved accounting rule,
+not a claim of supplier-provided individual prices.
 It is not evidence that all sites share a rate or that this batch predicts
 future costs. No new supplier requests are needed for this calculation.
 
-The customer ledger uses **AUD**, so these USD millionths must never be passed
-directly as `supplierMicros` to `billing:reconcile`. The controls have no
-identified customer job ownership, and allocating an aggregate across customers
-would require an explicitly approved policy. This evidence therefore does not
-alter customer debt, reservations or enable paid execution. The operator's
-conversion/credit/remainder choices are recorded below. Their implementation
-still requires settlement evidence and customer-owned usage. Until individual
-evidence or an approved allocation policy exists, retain the current fail-closed
-customer reconciliation path.
+New customer ledgers use **USD** after migration 006; old AUD records stay frozen.
+These controls are operator tests with no customer ownership. All 532 microusd
+is PROBE's absorbed cost. Only verified customer-owned attempts under the new
+policy can post debt. The AUD conversion choices below are historical and do
+not require an FX converter for new USD usage.
 
-#### Approved AUD accounting policy (not yet implemented)
+#### Historical AUD accounting policy (superseded for new usage by USD decision)
 
 On 2026-11-09 the operator selected:
 
@@ -793,6 +986,11 @@ On 2026-11-09 the operator selected:
   disclosed margin, even when free trial credits cover that usage.
 - **Precision:** carry fractional AUD millionths forward per customer rather
   than discard them or round each request up.
+
+On 2026-11-10 the operator chose USD for new customer usage and preservation/
+freezing of existing AUD records. The AUD conversion design below is historical,
+not a requirement to build FX conversion for the new USD path. The code's
+new path now uses USD; these historical FX requirements are not active.
 
 The credit decision qualifies the earlier "actual supplier cost" wording:
 customer charges are based on supplier-recorded usage value before credits,
@@ -834,29 +1032,26 @@ preserve reservation/credit limits, and reject conflicting evidence or costs
 above the authorized reservation. Existing cent-floor Stripe collection and
 small-debt rules remain unchanged.
 
-These are recorded requirements, not deployed conversion code: the current
-ledger accepts whole AUD millionths only and has no durable fractional FX
-remainder. No customer amount, consent text or public gate was changed by this
-policy record. Implementation/acceptance must cover actual settlement evidence,
-credit handling, fee attribution, response-loss retries and cross-customer
-isolation before this path can be enabled.
+These were recorded AUD conversion requirements, not deployed conversion code.
+The new USD path has durable fractional usage carry-forward and does not
+implement FX conversion. Historical AUD records are frozen, never relabeled.
 
 The reported Zyte calculator estimate is $4 for 10,000 requests/month ($0.0004
 per request on average). Its currency and transport assumptions remain
 unverified independently of the confirmed USD batch above; use the calculator
 for planning, not customer ledger ingestion.
 
-Real hosted PostgreSQL accounting and the exercised Stripe sandbox acceptance
-paths passed. Four authorized Zyte HTTP controls also passed with supplier
-references. Remaining blockers: automated authoritative per-request cost
-ingestion (including settlement evidence and implementation of the approved
-credit/FX/remainder policy), approved paid-source
-detection/transport, browser-side supplier isolation and a lawful financial
+Historical hosted PostgreSQL accounting and AUD Stripe sandbox acceptance
+passed. Four authorized Zyte HTTP controls also passed with supplier references.
+The USD ledger/consent/Stripe code and exact fractional posting are implemented
+locally. Remaining launch blockers: authorized migrations 005/006 and deployment,
+fresh USD sandbox acceptance, complete verified customer-batch membership and
+pre-credit basis, approved paid-source detection/transport and a lawful financial
 retention/ownership-assistance policy. Small-debt carry-forward and private
 lost/expired-session recovery are implemented; they do not bypass cost evidence.
-Hosted recovery payment and explicit resume have now passed sandbox acceptance;
-standalone card replacement and its explicit resume have also passed.
-live activation and remaining launch gates are still separate.
+Historical AUD recovery/replacement/resume proof is not USD proof. Browser
+requests remain disabled for this policy, independently of prior browser flags.
+Live activation and remaining launch gates are still separate.
 Therefore public paid execution remains locked.
 
 The lab's existing `config/paid-tier-hints.json` contains conditional metadata

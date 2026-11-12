@@ -28,7 +28,7 @@ function fixture(style, changed = false) {
 test('migration checks accept exact legacy LF/CRLF SQL without replaying or rewriting history', async () => {
   for (const style of ['lf','crlf']) {
     const pool = fixture(style);
-    assert.equal(await migrate(pool), 3);
+    assert.equal(await migrate(pool), 6);
     assert.equal(pool.queries.some(query => query.sql.startsWith('INSERT INTO probe_billing.migrations')), false);
     assert.equal(pool.queries.some(query => query.sql.includes('ALTER TABLE probe_billing.collections')), false);
     assert.equal(pool.queries.some(query => query.sql === 'COMMIT'), true);

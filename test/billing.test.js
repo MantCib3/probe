@@ -29,10 +29,11 @@ const paymentMethodConfigurations = { async list() {
     active: true, livemode: false, card: { available: true, display_preference: { value: 'on' } },
     link: { display_preference: { value: 'off' } } }] };
 } };
-const guest = () => ({ id: randomUUID(), state: 'active', customer_id: 'cus_fixture',
+const guest = () => ({ currency: 'usd', id: randomUUID(), state: 'active', customer_id: 'cus_fixture',
   payment_method_id: 'pm_fixture', consent_version: CONSENT_VERSION, terms_hash: config.termsHash,
   consent_at: new Date(), expires_at: new Date(Date.now() + 3600000),
-  cap_micros: null, debt_micros: '0', paid_micros: '0', reserved_micros: '0' });
+  cap_micros: null, debt_micros: '0', paid_micros: '0', reserved_micros: '0',
+  remainder_numerator: '0', remainder_denominator: '1' });
 function poolWith(query) {
   const queries = [];
   const client = {
@@ -113,21 +114,24 @@ test('recovery routes require the owning cookie, same origin, CSRF and explicit 
   assert.equal((await request('resume', { method: 'POST', headers, body })).status, 200);
   assert.equal(resumed, 1);
 });
-test('real rate parser requires explicit gates, measured per-source AUD rates, private storage and test keys', t => {
+test('real rate parser requires explicit gates, measured per-source USD rates, private storage and test keys', t => {
   const directory = path.join(__dirname, '..', 'billing-private', `fixture-${randomUUID()}`);
   fs.mkdirSync(directory, { recursive: true });
   t.after(() => fs.rmSync(directory, { recursive: true }));
   const file = path.join(directory, 'rate-fixture.json');
-  const card = { currency: 'aud', billability: 'authoritative-reconciliation', measured: true,
+  const card = { currency: 'usd', billability: 'authoritative-reconciliation', measured: true,
+    allocationPolicy: 'domain-window-equal-share-usd-v1', costBasis: 'pre-credit',
     measurementReference: 'UNIT-TEST-ONLY-NOT-LAUNCH-RATES', creditMicros: config.creditMicros,
     thresholdMicros: config.thresholdMicros, minimumCents: 50, sources: config.rates };
   fs.writeFileSync(file, JSON.stringify(card));
   const env = { PROBE_STAGING: '1', PAID_INFRA_ENABLED: '1', PAID_MONEY_PATH_VERIFIED: '1',
+    PAID_USD_MONEY_PATH_VERIFIED: '1',
     STRIPE_SECRET_KEY: 'sk_test_fixture', STRIPE_WEBHOOK_SECRET: 'whsec_fixture', ZYTE_API_KEY: 'fixture',
     DATABASE_URL: 'not-contacted', PAID_ORIGIN: config.origin, PAID_RATE_CONFIG_PATH: file,
     TURNSTILE_SECRET: 'fixture', TURNSTILE_HOSTNAMES: 'staging.example.test' };
   assert.equal(loadConfig(env, [site]).enabled, true);
-  for (const patch of [{ PAID_MONEY_PATH_VERIFIED: '0' }, { STRIPE_SECRET_KEY: 'sk_live_fixture' },
+  for (const patch of [{ PAID_MONEY_PATH_VERIFIED: '0' }, { PAID_USD_MONEY_PATH_VERIFIED: '0' },
+    { PAID_USD_MONEY_PATH_VERIFIED: undefined }, { STRIPE_SECRET_KEY: 'sk_live_fixture' },
     { PROBE_STAGING: '0' }, { RENDER: '1', RENDER_SERVICE_NAME: 'probe-production' },
     { TURNSTILE_SECRET: '' }, { PAID_ORIGIN: 'http://staging.example.test' },
     { PAID_RATE_CONFIG_PATH: path.join(__dirname, 'fixture.json') }]) {
@@ -144,7 +148,7 @@ test('real rate parser requires explicit gates, measured per-source AUD rates, p
   fs.writeFileSync(file, JSON.stringify(card));
   assert.notEqual(loadConfig(env, [{ ...site, positiveMsg: 'changed-marker' }]).termsHash, baseline);
   for (const patch of [{ measured: false }, { minimumCents: 0 }, { minimumCents: 49 },
-    { thresholdMicros: 499999 }, { currency: 'usd' },
+    { thresholdMicros: 499999 }, { currency: 'aud' },
     { sources: [{ ...card.sources[0], hosts: ['127.0.0.1'] }] },
     { sources: [{ ...card.sources[0], mode: 'browser' }] },
     { sources: [{ ...card.sources[0], ipType: 'automatic' }] },
@@ -273,7 +277,7 @@ test('hosted setup creation uses durable ownership metadata and distinct idempot
     checkout: { sessions: { async create(params, opts) {
       calls.push({ params, opts });
       assert.equal(params.mode, 'setup');
-      assert.equal(params.currency, 'aud');
+      assert.equal(params.currency, 'usd');
       assert.equal(params.payment_method_configuration, 'pmc_fixture');
       assert.equal(Object.hasOwn(params, 'payment_method_types'), false);
       assert.equal(params.customer, 'cus_fixture');
@@ -296,27 +300,27 @@ test('uncertain setup is persisted rather than silently re-created', async () =>
     randomUUID(), config), /setup_uncertain/);
   assert.equal(uncertain, 1);
 });
-test('Stripe account must be Australian with AUD settlement before new hosted setup/collection', async () => {
+test('Stripe account must be Australian with USD settlement before new hosted setup/collection', async () => {
   await assertAustralianAccount({ accounts });
   await assert.rejects(assertAustralianAccount({ accounts: { async retrieve() {
-    return { country: 'US', default_currency: 'usd' };
+    return { country: 'US', default_currency: 'aud' };
   } } }), /australian_aud_account_required/);
 });
-test('sandbox readiness retrieves only AU/AUD configuration and never exposes identity or secrets', async () => {
+test('sandbox readiness retrieves only AU/USD configuration and never exposes identity or secrets', async () => {
   let calls = 0;
   const stripe = { accounts: { async retrieve() {
     calls++;
     return { country: 'AU', default_currency: 'aud', id: 'acct_private', email: 'private@example.com' };
   } } };
   const result = await checkSandboxConfiguration(stripe, { STRIPE_WEBHOOK_SECRET: 'whsec_private' });
-  assert.deepEqual(result, { country: 'AU', currency: 'aud', mode: 'test', webhookSecretConfigured: true,
+  assert.deepEqual(result, { country: 'AU', currency: 'usd', settlementCurrency: 'aud', mode: 'test', webhookSecretConfigured: true,
     stripeRequests: 1, paymentRequests: 0, providerRequests: 0, acceptanceVerified: false });
   assert.equal(calls, 1);
   assert.equal(JSON.stringify(result).includes('private'), false);
   assert.equal((await checkSandboxConfiguration(stripe, {})).webhookSecretConfigured, false);
   assert.throws(() => createStripe({ STRIPE_SECRET_KEY: 'sk_live_private' }), /sandbox_key_required/);
   await assert.rejects(checkSandboxConfiguration({ accounts: { async retrieve() {
-    return { country: 'US', default_currency: 'usd' };
+    return { country: 'US', default_currency: 'aud' };
   } } }, {}), /australian_aud_account_required/);
 });
 test('current Checkout uses a verified dedicated card-only configuration, not removed payment_method_types', async () => {
@@ -377,10 +381,10 @@ test('locked billing accepts real signatures only for isolated sandbox setup fix
   const pool = { async query(sql) {
     reads++;
     return { rows: sql.includes('FROM probe_billing.setups') ?
-      [{ guest_id: guestId, checkout_id: 'cs_test_fixture' }] : [{ id: guestId }] };
+      [{ guest_id: guestId, checkout_id: 'cs_test_fixture' }] : [{ id: guestId, currency: 'usd' }] };
   } };
   sdk.checkout.sessions.retrieve = async () => ({ id: 'cs_test_fixture', livemode: false,
-    mode: 'setup', status: 'complete', setup_intent: 'seti_fixture',
+    mode: 'setup', currency: 'usd', status: 'complete', setup_intent: 'seti_fixture',
     metadata: { probe_setup: setupId, probe_guest: guestId } });
   sdk.setupIntents.retrieve = async () => ({ livemode: false, status: 'succeeded', usage: 'off_session', payment_method: 'pm_fixture' });
   sdk.paymentMethods.retrieve = async () => ({ livemode: false, type: 'card' });
@@ -409,7 +413,7 @@ test('verified SetupIntent must be succeeded off-session test card before confir
   const intent = { id: 'seti_fixture', status: 'succeeded', usage: 'off_session', livemode: false,
     customer: 'cus_fixture', payment_method: 'pm_fixture' };
   const stripe = {
-    checkout: { sessions: { async retrieve() { return { id: 'cs_fixture', mode: 'setup', status: 'complete',
+    checkout: { sessions: { async retrieve() { return { id: 'cs_fixture', mode: 'setup', currency: 'usd', status: 'complete',
       livemode: false, customer: 'cus_fixture', setup_intent: intent.id, metadata: { probe_setup: setupId, probe_guest: guestId } }; } } },
     setupIntents: { async retrieve() { return intent; } },
     paymentMethods: { async retrieve() { return { id: 'pm_fixture', customer: 'cus_fixture', type: 'card', livemode: false }; } },
@@ -435,14 +439,16 @@ test('duplicate setup webhook does not reapply consent and revocation remains te
     if (sql.startsWith('SELECT * FROM probe_billing.guests')) return { rows: [owner] };
     if (sql.includes('INSERT INTO probe_billing.payment_events')) {
       if (seen.has(values[0])) return { rows: [], rowCount: 0 };
-      seen.add(values[0]); return { rows: [{ id: values[0] }], rowCount: 1 };
+      seen.add(values[0]); return { rows: [{ currency: 'usd', id: values[0] }], rowCount: 1 };
     }
     if (sql.includes("UPDATE probe_billing.setups SET state='confirmed'")) setup.state = 'confirmed';
     return { rows: [], rowCount: 1 };
   });
   const store = new Store(pool);
   const event = { id: 'evt_once', type: 'checkout.session.completed' };
-  const checkout = { id: setup.checkout_id, customer: owner.customer_id, metadata: { probe_setup: setup.id, probe_guest: owner.id } };
+  const checkout = { id: setup.checkout_id, currency: 'usd', customer: owner.customer_id, metadata: { probe_setup: setup.id, probe_guest: owner.id } };
+  await assert.rejects(store.confirmSetup({ id: 'evt_aud', type: 'checkout.session.completed' },
+    { ...checkout, currency: 'aud' }, {}, {}), /setup_ownership_mismatch/);
   const intent = { id: 'seti_fixture', customer: owner.customer_id,
     metadata: { probe_setup: setup.id, probe_guest: owner.id, probe_terms: setup.terms_hash } };
   const method = { id: owner.payment_method_id, customer: owner.customer_id };
@@ -504,15 +510,22 @@ test('provider HTTP failure differs from billable target 404; timeout never retr
   const job = { source: site.name, username: 'alice', rate: config.rates[0], attempt_id: randomUUID(),
     target_url: targetFor(site, 'alice', config.rates[0]) };
   let calls = 0;
+  let dispatchEvidence;
   const fetch404 = async (_url, opts) => {
     calls++;
     assert.equal(JSON.parse(opts.body).followRedirect, false);
     assert.equal(opts.redirect, 'error');
+    assert.equal(dispatchEvidence.requestBytes, Buffer.byteLength(opts.body));
+    assert.equal(dispatchEvidence.domain, 'example.com');
+    assert.equal(dispatchEvidence.pricing.mode, 'http');
+    assert.equal(dispatchEvidence.pricing.ipType, 'automatic');
+    assert.equal(Object.hasOwn(dispatchEvidence, 'url'), false);
+    assert.equal(Object.hasOwn(dispatchEvidence, 'username'), false);
     return new Response(JSON.stringify({ url: job.target_url, statusCode: 404, echoData: JSON.parse(opts.body).echoData,
       httpResponseHeaders: [], httpResponseBody: Buffer.from('missing').toString('base64') }),
     { status: 200, headers: { 'request-id': 'provider-fixture' } });
   };
-  const result = await execute(job, site, 'fixture-key', fetch404, async () => {}, async () => {});
+  const result = await execute(job, site, 'fixture-key', fetch404, async () => {}, async evidence => { dispatchEvidence = evidence; });
   assert.equal(result.state, 'response');
   assert.equal(result.providerStatus, 200); assert.equal(result.targetStatus, 404);
   assert.equal(result.result.status, 'not_found');
@@ -521,6 +534,12 @@ test('provider HTTP failure differs from billable target 404; timeout never retr
   const unknown = await execute(job, site, 'fixture-key', async () => { calls++; throw new Error('timeout'); }, async () => {}, async () => {});
   assert.equal(unknown.state, 'uncertain');
   assert.equal(calls, 2);
+  const malformed = await execute(job, site, 'fixture-key',
+    async () => new Response('not-json', { status: 200, headers: { 'request-id': 'retained-provider-reference' } }),
+    async () => {}, async () => {});
+  assert.equal(malformed.state, 'uncertain');
+  assert.equal(malformed.providerRef, 'retained-provider-reference');
+  assert.equal(malformed.providerStatus, 200);
   let forbidden = 0;
   const guard = await execute({ ...job, target_url: 'https://evil.test/' }, site, 'fixture',
     async () => { forbidden++; }, async () => {});
@@ -560,10 +579,15 @@ test('Zyte IP transport is explicit when approved, unchanged by default and guar
     assert.equal(calls, 0);
   }
 });
-test('authoritative reconciliation charges successful target evidence, absorbs errors and blocks rate overrun', async () => {
+test('isolated synthetic accounting fixtures exercise reconciliation but cannot bypass USD allocation', async t => {
+  const names = ['PROBE_STAGING', 'PAID_INFRA_ENABLED', 'PAID_WORKER_ENABLED', 'PAID_MONEY_PATH_VERIFIED', 'PAID_USD_MONEY_PATH_VERIFIED'];
+  const previous = names.map(name => process.env[name]);
+  Object.assign(process.env, { PROBE_STAGING: '1', PAID_INFRA_ENABLED: '0', PAID_WORKER_ENABLED: '0', PAID_MONEY_PATH_VERIFIED: '0', PAID_USD_MONEY_PATH_VERIFIED: '0' });
+  t.after(() => names.forEach((name, i) => { if (previous[i] === undefined) delete process.env[name]; else process.env[name] = previous[i]; }));
   for (const state of ['response','provider_error','uncertain','probe_error']) {
     const owner = guest();
-    const job = { id: randomUUID(), guest_id: owner.id, state: 'reconcile', rate: config.rates[0],
+    const job = { id: randomUUID(), guest_id: owner.id, state: 'reconcile', source: 'AccountingFixture',
+      rate: { ...config.rates[0], synthetic: true },
       reservation_micros: '3000', result: { status: 'unknown' } };
     const attempt = { state, provider_status: state === 'provider_error' ? 500 : 200, target_status: 404, provider_ref: 'provider-fixture' };
     const pool = poolWith(async sql => {
@@ -574,30 +598,31 @@ test('authoritative reconciliation charges successful target evidence, absorbs e
       return { rows: [], rowCount: 1 };
     });
     const store = new Store(pool);
-    const input = { jobId: job.id, supplierMicros: 2000, authoritative: true, disposition: 'billed',
-      evidenceReference: 'verified-usage-export:fixture', providerReference: 'provider-fixture' };
-    await assert.rejects(store.reconcile({ ...input, authoritative: false }), /authoritative_evidence/);
-    await assert.rejects(store.reconcile({ ...input, providerReference: 'other' }), /provider_reference_mismatch/);
+    const input = { sandboxFixture: true, jobId: job.id, supplierMicros: 2000, authoritative: true, disposition: 'billed',
+      evidenceReference: 'fixture-usage-export:fixture', providerReference: 'provider-fixture' };
+    await assert.rejects(store.reconcile(input), /usd_allocation_reconciliation_required/);
+    await assert.rejects(store.reconcileFixture({ ...input, authoritative: false }), /authoritative_evidence/);
+    await assert.rejects(store.reconcileFixture({ ...input, providerReference: 'other' }), /provider_reference_mismatch/);
     if (state === 'response') {
-      await assert.rejects(store.reconcile({ ...input, supplierMicros: 2001 }), /supplier_rate_exceeded/);
+      await assert.rejects(store.reconcileFixture({ ...input, supplierMicros: 2001 }), /supplier_rate_exceeded/);
       attempt.provider_ref = null;
-      await assert.rejects(store.reconcile(input), /supplier_reference_unverified/);
+      await assert.rejects(store.reconcileFixture(input), /supplier_reference_unverified/);
       attempt.provider_ref = 'provider-fixture';
     }
-    await store.reconcile(input);
+    await store.reconcileFixture(input);
     const ledger = pool.queries.find(q => q.sql.includes('INSERT INTO probe_billing.ledger'));
     assert.equal(ledger.values[2], state === 'response' ? 'usage' : 'absorbed');
     assert.equal(ledger.values[3], state === 'response' ? 3000 : 0);
   }
 });
 test('collection retries are keyed to durable claims, cents leave remainder, stale unknowns freeze', async () => {
-  const collection = { id: randomUUID(), guest_id: randomUUID(), amount_cents: 3,
+  const collection = { currency: 'usd', id: randomUUID(), guest_id: randomUUID(), amount_cents: 3,
     customer_id: 'cus_fixture', payment_method_id: 'pm_fixture', created_at: new Date() };
   const keys = [];
   let results = 0; let frozen = 0;
   const stripe = { accounts, paymentMethodConfigurations, paymentIntents: { async create(params, opts) {
     keys.push(opts.idempotencyKey);
-    assert.equal(params.off_session, true); assert.equal(params.confirm, true); assert.equal(params.currency, 'aud');
+    assert.equal(params.off_session, true); assert.equal(params.confirm, true); assert.equal(params.currency, 'usd');
     assert.equal(params.payment_method_configuration, 'pmc_fixture');
     assert.equal(Object.hasOwn(params, 'payment_method_types'), false);
     return { id: 'pi_fixture', status: 'succeeded' };
@@ -615,7 +640,7 @@ test('collection retries are keyed to durable claims, cents leave remainder, sta
 });
 test('payment failure and uncertainty suspend spending; succeeded webhook cannot bill twice', async () => {
   const owner = guest();
-  const collection = { id: randomUUID(), guest_id: owner.id, amount_cents: '1', state: 'claimed',
+  const collection = { currency: 'usd', id: randomUUID(), guest_id: owner.id, amount_cents: '1', state: 'claimed',
     payment_intent_id: null };
   const pool = poolWith(async (sql, values) => {
     if (sql.startsWith('SELECT guest_id FROM probe_billing.collections')) return { rows: [{ guest_id: owner.id }] };
@@ -625,7 +650,7 @@ test('payment failure and uncertainty suspend spending; succeeded webhook cannot
     return { rows: [], rowCount: 1 };
   });
   const store = new Store(pool);
-  const intent = { id: 'pi_fixture', amount: 1, amount_received: 1, currency: 'aud', livemode: false,
+  const intent = { id: 'pi_fixture', amount: 1, amount_received: 1, currency: 'usd', livemode: false,
     customer: owner.customer_id, payment_method: owner.payment_method_id, status: 'succeeded',
     metadata: { probe_collection: collection.id, probe_guest: owner.id } };
   await store.paymentResult(collection.id, intent);
@@ -658,14 +683,14 @@ test('declines retain strict ownership when Stripe clears the primary payment me
   assert.equal(intentPaymentMethodId({ status: 'succeeded', payment_method: null,
     last_payment_error: { payment_method: 'pm_failed' } }), null);
   const owner = guest();
-  const collection = { id: randomUUID(), guest_id: owner.id, amount_cents: '100', state: 'claimed' };
+  const collection = { currency: 'usd', id: randomUUID(), guest_id: owner.id, amount_cents: '100', state: 'claimed' };
   const pool = poolWith(async sql => {
     if (sql.startsWith('SELECT guest_id FROM probe_billing.collections')) return { rows: [{ guest_id: owner.id }] };
     if (sql.startsWith('SELECT * FROM probe_billing.guests')) return { rows: [owner] };
     if (sql.startsWith('SELECT * FROM probe_billing.collections')) return { rows: [collection] };
     return { rows: [], rowCount: 1 };
   });
-  const intent = { id: 'pi_declined', livemode: false, currency: 'aud', amount: 100,
+  const intent = { id: 'pi_declined', livemode: false, currency: 'usd', amount: 100,
     customer: owner.customer_id, payment_method: null, status: 'requires_payment_method',
     metadata: { probe_collection: collection.id, probe_guest: owner.id },
     last_payment_error: { payment_method: { id: owner.payment_method_id } } };

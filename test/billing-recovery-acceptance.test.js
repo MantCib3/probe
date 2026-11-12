@@ -6,13 +6,13 @@ const { runSetupAcceptance, assertAcceptanceEvent, TERMS_HASH, RECOVERY_GUEST } 
 const { randomUUID } = require('node:crypto');
 
 function fixture() {
-  const guest = { id: RECOVERY_GUEST, customer_id: 'cus_private', payment_method_id: 'pm_private',
+  const guest = { currency: 'usd', id: RECOVERY_GUEST, customer_id: 'cus_private', payment_method_id: 'pm_private',
     state: 'action_required', debt_micros: '1000000', paid_micros: '0',
     consent_at: new Date(), expires_at: new Date(Date.now() + 3600000) };
   const recovery = { id: randomUUID(), guest_id: guest.id, customer_id: guest.customer_id,
     collection_id: guest.id, amount_cents: '100', terms_hash: TERMS_HASH,
     state: 'ready', created_at: new Date(), checkout_id: 'cs_fixture', checkout_url: 'https://checkout.stripe.com/c/pay/fixture#complete-fragment' };
-  const collection = { id: guest.id, guest_id: guest.id, state: 'failed', amount_cents: '100', payment_intent_id: 'pi_old' };
+  const collection = { currency: 'usd', id: guest.id, guest_id: guest.id, state: 'failed', amount_cents: '100', payment_intent_id: 'pi_old' };
   const queries = [];
   let marker = { scenario: 'authentication', synthetic: true };
   const client = { release() {}, async query(sql, values) {
@@ -57,12 +57,12 @@ test('ready checkout returns its full URL without provider calls; completed/unce
 });
 test('locked webhook recovery admits new test card only for exact owned amount, terms, guest and checkout; authoritative retrieval still follows', async () => {
   const f = fixture();
-  const object = { id: 'cs_fixture', mode: 'payment', amount_total: 100, currency: 'aud',
+  const object = { id: 'cs_fixture', mode: 'payment', amount_total: 100, currency: 'usd',
     customer: f.guest.customer_id, metadata: { probe_recovery: f.recovery.id,
       probe_guest: RECOVERY_GUEST, probe_collection: RECOVERY_GUEST, probe_terms: TERMS_HASH } };
   const event = { type: 'checkout.session.completed', livemode: false, data: { object } };
   await assertAcceptanceEvent(f.pool, event);
-  for (const patch of [{ amount_total: 101 }, { currency: 'usd' }, { id: 'cs_other' }, { mode: 'setup' },
+  for (const patch of [{ amount_total: 101 }, { currency: 'aud' }, { id: 'cs_other' }, { mode: 'setup' },
     { customer: 'cus_other' }, { metadata: { ...object.metadata, probe_terms: 'b'.repeat(64) } },
     { metadata: { ...object.metadata, probe_guest: randomUUID() } }]) {
     await assert.rejects(assertAcceptanceEvent(f.pool, { ...event, data: { object: { ...object, ...patch } } }));

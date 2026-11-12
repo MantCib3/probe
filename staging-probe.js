@@ -95,7 +95,7 @@ function createStagingHandler(options) {
       } catch (_) {
         console.error(`[staging-billing-health] ${stripeCheck ? 'Stripe sandbox' : 'read-only database'} verification failed; details withheld.`);
         return send(503, { ok: false, error: stripeCheck ?
-          'Stripe sandbox readiness failed. Check staging test key and AU/AUD account settings.' :
+          'Stripe sandbox readiness failed. Check staging test key and AU/USD account settings.' :
           'Database readiness check failed. Check staging database and CA settings.' });
       } finally {
         billingHealthActive = false;

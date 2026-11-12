@@ -1,13 +1,13 @@
 'use strict';
 
-function paidAud(micros) {
+function paidUsd(micros) {
   const value = BigInt(micros || 0);
-  return `AUD ${value / 1000000n}.${(value % 1000000n).toString().padStart(6, '0')}`;
+  return `USD ${value / 1000000n}.${(value % 1000000n).toString().padStart(6, '0')}`;
 }
 function paidCapMicros(value) {
   const text = value.trim();
   if (!text) return null;
-  if (!/^\d{1,6}(?:\.\d{1,2})?$/.test(text)) throw new Error('Use an AUD cap with at most two decimal places.');
+  if (!/^\d{1,6}(?:\.\d{1,2})?$/.test(text)) throw new Error('Use a USD cap with at most two decimal places.');
   const [whole, decimal = ''] = text.split('.');
   return Number(BigInt(whole) * 1000000n + BigInt(decimal.padEnd(2, '0')) * 10000n);
 }
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const element = id => document.getElementById(id);
   const notice = element('paidStatus');
   const optIn = element('paidOptIn');
+  const legacyMessage = 'This is a preserved, frozen AUD session. No amounts have been converted. Use a separate browser profile for a new USD session; contact the operator about the old record.';
   let config;
   let csrf;
   let state = 'new';
@@ -34,8 +35,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     element('paidSettle').disabled = busy || !csrf || !recoveryConsent || !collectibleDebt || debtBelowMinimum ||
       !['action_required', 'revoked'].includes(state);
     element('paidResume').disabled = busy || !optIn.checked || state !== 'action_required' || !recoveryComplete;
-    element('paidCreateCode').disabled = busy || !element('paidCodeReplaceConsent').checked;
-    element('paidRestoreSession').disabled = busy || Boolean(csrf);
+    element('paidCreateCode').disabled = busy || state === 'legacy_frozen' || !element('paidCodeReplaceConsent').checked;
+    element('paidRestoreSession').disabled = busy || state === 'legacy_frozen' || Boolean(csrf);
     element('paidCopyCode').disabled = busy || !element('paidNewCode').value;
     element('paidRevealCode').disabled = busy || !element('paidNewCode').value;
   };
@@ -65,6 +66,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         element('paidSessionStatus').textContent = 'Session missing or expired. Restore with your saved recovery code. If both cookie and code are lost, contact the operator; debt is not erased.';
         sync();
       }
+      if (error.message === 'legacy_currency_frozen') {
+        csrf = undefined;
+        state = 'legacy_frozen';
+        optIn.checked = false;
+        sync();
+      }
       throw error;
     }
     csrf = status.csrf;
@@ -75,10 +82,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       !status.collections?.length && !['creating', 'ready', 'uncertain'].includes(status.recovery?.state);
     element('paidRecovery').hidden = !['action_required', 'revoked'].includes(state);
     element('paidRecoveryStatus').textContent = status.recovery
-      ? `Hosted recovery: ${status.recovery.state}; ${paidAud(BigInt(status.recovery.amount_cents) * 10000n)}. Refresh after Stripe finishes. New spending stays paused until explicitly resumed; revoked spending cannot resume.`
+      ? `Hosted recovery: ${status.recovery.state}; ${paidUsd(BigInt(status.recovery.amount_cents) * 10000n)}. Refresh after Stripe finishes. New spending stays paused until explicitly resumed; revoked spending cannot resume.`
       : 'Replace a declined card, or review the fixed debt amount in Stripe checkout. Unknown payments require operator review; do not pay twice.';
     if (debtBelowMinimum) {
-      element('paidRecoveryStatus').textContent += ' Debt is below Stripe’s AUD 0.50 minimum. It carries forward without rounding up or forgiveness; failed-payment spending remains paused.';
+      element('paidRecoveryStatus').textContent += ' Debt is below Stripe’s USD 0.50 minimum. It carries forward without rounding up or forgiveness; failed-payment spending remains paused.';
     }
     if (element('paidCodeOutput').hidden) {
       element('paidSessionStatus').textContent = status.recoveryCodeConfigured
@@ -86,11 +93,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         : 'No recovery code is configured. Create and save one before losing access to this browser session.';
     }
     notice.textContent = `Sandbox: ${state}. A return from Stripe never authorizes spending by itself.`;
-    element('paidMeter').textContent = `Confirmed debt ${paidAud(status.debtMicros)}; reserved pending usage ${paidAud(status.reservedMicros)}; collected ${paidAud(status.paidMicros)}. Lifetime cap: ${status.capMicros === null ? 'none (credit limit still applies)' : paidAud(status.capMicros)}. Sub-cent balances carry forward.`;
+    element('paidMeter').textContent = `Confirmed debt ${paidUsd(status.debtMicros)}; reserved pending usage ${paidUsd(status.reservedMicros)}; collected ${paidUsd(status.paidMicros)}. Lifetime cap: ${status.capMicros === null ? 'none (credit limit still applies)' : paidUsd(status.capMicros)}. Sub-cent balances carry forward.${status.remainder && status.remainder.numerator !== '0' ? ` Additional exact fractional usage carried: ${status.remainder.numerator}/${status.remainder.denominator} of one USD millionth.` : ''}`;
     element('paidJobs').replaceChildren();
     for (const job of status.jobs) {
       const item = document.createElement('li');
-      item.textContent = `${job.source}: ${job.result?.status || 'pending'} — ${job.state}; ${paidAud(job.reservation_micros)} maximum reserved. ${job.result?.reasonCodes?.join(', ') || ''}`;
+      item.textContent = `${job.source}: ${job.result?.status || 'pending'} — ${job.state}; ${paidUsd(job.reservation_micros)} maximum reserved. ${job.result?.reasonCodes?.join(', ') || ''}`;
       element('paidJobs').append(item);
     }
     sync();
@@ -124,13 +131,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           recovery_pending_operator_review: 'Recovery is pending or uncertain. Refresh; if unresolved, contact the operator before another payment.',
           payment_uncertain_operator_review: 'The earlier payment outcome is unresolved. Contact the operator; do not pay twice.',
           recovery_not_complete: 'Debt, pending usage or a hosted checkout still needs resolution before spending can resume.',
-          debt_below_stripe_minimum: 'This debt is below Stripe’s AUD 0.50 minimum. It remains owed; contact the operator rather than attempting another payment.',
+          debt_below_stripe_minimum: 'This debt is below Stripe’s USD 0.50 minimum. It remains owed; contact the operator rather than attempting another payment.',
           payment_already_settled_refresh: 'Stripe already settled this payment. Refresh the meter; no second payment was created.',
           spending_suspended: 'Spending cannot resume for this session. Revocation cannot be reversed.',
           invalid_recovery_code: 'Recovery code not recognized. Check your saved copy. If both code and cookie are lost, contact the operator; never send card details or the code.',
           existing_session_present: 'This browser already has a billing session. Use a separate browser profile to restore another session without losing the current one.',
           session_invalid: 'The browser session is invalid or expired. Restore it with your saved recovery code.',
           session_required: 'Restore your billing session with its saved recovery code.',
+          legacy_currency_frozen: legacyMessage,
         };
         notice.textContent = `Sandbox: ${messages[error.message] || error.message}. No automatic paid retry.`;
       }
@@ -228,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!config.enabled) return;
     optIn.disabled = false;
     element('paidControls').hidden = false;
-    element('paidRates').textContent = `${config.rates.map(rate => `${rate.source} (${rate.mode}, ${rate.ipType || 'supplier-selected'} IP): supplier up to ${paidAud(rate.supplierMicros)} + margin ${paidAud(rate.marginMicros)} per provider-billable attempt`).join('; ')}. Credit ${paidAud(config.creditMicros)}, collection threshold ${paidAud(config.thresholdMicros)}, minimum collection ${paidAud(config.minimumCents * 10000)}. Actual supplier billing requires authoritative reconciliation, not a PROBE verdict.`;
+    element('paidRates').textContent = `${config.rates.map(rate => `${rate.source} (${rate.mode}, ${rate.ipType || 'supplier-selected'} IP): supplier share up to ${paidUsd(rate.supplierMicros)} + margin ${paidUsd(rate.marginMicros)} per comparable request`).join('; ')}. Credit ${paidUsd(config.creditMicros)}, collection threshold ${paidUsd(config.thresholdMicros)}, minimum collection ${paidUsd(config.minimumCents * 10000)}. Measured pre-credit domain/window usage is shared equally, not priced from rounded individual dashboard rows or PROBE verdicts. PROBE absorbs its own test, duplicate and error shares.`;
     for (const rate of config.rates) {
       const option = document.createElement('option');
       option.value = rate.source;
@@ -239,7 +247,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     try { await refresh(); }
     catch (error) { if (error.httpStatus !== 401) throw error; }
   } catch (error) {
-    notice.textContent = error.httpStatus === 404 ? 'Paid infrastructure is staging-only. Free scans are unchanged.' : 'Paid infrastructure unavailable. Free scans are unchanged.';
+    notice.textContent = error.message === 'legacy_currency_frozen' ? legacyMessage :
+      error.httpStatus === 404 ? 'Paid infrastructure is staging-only. Free scans are unchanged.' : 'Paid infrastructure unavailable. Free scans are unchanged.';
     optIn.disabled = true;
     element('paidControls').hidden = true;
   }

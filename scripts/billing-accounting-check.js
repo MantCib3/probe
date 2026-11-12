@@ -10,6 +10,7 @@ const { transaction } = require('../lib/billing/db');
 function accountingCheckAllowed(env = process.env) {
   return env.PROBE_STAGING === '1' &&
     (!env.RENDER || env.RENDER_SERVICE_NAME === 'probe-staging') &&
+    env.PAID_USD_MONEY_PATH_VERIFIED !== '1' &&
     ['PAID_INFRA_ENABLED', 'PAID_WORKER_ENABLED', 'PAID_MONEY_PATH_VERIFIED']
       .every(name => env[name] === '0');
 }
@@ -42,7 +43,7 @@ async function runFixtures(pool) {
   const termsHash = createHash('sha256').update('test-only-terms').digest('hex');
   const config = { enabled: true, consentVersion: CONSENT_VERSION, termsHash,
     creditMicros: 100000, thresholdMicros: 20000, minimumCents: 1 };
-  const rate = { source: 'AccountingFixture', mode: 'http', hosts: ['example.com'],
+  const rate = { source: 'AccountingFixture', synthetic: true, mode: 'http', hosts: ['example.com'],
     supplierMicros: 10003, marginMicros: 1, maximumMicros: 10004 };
   const site = { name: rate.source };
   // Delete only this test's UUID-owned records, never shared data or schema.
@@ -91,11 +92,11 @@ async function runFixtures(pool) {
     assert.equal((await pool.query('SELECT count(*)::int AS n FROM probe_billing.attempts WHERE job_id=$1', [job.id])).rows[0].n, 1);
     await store.finishJob(job, { state: 'response', providerStatus: 200, targetStatus: 404,
       providerRef: `provider_fixture_${job.id}`, result: { status: 'not_found', reasonCodes: ['http_404'] } });
-    const evidence = { jobId: job.id, supplierMicros: 10003, disposition: 'billed',
+    const evidence = { sandboxFixture: true, jobId: job.id, supplierMicros: 10003, disposition: 'billed',
       authoritative: true, evidenceReference: `fixture-usage-export:${job.id}`,
       providerReference: `provider_fixture_${job.id}` };
-    await store.reconcile(evidence);
-    await store.reconcile(evidence);
+    await store.reconcileFixture(evidence);
+    await store.reconcileFixture(evidence);
     let status = await store.status(owner);
     assert.equal(status.debtMicros, '10004'); assert.equal(status.reservedMicros, '0');
     await pool.query("UPDATE probe_billing.guests SET last_collection_at=now()-interval '2 days' WHERE id=$1", [owner]);
@@ -104,7 +105,7 @@ async function runFixtures(pool) {
     const collections = claims.map(r => r.value);
     assert.equal(collections.filter(Boolean).length, 1);
     const collection = collections.find(Boolean);
-    const intent = { id: `pi_fixture_${collection.id}`, status: 'succeeded', livemode: false, currency: 'aud',
+    const intent = { id: `pi_fixture_${collection.id}`, status: 'succeeded', livemode: false, currency: 'usd',
       customer: `cus_fixture_${owner}`, payment_method: `pm_fixture_${owner}`, amount: 1, amount_received: 1,
       metadata: { probe_collection: collection.id, probe_guest: owner } };
     await assert.rejects(store.paymentResult(collection.id, { ...intent, customer: `cus_fixture_${other}` }), /payment_ownership_mismatch/);
@@ -129,7 +130,7 @@ async function runFixtures(pool) {
         targetStatus: state === 'response' ? 200 : null, providerRef: `provider_fixture_${id}`,
         result: { status: 'unknown', reasonCodes: ['fixture_inconclusive'] } });
       if (state !== 'probe_error') {
-        await store.reconcile({ ...evidence, jobId: id, evidenceReference: `fixture-usage-export:${id}`,
+        await store.reconcileFixture({ ...evidence, jobId: id, evidenceReference: `fixture-usage-export:${id}`,
           providerReference: `provider_fixture_${id}` });
       }
       const result = await store.status(owner);

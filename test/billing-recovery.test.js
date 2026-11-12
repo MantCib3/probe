@@ -12,11 +12,11 @@ function fixture() {
     prior_payment_intent_id: 'pi_old', customer_id: 'cus_fixture', payment_method_id: 'pm_old',
     state: 'creating', amount_cents: '100', terms_hash: config.termsHash };
   const prior = { id: 'pi_old', status: 'requires_payment_method', livemode: false, customer: recovery.customer_id,
-    currency: 'aud', amount: 100, payment_method: null, last_payment_error: { payment_method: 'pm_old' },
+    currency: 'usd', amount: 100, payment_method: null, last_payment_error: { payment_method: 'pm_old' },
     metadata: { probe_guest: recovery.guest_id, probe_collection: recovery.collection_id } };
   const checkout = { id: 'cs_fixture', livemode: false, url: 'https://checkout.stripe.com/c/pay/fixture#full-fragment',
     mode: 'payment', status: 'complete', payment_status: 'paid', payment_intent: 'pi_new',
-    customer: recovery.customer_id, currency: 'aud', amount_total: 100,
+    customer: recovery.customer_id, currency: 'usd', amount_total: 100,
     metadata: { probe_guest: recovery.guest_id, probe_collection: recovery.collection_id,
       probe_recovery: recovery.id, probe_terms: config.termsHash } };
   const intent = { ...prior, id: 'pi_new', status: 'succeeded', amount_received: 100,
@@ -54,7 +54,7 @@ function fixture() {
         calls.push('create');
         assert.equal(params.mode, 'payment');
         assert.equal(params.line_items[0].price_data.unit_amount, 100);
-        assert.equal(params.line_items[0].price_data.currency, 'aud');
+        assert.equal(params.line_items[0].price_data.currency, 'usd');
         assert.equal(params.customer, recovery.customer_id);
         assert.equal(params.payment_intent_data.setup_future_usage, 'off_session');
         assert.equal(params.payment_method_configuration, 'pmc_fixture');
@@ -151,7 +151,7 @@ function sqlPool(guest, blocked = false) {
   return { queries, async connect() { return client; } };
 }
 test('explicit resume rejects revoked/expired sessions, debt, reservations and unresolved external effects', async () => {
-  const guest = { id: randomUUID(), state: 'action_required', customer_id: 'cus_fixture', payment_method_id: 'pm_fixture',
+  const guest = { currency: 'usd', id: randomUUID(), state: 'action_required', customer_id: 'cus_fixture', payment_method_id: 'pm_fixture',
     consent_at: new Date(), expires_at: new Date(Date.now() + 3600000), debt_micros: '0', reserved_micros: '0' };
   for (const patch of [{ state: 'revoked' }, { expires_at: new Date(0) }, { debt_micros: '10000' },
     { reserved_micros: '1' }, { payment_method_id: null }]) {

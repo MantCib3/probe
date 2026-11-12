@@ -33,7 +33,7 @@ async function main(env = process.env) {
       try {
         await tick(store, stripe, config, job =>
           execute(job, SITES.find(s => s.name === job.source), env.ZYTE_API_KEY,
-            undefined, undefined, () => store.authorizeAttempt(job, config)));
+            undefined, undefined, evidence => store.authorizeAttempt(job, config, evidence)));
       } catch (_) {
         console.error('[billing:worker] tick failed; details withheld. Durable uncertain work needs review.');
         if (process.argv.includes('--once')) throw new Error('Worker failed.');

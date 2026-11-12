@@ -9,6 +9,8 @@
     "billing:migrate": "node scripts/billing-migrate.js",
     "billing:worker": "node scripts/billing-worker.js",
     "billing:reconcile": "node scripts/billing-reconcile.js",
+    "zyte:stats-import": "node scripts/zyte-stats-import.js",
+    "billing:allocate": "node scripts/billing-allocate.js",
     "build:assets": "node build-assets.js",
     "social:render": "node social/render-cards.js",
     "check": "node --check server.js && node --check script.js && node --check build-assets.js && node --check username-rules.js && node --check source-request-adapter.js && node tools/check-lib.js",
@@ -18,6 +20,7 @@
     "node": ">=22.0.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "clean-css": "^5.3.3",
     "playwright": "1.60.0",
     "terser": "^5.51.2"
