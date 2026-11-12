@@ -19,4 +19,64 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npm test
+      - name: Offline regression and embedded SQL
+        run: node --test --test-concurrency=1 test/*.test.js
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Required browser gate (missing browser is a failure)
+        env:
+          PROBE_REQUIRE_BROWSER: '1'
+        run: node --test test/billing-frontend.test.js
+
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+          cache: npm
+      - run: npm ci
+      - name: Start dedicated TLS PostgreSQL 17
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/probe-pg-tls"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+            -keyout "$RUNNER_TEMP/probe-pg-tls/server.key" \
+            -out "$RUNNER_TEMP/probe-pg-tls/server.crt" \
+            -subj '/CN=localhost' \
+            -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1' \
+            -addext 'basicConstraints=critical,CA:TRUE'
+          sudo chown 999:999 "$RUNNER_TEMP/probe-pg-tls/server.key"
+          sudo chmod 600 "$RUNNER_TEMP/probe-pg-tls/server.key"
+          password=$(openssl rand -hex 24)
+          echo "::add-mask::$password"
+          docker run -d --name probe-billing-test -p 5432:5432 \
+            -e POSTGRES_PASSWORD="$password" -e POSTGRES_DB=probe_billing_test_ci \
+            -v "$RUNNER_TEMP/probe-pg-tls:/certs:ro" postgres:17 \
+            -c ssl=on -c ssl_cert_file=/certs/server.crt -c ssl_key_file=/certs/server.key
+          for attempt in $(seq 1 30); do
+            if docker exec probe-billing-test pg_isready -U postgres -d probe_billing_test_ci; then break; fi
+            sleep 2
+          done
+          docker exec probe-billing-test pg_isready -U postgres -d probe_billing_test_ci
+          echo "PROBE_BILLING_TEST_DATABASE_URL=postgresql://postgres:$password@127.0.0.1:5432/probe_billing_test_ci" >> "$GITHUB_ENV"
+          echo "PROBE_BILLING_TEST_CA_PATH=$RUNNER_TEMP/probe-pg-tls/server.crt" >> "$GITHUB_ENV"
+      - name: Required real database gate
+        env:
+          PROBE_REQUIRE_POSTGRES: '1'
+        run: node --test test/billing-postgres.test.js
+      - name: Remove dedicated test database container
+        if: always()
+        run: docker rm -f probe-billing-test

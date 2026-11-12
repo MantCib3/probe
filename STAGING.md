@@ -29,7 +29,9 @@ test routes return 404.
   structured signals from [tools/census-observe.js](tools/census-observe.js)
   (status, redirect class, anti-bot vendor fingerprint, title, canonical,
   JSON-LD types, size, hash and username reflection), never the body.
-  `variant: "browserlike"` is a diagnostic only; production stays honest.
+  `variant: "browserlike"` is a diagnostic override. Normal requests currently
+  use browser-style headers by default; some source adapters explicitly use
+  the PROBE user-agent. Do not describe the default as honestly identified.
   Census requests share the same in-flight and hourly limits. The lab's
   `src/blocker-census.js` drives it; this mode is never ported to production.
 - Tests have a global maximum of two in-flight requests and 120 attempts/hour.
@@ -46,6 +48,26 @@ test routes return 404.
   still fail closed without a separately configured Turnstile secret.
 
 Run `node --test test/staging-probe.test.js` for harness regressions.
+CI separates offline regression/embedded SQL, a required Playwright browser
+job, and a dedicated TLS PostgreSQL 17 job. Set `PROBE_REQUIRE_BROWSER=1` or
+`PROBE_REQUIRE_POSTGRES=1` to make missing local prerequisites fail rather than
+skip the respective test. Embedded SQL does not certify PostgreSQL
+client/pooler/concurrency behavior. New CI jobs must actually run before they
+count as verified gates; their presence in this checkout is not a pass.
+
+Post-deploy verification accepts `--report <new-file.json>` and retains its
+timestamp, expected/observed commit, catalog hash, runtime-code hash, source
+counts and failures as a CI artifact. It remains a smoke test, not a public
+search browser journey. The runtime hash covers the application code, not just
+the existence classifier.
+
+The nightly report view displays completed/degraded/failed/skipped states,
+email-delivery health, campaign commit/hashes and evidence age. Reports older
+than 36 hours are explicitly stale. A 404 on `/lab` or its upload endpoint is
+not a successful report run: verify deployment, `PROBE_STAGING` and the
+privately configured `LAB_VIEW_PASSWORD`. Never put that password in reports
+or source control. No live view restoration is established by local tests.
+
 Use the hosted baseline runner with a small manifest of existing campaign
 controls, and retain the actual runtime hashes and commit in each report.
 Set `STAGING_PROBE_KEY` in the local process environment, then run:

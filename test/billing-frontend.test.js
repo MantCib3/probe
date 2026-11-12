@@ -11,7 +11,7 @@ test('offline browser: paid checkbox never spends implicitly, meter and explicit
   let browser;
   try { browser = await chromium.launch({ headless: true }); }
   catch (error) {
-    if (/Executable doesn't exist/.test(error.message)) { t.skip('Existing Playwright browser is unavailable; no installation requested.'); return; }
+    if (/Executable doesn't exist/.test(error.message) && process.env.PROBE_REQUIRE_BROWSER !== '1') { t.skip('Existing Playwright browser is unavailable; no installation requested.'); return; }
     throw error;
   }
   t.after(() => browser.close());

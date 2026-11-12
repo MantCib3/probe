@@ -26,4 +26,11 @@ jobs:
       - name: Verify live deploy
         env:
           ORIGIN: ${{ vars.DEPLOY_ORIGIN || ((github.repository == 'MantCib3/probe' && github.ref_name == 'main') && 'https://usernameprobe.com' || 'https://probe-staging.onrender.com') }}
-        run: node scripts/verify-deploy.js "$ORIGIN" "${{ github.sha }}" --timeout-min 25
+        run: node scripts/verify-deploy.js "$ORIGIN" "${{ github.sha }}" --timeout-min 25 --report deployment-report.json
+      - name: Retain stamped deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-report
+          path: deployment-report.json
+          if-no-files-found: error

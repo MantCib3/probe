@@ -44,8 +44,9 @@ test('accounting preflight refuses populated ledgers and competing runs without 
 
 const localUri = process.env.PROBE_BILLING_TEST_DATABASE_URL;
 test('real local PostgreSQL: cap race, durable recovery, reconciliation and webhook accounting', {
-  skip: !localUri && 'No dedicated local TLS PostgreSQL provided; hosted acceptance is separate.',
+  skip: !localUri && process.env.PROBE_REQUIRE_POSTGRES !== '1' && 'No dedicated local TLS PostgreSQL provided; hosted acceptance is separate.',
 }, async t => {
+  assert.ok(localUri, 'Required PostgreSQL gate unavailable: configure a dedicated local TLS database.');
   const url = new URL(localUri);
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname), 'Remote databases are forbidden in this test.');
   assert.match(url.pathname, /^\/probe_billing_test_[a-z0-9_]+$/, 'Use a dedicated test database.');

@@ -112,3 +112,22 @@ test('validateReport rejects non-objects and bad dates', () => {
   assert.ok(validateReport({ schemaVersion: 1, generatedAt: '2026-11-09T00:00:00Z', canary: 5 }));
   assert.equal(validateReport(report()), null);
 });
+
+test('nightly view exposes degraded/skipped gates, report identity, evidence age and stale reports', async () => {
+  const store = createMemoryStore();
+  await store.save(report({
+    run: { status: 'degraded', alertDelivery: { status: 'degraded', reason: 'RESEND_API_KEY not set' },
+      steps: [{ name: 'database', status: 'skipped', note: 'unavailable' }, { name: 'untrusted', status: '<script>bad</script>' }] },
+    campaign: { generatedAt: '2020-01-01T00:00:00Z',
+      provenance: { git: { commit: 'abc1234' }, inputs: { catalogSha256: 'catalog-hash', classifierSha256: 'classifier-hash' } },
+      evidenceAge: { oldestReviewedAt: '2019-12-01T00:00:00Z', maximumAgeDays: 31, undatedRows: 2 } },
+  }));
+  await withServer({ store }, async base => {
+    const html = await (await fetch(`${base}/lab`, { headers: { authorization: basic(PASSWORD) } })).text();
+    for (const value of ['abc1234', 'catalog-hash', 'classifier-hash', '2019-12-01', 'degraded', 'skipped', 'RESEND_API_KEY not set', 'STALE OR UNDATED REPORT']) {
+      assert.ok(html.includes(value), value);
+    }
+    assert.ok(html.includes('&lt;script&gt;bad&lt;/script&gt;'));
+    assert.doesNotMatch(html, /<script>bad/);
+  });
+});

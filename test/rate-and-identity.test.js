@@ -2,6 +2,8 @@
 
 const assert = require('node:assert/strict');
 const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
 const test = require('node:test');
 const server = require('../server');
 const adapter = require('../source-request-adapter');
@@ -75,6 +77,10 @@ test('honest user agents drop browser-only client hints; browser defaults keep t
   assert.ok(!names.some(name => name.startsWith('sec-ch-ua') || name.startsWith('sec-fetch-') || name === 'upgrade-insecure-requests'));
   const browser = server.makeReqOptions(parsed, null, new Map(), null);
   assert.ok(Object.keys(browser.headers).includes('sec-ch-ua'));
+  assert.match(browser.headers['User-Agent'] || browser.headers['user-agent'], /Mozilla/);
+  const policy = fs.readFileSync(path.join(__dirname, '..', 'privacy.html'), 'utf8');
+  assert.match(policy, /automatic HTTP checks currently use browser-style headers by default/);
+  assert.match(policy, /Some source-specific adapters explicitly identify as PROBE/);
 });
 
 test('credentials are validated, environment-only and limited to their HTTPS host', () => {
