@@ -70,6 +70,12 @@ test('real local PostgreSQL: cap race, durable recovery, reconciliation and webh
     const recovery = await runRecoveryFixtures(pool);
     assert.equal(recovery.checks.length, 12);
     assert.equal(recovery.fixturesRemoved, true);
+    await t.test('source benchmark durable reservations, metadata and uncertain outcomes without customer writes', async () => {
+      const before = (await pool.query('SELECT count(*)::integer AS count FROM probe_billing.guests')).rows[0].count;
+      await require('./source-benchmark-fixture').runBenchmarkFixture(pool);
+      await require('./source-benchmark-fixture').runBenchmarkRaceFixture(pool);
+      assert.equal((await pool.query('SELECT count(*)::integer AS count FROM probe_billing.guests')).rows[0].count, before);
+    });
   } finally {
     await pool.end();
   }

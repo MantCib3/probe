@@ -80,6 +80,23 @@ function createStagingHandler(options) {
       if (req.method !== 'GET') return send(405, { ok: false, error: 'GET required.' }, { Allow: 'GET' });
       return send(200, { ok: true, runtimeFingerprint, deployment: options.deployment, credentialsConfigured: options.credentialsConfigured || {} });
     }
+    if (pathname === '/api/staging-source-benchmark') {
+      if (req.method !== 'POST') return send(405, { ok: false, error: 'POST required.' }, { Allow: 'POST' });
+      if (!options.sourceBenchmark) return send(404, { ok: false, error: 'Not found.' });
+      let input;
+      try {
+        req.setTimeout(5000, () => req.destroy());
+        input = JSON.parse(await readBody(req, 256 * 1024));
+      } catch (error) {
+        return send(error.code === 'BODY_TOO_LARGE' ? 413 : 400, { ok: false, error: 'Invalid bounded benchmark input.' });
+      } finally { req.setTimeout(0); }
+      try {
+        return send(200, { ok: true, benchmark: await options.sourceBenchmark(input), runtimeFingerprint });
+      } catch (error) {
+        console.error('[source-benchmark] request failed; inspect durable status before retrying. Details withheld.');
+        return send(error.status || 503, { ok: false, error: error.publicCode || 'Benchmark unavailable; inspect saved status before retrying.' });
+      }
+    }
     if (['/api/staging-billing-health', '/api/staging-billing-stripe-health'].includes(pathname)) {
       const stripeCheck = pathname === '/api/staging-billing-stripe-health';
       const check = stripeCheck ? options.stripeHealth : options.billingHealth;

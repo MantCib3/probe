@@ -48,6 +48,61 @@ test routes return 404.
   still fail closed without a separately configured Turnstile secret.
 
 Run `node --test test/staging-probe.test.js` for harness regressions.
+
+## Authenticated integrated source benchmark
+
+`POST /api/staging-source-benchmark` uses the same bearer key and exact full
+runtime fingerprint as staging health (including profile extractor and metadata
+hints). It requires `trialAllowed`: staging identity, all public spending gates
+disabled, and a supplier key. Public scans, billing guests, customer charges and
+debt are never activated. PostgreSQL is mandatory: benchmark records live only
+in `probe_lab.benchmark_*`; database failure never falls back to memory.
+
+The bounded JSON body (256 KB, five-second body timeout) supports:
+
+- `{"action":"start","manifest":{...}}`: manifest fields are exactly
+  `schemaVersion:1`, `runId` (UUID), `commit` (40 lowercase hex),
+  `catalogSha256` (64 lowercase hex), `sources` and `limits`.
+  `sources` contains at most 300 `{site,controls}` entries, each with one to
+  three `{username,expected:"found"|"not_found"}` controls. Sources must be
+  active automatic catalog entries; controls must be username-compatible and
+  unique case-insensitively. Limits contain nonnegative integers `direct<=2000`,
+  `http<=1000`, `browser<=100`. No URLs, headers or additional fields are accepted.
+  Start is idempotent only for an identical manifest and run UUID; one unexpired
+  run is permitted at a time. Runs expire after 72 hours.
+- `{"action":"observe","runId":"UUID","site":"GitHub","username":"example","mode":"direct","pass":1}`:
+  modes are `direct`, `http`, `browser`; pass is 1, 2 or 3. Exact manifest
+  control identity is required. Direct uses the real 15-second engine;
+  supplier modes use the existing guarded Zyte executor and do not support
+  API/check URL, credential or request-adapter sources. No adapter is broadened.
+- `{"action":"status","runId":"UUID","offset":0}`: offset is optional.
+  Returns `{run,attempts,nextOffset}` (up to 100 attempts); start returns the
+  same page. Observe returns `{attempt,runtimeFingerprint}`. All are wrapped
+  in `{ok:true,benchmark:...,runtimeFingerprint}`. Run and every attempt retain
+  the pinned deployment identity; mixed deployments fail with HTTP 409.
+  Run status also includes the pinned deployment region (or null locally),
+  `supplierStopped`, `createdAt` and `expiresAt`.
+
+Observe reservations have a separate durable limit of 600/hour and two active
+attempts. Ordinary staging remains 120/hour. Start, status and saved replays
+consume no attempt quota. Transactions reserve lane counts before dispatch.
+An attempt's UUID is echoed to Zyte and authorization transitions it exactly
+once. Pending `started`/`dispatched` attempts return `result:null`, never
+re-dispatch. They remain unresolved and occupy a concurrency slot until their
+original invocation finishes or the run expires (fail closed after process loss).
+Uncertain outcomes and direct errors are saved explicitly. Supplier HTTP
+400/401/403/422/429 stops subsequent supplier authorization across the run;
+saved status/replays remain available.
+
+Records retain normalized classification, evidence, profile values, timestamps,
+latency and provider reference/status, but no raw response bodies or credentials.
+`costVerified:false,cost:null` means no supplier-cost verification or customer
+debt. This trusted-operator diagnostic bypasses census policy restrictions,
+not source detection safeguards, and is **not approval for catalog promotion**.
+Run `node --test test/source-benchmark.test.js test/billing-postgres.test.js`;
+the latter executes the shared fixture against dedicated real TLS PostgreSQL
+when configured, not mocked SQL.
+
 CI separates offline regression/embedded SQL, a required Playwright browser
 job, and a dedicated TLS PostgreSQL 17 job. The browser job pins Ubuntu 24.04,
 supported by the locked Playwright release. Set `PROBE_REQUIRE_BROWSER=1` or
