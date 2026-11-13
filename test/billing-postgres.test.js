@@ -74,6 +74,7 @@ test('real local PostgreSQL: cap race, durable recovery, reconciliation and webh
       const before = (await pool.query('SELECT count(*)::integer AS count FROM probe_billing.guests')).rows[0].count;
       await require('./source-benchmark-fixture').runBenchmarkFixture(pool);
       await require('./source-benchmark-fixture').runBenchmarkRaceFixture(pool);
+      await require('./source-benchmark-fixture').runBenchmarkInterruptionFixture(pool);
       assert.equal((await pool.query('SELECT count(*)::integer AS count FROM probe_billing.guests')).rows[0].count, before);
     });
   } finally {

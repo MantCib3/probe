@@ -5,7 +5,8 @@ const test = require('node:test');
 const { PGlite } = require('@electric-sql/pglite');
 const { createSourceBenchmark, validateManifest } = require('../lib/source-benchmark');
 const { createStagingHandler } = require('../staging-probe');
-const { env, sites, fingerprint, commit, manifest, runBenchmarkFixture, runBenchmarkRaceFixture } = require('./source-benchmark-fixture');
+const { env, sites, fingerprint, commit, manifest, runBenchmarkFixture, runBenchmarkRaceFixture,
+  runBenchmarkInterruptionFixture } = require('./source-benchmark-fixture');
 
 test('benchmark rejects malformed/untrusted manifests, inactive sources and deployment drift', () => {
   const good = manifest();
@@ -98,6 +99,7 @@ test('embedded PostgreSQL retains metadata, reservations and uncertain outcomes 
   try {
     await runBenchmarkFixture(pool);
     await runBenchmarkRaceFixture(pool);
+    await runBenchmarkInterruptionFixture(pool);
   }
   finally { await db.close(); }
 });

@@ -177,4 +177,98 @@ async function runBenchmarkRaceFixture(pool) {
     await pool.query('DELETE FROM probe_lab.benchmark_runs WHERE id=$1', [input.runId]);
   }
 }
-module.exports = { env, sites, fingerprint, commit, manifest, runBenchmarkFixture, runBenchmarkRaceFixture };
+async function runBenchmarkInterruptionFixture(pool) {
+  const input = manifest();
+  input.limits.browser = 2;
+  let directCalls = 0;
+  let supplierCalls = 0;
+  let finishLate;
+  let lateWork;
+  let markLateStarted;
+  const lateStarted = new Promise(resolve => { markLateStarted = resolve; });
+  const options = { pool, sites, runtimeFingerprint: fingerprint, commit, env,
+    direct: () => {
+      directCalls++;
+      if (directCalls === 2) {
+        const promise = new Promise(resolve => { finishLate = resolve; });
+        markLateStarted();
+        return { promise };
+      }
+      return { promise: Promise.resolve({ status: 'found', reasonCodes: ['fixture_profile'] }) };
+    },
+    execute: async () => { supplierCalls++; throw new Error('must never redispatch interrupted supplier attempts'); } };
+  const first = createSourceBenchmark(options);
+  const second = createSourceBenchmark(options);
+  const observe = (mode, username = 'alice', pass = 1) => ({ action: 'observe', runId: input.runId,
+    site: sites[0].name, username, mode, pass });
+  const ids = [randomUUID(), randomUUID(), randomUUID(), randomUUID()];
+  try {
+    await first({ action: 'start', manifest: input });
+    await pool.query(`INSERT INTO probe_lab.benchmark_attempts
+      (id,run_id,site,username,mode,pass,state,created_at,dispatched_at) VALUES
+      ($1,$3,$4,'alice','http',1,'started',now()-interval '11 minutes',null),
+      ($2,$3,$4,'bob','http',1,'dispatched',now()-interval '12 minutes',now()-interval '11 minutes')`,
+    [ids[0], ids[1], input.runId, sites[0].name]);
+    // Both invocations race to recover the same two occupied slots.
+    const recovered = await Promise.all([first, second].map(service => service(observe('http'))));
+    for (const response of recovered) {
+      assert.equal(response.attempt.id, ids[0]);
+      assert.equal(response.attempt.state, 'uncertain');
+      assert.deepEqual(response.attempt.result.reasonCodes, ['benchmark_attempt_interrupted']);
+      assert.ok(response.attempt.checkedAt);
+      assert.ok(response.attempt.durationMs >= 10 * 60 * 1000);
+    }
+    const other = (await second(observe('http', 'bob'))).attempt;
+    assert.equal(other.id, ids[1]);
+    assert.equal(other.state, 'uncertain');
+    assert.deepEqual(other.result.reasonCodes, ['benchmark_attempt_interrupted']);
+    const fresh = await first(observe('direct'));
+    assert.equal(fresh.attempt.state, 'response');
+    assert.equal(directCalls, 1);
+    assert.equal(supplierCalls, 0);
+    await assert.rejects(second(observe('http', 'alice', 2)), /benchmark_lane_limit/);
+    await pool.query(`INSERT INTO probe_lab.benchmark_attempts
+      (id,run_id,site,username,mode,pass,state,created_at,dispatched_at) VALUES
+      ($1,$3,$4,'alice','browser',1,'started',now()-interval '9 minutes',null),
+      ($2,$3,$4,'bob','browser',1,'dispatched',now()-interval '11 minutes',now()-interval '2 minutes')`,
+    [ids[2], ids[3], input.runId, sites[0].name]);
+    await assert.rejects(first(observe('direct', 'alice', 2)), /benchmark_rate_limited/);
+    const recent = await second(observe('browser'));
+    assert.equal(recent.attempt.id, ids[2]);
+    assert.equal(recent.attempt.state, 'started');
+    assert.equal(recent.attempt.result, null);
+    const status = await first({ action: 'status', runId: input.runId });
+    assert.equal(status.attempts.find(attempt => attempt.id === ids[3]).state, 'dispatched');
+    assert.equal(status.run.reserved.http, 2);
+    assert.equal(status.run.reserved.browser, 2);
+    assert.equal(status.attempts.length, 5);
+    assert.equal(directCalls, 1);
+    assert.equal(supplierCalls, 0);
+    // Recovery does not refund the hourly budget either.
+    const quota = createSourceBenchmark({ ...options, hourlyLimit: 5 });
+    await pool.query(`UPDATE probe_lab.benchmark_attempts SET state='uncertain'
+      WHERE id=$1 OR id=$2`, [ids[2], ids[3]]);
+    await assert.rejects(quota(observe('direct', 'alice', 2)), /benchmark_rate_limited/);
+    lateWork = first(observe('direct', 'alice', 2));
+    await lateStarted;
+    await pool.query(`UPDATE probe_lab.benchmark_attempts SET
+      created_at=now()-interval '12 minutes',dispatched_at=now()-interval '11 minutes'
+      WHERE run_id=$1 AND mode='direct' AND pass=2`, [input.runId]);
+    const interruptedLate = await second(observe('direct', 'alice', 2));
+    assert.equal(interruptedLate.attempt.state, 'uncertain');
+    finishLate({ status: 'found', reasonCodes: ['late_fixture_response'] });
+    const originalLate = await lateWork;
+    assert.equal(originalLate.attempt.id, interruptedLate.attempt.id);
+    assert.equal(originalLate.attempt.state, 'uncertain');
+    assert.deepEqual(originalLate.attempt.result.reasonCodes, ['benchmark_attempt_interrupted']);
+    assert.equal(directCalls, 2);
+    assert.equal(supplierCalls, 0);
+  } finally {
+    finishLate?.({ status: 'unknown' });
+    if (lateWork) await lateWork.catch(() => {});
+    await pool.query('DELETE FROM probe_lab.benchmark_attempts WHERE run_id=$1', [input.runId]);
+    await pool.query('DELETE FROM probe_lab.benchmark_runs WHERE id=$1', [input.runId]);
+  }
+}
+module.exports = { env, sites, fingerprint, commit, manifest, runBenchmarkFixture, runBenchmarkRaceFixture,
+  runBenchmarkInterruptionFixture };

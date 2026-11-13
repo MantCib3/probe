@@ -88,8 +88,13 @@ attempts. Ordinary staging remains 120/hour. Start, status and saved replays
 consume no attempt quota. Transactions reserve lane counts before dispatch.
 An attempt's UUID is echoed to Zyte and authorization transitions it exactly
 once. Pending `started`/`dispatched` attempts return `result:null`, never
-re-dispatch. They remain unresolved and occupy a concurrency slot until their
-original invocation finishes or the run expires (fail closed after process loss).
+re-dispatch. Before reserving an observation, the transaction finalizes pending
+attempts older than ten minutes (measured from the later of reservation and
+dispatch) as `uncertain`, with reason `benchmark_attempt_interrupted`. This
+conservative bound exceeds the supplier's 65-second request timeout. Recovery
+releases only the concurrency slot: the tuple, lane count and hourly quota stay
+consumed, with no retry or refund. Recent pending attempts remain busy. A late
+original invocation cannot overwrite the durable interruption decision.
 Uncertain outcomes and direct errors are saved explicitly. Supplier HTTP
 400/401/403/422/429 stops subsequent supplier authorization across the run;
 saved status/replays remain available.
