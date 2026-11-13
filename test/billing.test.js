@@ -540,6 +540,7 @@ test('provider HTTP failure differs from billable target 404; timeout never retr
   assert.equal(malformed.state, 'uncertain');
   assert.equal(malformed.providerRef, 'retained-provider-reference');
   assert.equal(malformed.providerStatus, 200);
+  assert.deepEqual(malformed.diagnostic, { stage: 'decode', code: 'provider_json_invalid' });
   let forbidden = 0;
   const guard = await execute({ ...job, target_url: 'https://evil.test/' }, site, 'fixture',
     async () => { forbidden++; }, async () => {});
@@ -547,6 +548,43 @@ test('provider HTTP failure differs from billable target 404; timeout never retr
   const revoked = await execute(job, site, 'fixture-key', async () => { forbidden++; }, async () => {},
     async () => { throw new Error('revoked before dispatch'); });
   assert.equal(revoked.state, 'probe_error'); assert.equal(forbidden, 0);
+});
+test('Zyte failures retain safe phase-specific diagnostics without leaking responses or retrying', async () => {
+  const job = { source: site.name, username: 'alice', rate: config.rates[0], attempt_id: randomUUID(),
+    target_url: targetFor(site, 'alice', config.rates[0]) };
+  for (const [response, code, stage] of [
+    [() => new Response('x'.repeat(2 * 1024 * 1024 + 1)), 'provider_response_too_large', 'decode'],
+    [() => new Response(JSON.stringify({ echoData: { probeAttempt: job.attempt_id }, url: job.target_url, statusCode: 200 })),
+      'provider_target_headers_missing', 'classify'],
+    [() => { throw Object.assign(new Error('private token and URL must never escape'), { name: 'TimeoutError' }); },
+      'provider_timeout', 'transport'],
+  ]) {
+    let calls = 0;
+    const outcome = await execute(job, site, 'fixture', async () => { calls++; return response(); },
+      async () => {}, async () => {});
+    assert.equal(calls, 1);
+    assert.equal(outcome.state, 'uncertain');
+    assert.deepEqual(outcome.diagnostic, { stage, code });
+    assert.equal(JSON.stringify(outcome).includes('private token'), false);
+  }
+  const denied = await execute(job, site, 'fixture', async () => new Response('not retained', { status: 451 }),
+    async () => {}, async () => {});
+  assert.deepEqual(denied.diagnostic, { stage: 'provider', code: 'provider_policy_restriction' });
+});
+
+test('PSN reflected missing usernames cannot become paid browser profiles', () => {
+  const source = require('../sites.json').find(source => source.name === 'PSN Profiles');
+  const username = 'pf09e6b942e20dd';
+  const rate = { mode: 'browser', hosts: ['psnprofiles.com'] };
+  const target = targetFor(source, username, rate);
+  const data = { url: target, statusCode: 200, httpResponseHeaders: [{ name: 'Content-Type', value: 'text/html' }],
+    browserHtml: `<title>PSNProfiles</title><input value="${username}"><script>const requestedUser="${username}"</script>` };
+  const result = classifyResponse(source, username, target, rate, data);
+  assert.equal(result.status, 'unknown');
+  assert.equal(result.profile, undefined);
+  assert.deepEqual(result.reasonCodes, ['site_200_abstention']);
+  assert.equal(classifyResponse(source, username, target, rate, { ...data, statusCode: 404 }).status, 'not_found');
+  assert.equal(classifyResponse(source, username, target, rate, { ...data, statusCode: 403 }).status, 'blocked');
 });
 test('Zyte IP transport is explicit when approved, unchanged by default and guarded before dispatch', async () => {
   for (const mode of ['http', 'browser']) {

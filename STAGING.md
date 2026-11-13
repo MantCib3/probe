@@ -68,8 +68,10 @@ The bounded JSON body (256 KB, five-second body timeout) supports:
   active automatic catalog entries; controls must be username-compatible and
   unique case-insensitively. Limits contain nonnegative integers `direct<=2000`,
   `http<=1000`, `browser<=100`. No URLs, headers or additional fields are accepted.
-  Start is idempotent only for an identical manifest and run UUID; one unexpired
-  run is permitted at a time. Runs expire after 72 hours.
+  Start is idempotent only for an identical manifest, run UUID and predecessor
+  identity; one active run is permitted at a time. Runs expire after 72 hours.
+  Optional top-level `predecessorRunId` creates an immutable versioned successor
+  after a deployment fix, without waiting for the predecessor's expiry.
 - `{"action":"observe","runId":"UUID","site":"GitHub","username":"example","mode":"direct","pass":1}`:
   modes are `direct`, `http`, `browser`; pass is 1, 2 or 3. Exact manifest
   control identity is required. Direct uses the real 15-second engine;
@@ -79,16 +81,50 @@ The bounded JSON body (256 KB, five-second body timeout) supports:
   Returns `{run,attempts,nextOffset}` (up to 100 attempts); start returns the
   same page. Observe returns `{attempt,runtimeFingerprint}`. All are wrapped
   in `{ok:true,benchmark:...,runtimeFingerprint}`. Run and every attempt retain
-  the pinned deployment identity; mixed deployments fail with HTTP 409.
+  the pinned deployment identity. Observe/start writes require the current
+  deployment; mixed-deployment writes fail with HTTP 409. Status remains
+  available for superseded, expired or older-deployment runs without rewriting
+  their manifests, fingerprints or observations. The outer response fingerprint
+  identifies the serving deployment; `run.runtimeFingerprint` and each attempt's
+  fingerprint identify the original measurement deployment.
   Run status also includes the pinned deployment region (or null locally),
   `supplierStopped`, `createdAt` and `expiresAt`.
+
+### Versioned benchmark lifecycle and shared budgets
+
+Start a successor using
+`{"action":"start","manifest":{...},"predecessorRunId":"UUID"}`. Its manifest
+must validate against the current deployment and each lane limit must be no
+larger than the predecessor's declared limit. The durable global guard serializes
+creation: the predecessor must exist and have no successor, there must be no
+other active run, and recent pending attempts prevent supersession with HTTP
+409 `benchmark_predecessor_busy`. Ten-minute interrupted-attempt recovery runs
+first. Creation and closure of the predecessor are atomic; racing successors
+cannot both win. Repeating the exact successful successor start is idempotent.
+Superseded runs reject observe/start replay, including already saved tuples;
+read their evidence through status instead.
+
+Runs expose `lifecycle` (`active`, `superseded`, `expired`), `predecessorRunId`,
+`successorRunId`, and a durable `budgetId` inherited from the lineage root.
+Existing rows migrate to `budgetId=id`. `reserved` counts **all** attempts
+across that budget, while `runReserved` counts only the requested run's
+attempts. Both count maps always contain `direct`, `http` and `browser`, including
+zero values. `remaining` is the nonnegative difference between this run's declared
+limits and lineage reservations. Supersession never resets/refunds direct,
+HTTP or browser usage, including uncertain or interrupted attempts. For example,
+90 browser reservations leave at most ten from the original 100-request cap,
+not another 100; a successor with a smaller cap can already have zero remaining.
+Exhausted dispatches return HTTP 429 with a public error string such as
+`benchmark_lane_limit:browser:remaining=0:reserved=100:limit=100`.
 
 Observe reservations have a separate durable limit of 600/hour and two active
 attempts. Ordinary staging remains 120/hour. Start, status and saved replays
 consume no attempt quota. Transactions reserve lane counts before dispatch.
 An attempt's UUID is echoed to Zyte and authorization transitions it exactly
-once. Pending `started`/`dispatched` attempts return `result:null`, never
-re-dispatch. Before reserving an observation, the transaction finalizes pending
+once. Pending `started`/`dispatched` attempts return `result:null`, with
+`checkedAt` falling back to their reservation timestamp and `finishedAt:null`;
+their state does not claim completion. They never re-dispatch. Before reserving
+an observation, the transaction finalizes pending
 attempts older than ten minutes (measured from the later of reservation and
 dispatch) as `uncertain`, with reason `benchmark_attempt_interrupted`. This
 conservative bound exceeds the supplier's 65-second request timeout. Recovery
@@ -101,6 +137,8 @@ saved status/replays remain available.
 
 Records retain normalized classification, evidence, profile values, timestamps,
 latency and provider reference/status, but no raw response bodies or credentials.
+Attempt `diagnostic` retains the executor's safe `{stage,code}` diagnostic, or
+null when absent; it never includes raw provider errors.
 `costVerified:false,cost:null` means no supplier-cost verification or customer
 debt. This trusted-operator diagnostic bypasses census policy restrictions,
 not source detection safeguards, and is **not approval for catalog promotion**.

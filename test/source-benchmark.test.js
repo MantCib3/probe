@@ -3,10 +3,10 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { PGlite } = require('@electric-sql/pglite');
-const { createSourceBenchmark, validateManifest } = require('../lib/source-benchmark');
+const { createSourceBenchmark, validateManifest, initialize } = require('../lib/source-benchmark');
 const { createStagingHandler } = require('../staging-probe');
 const { env, sites, fingerprint, commit, manifest, runBenchmarkFixture, runBenchmarkRaceFixture,
-  runBenchmarkInterruptionFixture } = require('./source-benchmark-fixture');
+  runBenchmarkInterruptionFixture, runBenchmarkLifecycleFixture } = require('./source-benchmark-fixture');
 
 test('benchmark rejects malformed/untrusted manifests, inactive sources and deployment drift', () => {
   const good = manifest();
@@ -82,7 +82,7 @@ test('benchmark endpoint authenticates, bounds JSON, keeps status outside probe 
   }
 });
 
-test('embedded PostgreSQL retains metadata, reservations and uncertain outcomes across service restarts', { timeout: 120000 }, async () => {
+test('embedded PostgreSQL retains metadata, reservations and uncertain outcomes across service restarts', { timeout: 120000 }, async t => {
   const db = new PGlite();
   let queue = Promise.resolve();
   const query = async (sql, values) => {
@@ -97,9 +97,52 @@ test('embedded PostgreSQL retains metadata, reservations and uncertain outcomes 
     return { query, release };
   } };
   try {
+    await t.test('legacy roots migrate budget identity without losing existing attempt reservations', async () => {
+      await db.exec(`CREATE SCHEMA probe_lab;
+        CREATE TABLE probe_lab.benchmark_runs(
+          id uuid PRIMARY KEY,manifest jsonb NOT NULL,fingerprint jsonb NOT NULL,region text,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          expires_at timestamptz NOT NULL DEFAULT (now()+interval '72 hours'),
+          supplier_stopped boolean NOT NULL DEFAULT false);
+        CREATE TABLE probe_lab.benchmark_attempts(
+          sequence bigserial UNIQUE,id uuid PRIMARY KEY,
+          run_id uuid NOT NULL REFERENCES probe_lab.benchmark_runs(id),
+          site text NOT NULL,username text NOT NULL,mode text NOT NULL,pass integer NOT NULL,
+          state text NOT NULL DEFAULT 'started',created_at timestamptz NOT NULL DEFAULT now(),
+          dispatched_at timestamptz,completed_at timestamptz,outcome jsonb,duration_ms integer,
+          dispatch_evidence jsonb,UNIQUE(run_id,site,username,mode,pass));`);
+      const legacy = manifest();
+      await pool.query(`INSERT INTO probe_lab.benchmark_runs(id,manifest,fingerprint,expires_at)
+        VALUES($1,$2::jsonb,$3::jsonb,now()-interval '1 second')`,
+      [legacy.runId, JSON.stringify(legacy), JSON.stringify(fingerprint)]);
+      await pool.query(`INSERT INTO probe_lab.benchmark_attempts(id,run_id,site,username,mode,pass,state)
+        VALUES($1,$1,$2,'alice','browser',1,'uncertain')`, [legacy.runId, sites[0].name]);
+      await initialize(pool);
+      await initialize(pool);
+      const migratedService = createSourceBenchmark({ pool, sites, env, commit, runtimeFingerprint: fingerprint });
+      const migrated = await migratedService({ action: 'status', runId: legacy.runId });
+      assert.equal(migrated.run.budgetId, legacy.runId);
+      assert.equal(migrated.run.lifecycle, 'expired');
+      assert.deepEqual(migrated.run.manifest, legacy);
+      assert.deepEqual(migrated.run.reserved, { direct: 0, http: 0, browser: 1 });
+      assert.deepEqual(migrated.run.runReserved, { direct: 0, http: 0, browser: 1 });
+      assert.equal(migrated.attempts.length, 1);
+      const successorManifest = { ...legacy, runId: manifest().runId };
+      const successor = await migratedService({
+        action: 'start', manifest: successorManifest, predecessorRunId: legacy.runId,
+      });
+      assert.equal(successor.run.budgetId, legacy.runId);
+      assert.deepEqual(successor.run.reserved, { direct: 0, http: 0, browser: 1 });
+      assert.deepEqual(successor.run.runReserved, { direct: 0, http: 0, browser: 0 });
+      assert.equal(successor.run.remaining.browser, 0);
+      await pool.query('DELETE FROM probe_lab.benchmark_runs WHERE id=$1', [successorManifest.runId]);
+      await pool.query('DELETE FROM probe_lab.benchmark_attempts WHERE run_id=$1', [legacy.runId]);
+      await pool.query('DELETE FROM probe_lab.benchmark_runs WHERE id=$1', [legacy.runId]);
+    });
     await runBenchmarkFixture(pool);
     await runBenchmarkRaceFixture(pool);
     await runBenchmarkInterruptionFixture(pool);
+    await t.test('versioned successors share immutable lineage budgets across deployment changes', () => runBenchmarkLifecycleFixture(pool));
   }
   finally { await db.close(); }
 });

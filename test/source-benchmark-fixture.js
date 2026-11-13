@@ -35,7 +35,8 @@ async function runBenchmarkFixture(pool) {
       authorizeAgain = authorize;
       supplierCalls++;
       if (job.rate.mode === 'browser') return { state: 'provider_error', providerStatus: 429,
-        providerRef: 'fixture-request', result: { status: 'unknown', reasonCodes: ['provider_http_failure'] } };
+        providerRef: 'fixture-request', diagnostic: { stage: 'provider_http', code: 'http_429' },
+        result: { status: 'unknown', reasonCodes: ['provider_http_failure'] } };
       throw new Error('lost provider response');
     } };
   const service = createSourceBenchmark(options);
@@ -46,6 +47,11 @@ async function runBenchmarkFixture(pool) {
     const first = await service({ action: 'start', manifest: input });
     assert.equal(first.run.paidExecutionEnabled, false);
     assert.equal(first.run.customerCharges, 0);
+    assert.deepEqual(first.run.reserved, { direct: 0, http: 0, browser: 0 });
+    assert.deepEqual(first.run.runReserved, { direct: 0, http: 0, browser: 0 });
+    assert.equal(first.run.budgetId, input.runId);
+    assert.equal(first.run.predecessorRunId, null);
+    assert.equal(first.run.successorRunId, null);
     assert.equal(first.nextOffset, null);
     assert.equal(first.run.region, 'fixture-region');
     assert.ok(first.run.createdAt);
@@ -91,16 +97,22 @@ async function runBenchmarkFixture(pool) {
     const blocked = (await service(observe('browser'))).attempt;
     assert.equal(blocked.providerStatus, 429);
     assert.equal(blocked.providerRef, 'fixture-request');
-    assert.equal((await restarted(observe('browser'))).attempt.id, blocked.id);
+    assert.deepEqual(blocked.diagnostic, { stage: 'provider_http', code: 'http_429' });
+    const savedBlocked = (await restarted(observe('browser'))).attempt;
+    assert.equal(savedBlocked.id, blocked.id);
+    assert.deepEqual(savedBlocked.diagnostic, blocked.diagnostic);
     await assert.rejects(service(observe('http', 'alice', 2)), /benchmark_supplier_stopped/);
     assert.equal(supplierCalls, 2);
     const status = await service({ action: 'status', runId: input.runId });
     assert.equal(status.attempts.length, 5);
     assert.equal(status.run.supplierStopped, true);
+    assert.deepEqual(status.attempts.find(attempt => attempt.id === blocked.id).diagnostic, blocked.diagnostic);
     assert.equal((await service({ action: 'status', runId: input.runId, offset: 5 })).attempts.length, 0);
     const changed = createSourceBenchmark({ ...options, runtimeFingerprint: { ...fingerprint, metadataHintsSha256: 'f'.repeat(64) } });
-    await assert.rejects(changed({ action: 'status', runId: input.runId }), /benchmark_runtime_mismatch/);
+    assert.deepEqual((await changed({ action: 'status', runId: input.runId })).run.runtimeFingerprint, fingerprint);
+    await assert.rejects(changed(observe('direct')), /benchmark_runtime_mismatch/);
     await pool.query(`UPDATE probe_lab.benchmark_runs SET expires_at=now()-interval '1 second' WHERE id=$1`, [input.runId]);
+    assert.equal((await changed({ action: 'status', runId: input.runId })).run.lifecycle, 'expired');
     await assert.rejects(service(observe('direct')), /benchmark_run_expired/);
   } finally {
     await pool.query('DELETE FROM probe_lab.benchmark_attempts WHERE run_id=$1', [input.runId]);
@@ -270,5 +282,130 @@ async function runBenchmarkInterruptionFixture(pool) {
     await pool.query('DELETE FROM probe_lab.benchmark_runs WHERE id=$1', [input.runId]);
   }
 }
+async function runBenchmarkLifecycleFixture(pool) {
+  const root = manifest();
+  root.limits = { direct: 10, http: 1000, browser: 100 };
+  const catalog = Array.from({ length: 30 }, (_, index) => ({ ...sites[0], name: `BenchmarkLifecycle${index}` }));
+  root.sources = catalog.map(site => ({ site: site.name, controls: [{ username: 'alice', expected: 'found' }] }));
+  const nextFingerprint = { ...fingerprint, classifierSha256: '9'.repeat(64), metadataHintsSha256: '8'.repeat(64) };
+  const nextCommit = 'f'.repeat(40);
+  const runs = [root.runId];
+  let dispatches = 0;
+  const base = { pool, sites: catalog, env, region: 'fixture-region',
+    execute: async (job, site, key, fetchImpl, publicCheck, authorize) => {
+      await authorize();
+      dispatches++;
+      return { state: 'response', providerStatus: 200, providerRef: `lifecycle-${dispatches}`,
+        result: { status: 'found', profile: { displayName: 'Successor Fixture' }, reasonCodes: ['fixture_profile'] } };
+    },
+    direct: () => { throw new Error('not expected'); } };
+  const old = createSourceBenchmark({ ...base, commit, runtimeFingerprint: fingerprint });
+  const currentOptions = { ...base, commit: nextCommit, runtimeFingerprint: nextFingerprint };
+  const current = createSourceBenchmark(currentOptions);
+  const concurrent = createSourceBenchmark(currentOptions);
+  const child = () => ({ ...root, runId: randomUUID(), commit: nextCommit });
+  const observe = (runId, site = catalog[0].name, pass = 1, mode = 'browser') =>
+    ({ action: 'observe', runId, site, username: 'alice', mode, pass });
+  try {
+    await old({ action: 'start', manifest: root });
+    // Ninety valid, already-reserved browser tuples must remain charged to the lineage.
+    for (const site of catalog) {
+      for (let pass = 1; pass <= 3; pass++) {
+        await pool.query(`INSERT INTO probe_lab.benchmark_attempts
+          (id,run_id,site,username,mode,pass,state,outcome,completed_at)
+          VALUES($1,$2,$3,'alice','browser',$4,'response',$5::jsonb,now())`,
+        [randomUUID(), root.runId, site.name, pass, JSON.stringify({
+          state: 'response', providerStatus: 200, result: { status: 'found', profile: { displayName: 'Original Fixture' } },
+        })]);
+      }
+    }
+    const snapshot = (await current({ action: 'status', runId: root.runId })).attempts;
+    assert.equal(snapshot.length, 90);
+    assert.deepEqual(snapshot[0].runtimeFingerprint, fingerprint);
+    const increased = child();
+    increased.limits = { ...root.limits, direct: 11 };
+    await assert.rejects(current({ action: 'start', manifest: increased, predecessorRunId: root.runId }), /benchmark_successor_limit_increase/);
+    const pending = randomUUID();
+    await pool.query(`INSERT INTO probe_lab.benchmark_attempts(id,run_id,site,username,mode,pass)
+      VALUES($1,$2,$3,'alice','http',1)`, [pending, root.runId, catalog[0].name]);
+    const candidates = [child(), child()];
+    runs.push(...candidates.map(candidate => candidate.runId));
+    const pendingView = (await current({ action: 'status', runId: root.runId })).attempts.find(attempt => attempt.id === pending);
+    assert.ok(pendingView.checkedAt);
+    assert.equal(pendingView.finishedAt, null);
+    assert.equal(pendingView.result, null);
+    await assert.rejects(current({ action: 'start', manifest: candidates[0], predecessorRunId: root.runId }), /benchmark_predecessor_busy/);
+    assert.equal((await old({ action: 'status', runId: root.runId })).run.lifecycle, 'active');
+    await pool.query(`UPDATE probe_lab.benchmark_attempts SET state='dispatched',dispatched_at=now() WHERE id=$1`, [pending]);
+    await assert.rejects(current({ action: 'start', manifest: candidates[0], predecessorRunId: root.runId }), /benchmark_predecessor_busy/);
+    await pool.query(`UPDATE probe_lab.benchmark_attempts SET
+      created_at=now()-interval '12 minutes',dispatched_at=now()-interval '11 minutes' WHERE id=$1`, [pending]);
+    const race = await Promise.allSettled(candidates.map((manifest, index) =>
+      [current, concurrent][index]({ action: 'start', manifest, predecessorRunId: root.runId })));
+    assert.equal(race.filter(result => result.status === 'fulfilled').length, 1);
+    assert.match(race.find(result => result.status === 'rejected').reason.message, /benchmark_predecessor_superseded/);
+    const winner = candidates[race.findIndex(result => result.status === 'fulfilled')];
+    const successor = race.find(result => result.status === 'fulfilled').value;
+    assert.equal(successor.run.budgetId, root.runId);
+    assert.equal(successor.run.predecessorRunId, root.runId);
+    assert.equal(successor.run.lifecycle, 'active');
+    assert.equal(successor.run.reserved.browser, 90);
+    assert.equal(successor.run.runReserved.browser, 0);
+    assert.equal(successor.run.remaining.browser, 10);
+    assert.equal(successor.run.reserved.http, 1);
+    assert.equal(successor.run.reserved.direct, 0);
+    assert.deepEqual(successor.run.runReserved, { direct: 0, http: 0, browser: 0 });
+    assert.deepEqual((await current({ action: 'start', manifest: winner, predecessorRunId: root.runId })).run, successor.run);
+    await assert.rejects(current({ action: 'start', manifest: winner }), /benchmark_manifest_conflict/);
+    const historical = await current({ action: 'status', runId: root.runId });
+    assert.equal(historical.run.lifecycle, 'superseded');
+    assert.equal(historical.run.successorRunId, winner.runId);
+    assert.deepEqual(historical.run.manifest, root);
+    assert.deepEqual(historical.run.runtimeFingerprint, fingerprint);
+    assert.deepEqual(historical.attempts.slice(0, 90), snapshot);
+    assert.deepEqual(historical.attempts.find(attempt => attempt.id === pending).result.reasonCodes, ['benchmark_attempt_interrupted']);
+    await assert.rejects(old(observe(root.runId)), /benchmark_run_superseded/);
+    await assert.rejects(old({ action: 'start', manifest: root }), /benchmark_run_superseded/);
+    await assert.rejects(current({ action: 'start', manifest: child() }), /benchmark_run_in_progress/);
+    for (let index = 0; index < 10; index++) {
+      const observed = await current(observe(winner.runId, catalog[Math.floor(index / 3)].name, index % 3 + 1));
+      assert.equal(observed.attempt.state, 'response');
+      assert.deepEqual(observed.attempt.runtimeFingerprint, nextFingerprint);
+    }
+    await assert.rejects(current(observe(winner.runId, catalog[3].name, 2)), error =>
+      error.status === 429 && error.remaining === 0 && /benchmark_lane_limit:browser:remaining=0:reserved=100:limit=100/.test(error.publicCode));
+    assert.equal(dispatches, 10);
+    const spent = await current({ action: 'status', runId: winner.runId });
+    assert.equal(spent.run.reserved.browser, 100);
+    assert.equal(spent.run.runReserved.browser, 10);
+    assert.equal(spent.run.remaining.browser, 0);
+    const grandchild = child();
+    grandchild.limits = { ...root.limits, browser: 95 };
+    const inherited = await current({ action: 'start', manifest: grandchild, predecessorRunId: winner.runId });
+    runs.push(grandchild.runId);
+    assert.equal(inherited.run.budgetId, root.runId);
+    assert.equal(inherited.run.reserved.browser, 100);
+    assert.equal(inherited.run.remaining.browser, 0);
+    await assert.rejects(current(observe(grandchild.runId)), /benchmark_lane_limit:browser:remaining=0/);
+    await assert.rejects(current({ action: 'start', manifest: child(), predecessorRunId: grandchild.runId }), /benchmark_successor_limit_increase/);
+    const rootAfter = await current({ action: 'status', runId: root.runId });
+    assert.deepEqual(rootAfter.attempts.slice(0, 90), snapshot);
+    assert.equal(rootAfter.run.reserved.browser, 100);
+    assert.equal(rootAfter.run.runReserved.browser, 90);
+    await pool.query(`UPDATE probe_lab.benchmark_runs SET expires_at=now()-interval '1 second' WHERE id=$1`, [grandchild.runId]);
+    const future = createSourceBenchmark({ ...currentOptions, runtimeFingerprint: fingerprint, commit });
+    const expired = await future({ action: 'status', runId: grandchild.runId });
+    assert.equal(expired.run.lifecycle, 'expired');
+    assert.deepEqual(expired.run.runtimeFingerprint, nextFingerprint);
+    assert.deepEqual(expired.run.manifest, grandchild);
+    await assert.rejects(current(observe(grandchild.runId)), /benchmark_run_expired/);
+    assert.equal(dispatches, 10);
+  } finally {
+    for (const id of runs.reverse()) {
+      await pool.query('DELETE FROM probe_lab.benchmark_attempts WHERE run_id=$1', [id]);
+      await pool.query('DELETE FROM probe_lab.benchmark_runs WHERE id=$1', [id]);
+    }
+  }
+}
 module.exports = { env, sites, fingerprint, commit, manifest, runBenchmarkFixture, runBenchmarkRaceFixture,
-  runBenchmarkInterruptionFixture };
+  runBenchmarkInterruptionFixture, runBenchmarkLifecycleFixture };

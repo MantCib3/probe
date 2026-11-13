@@ -563,7 +563,9 @@
     "url": "https://psnprofiles.com/{}",
     "urlMain": "https://psnprofiles.com",
     "category": "gaming",
-    "checkMethod": "status_code"
+    "checkMethod": "status_code",
+    "abstainOn200": true,
+    "caveat": "The staged browser benchmark returned HTTP 200 and reflected a reviewed missing username in the body. Username reflection is not profile proof; abstain on 200 until an identity-bound positive rule is verified. Explicit missing and blocked responses remain classified."
   },
   {
     "name": "Roblox",
