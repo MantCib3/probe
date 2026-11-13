@@ -553,7 +553,7 @@ test('Zyte failures retain safe phase-specific diagnostics without leaking respo
   const job = { source: site.name, username: 'alice', rate: config.rates[0], attempt_id: randomUUID(),
     target_url: targetFor(site, 'alice', config.rates[0]) };
   for (const [response, code, stage] of [
-    [() => new Response('x'.repeat(2 * 1024 * 1024 + 1)), 'provider_response_too_large', 'decode'],
+    [() => new Response('x'.repeat(8 * 1024 * 1024 + 1)), 'provider_response_too_large', 'decode'],
     [() => new Response(JSON.stringify({ echoData: { probeAttempt: job.attempt_id }, url: job.target_url, statusCode: 200 })),
       'provider_target_headers_missing', 'classify'],
     [() => { throw Object.assign(new Error('private token and URL must never escape'), { name: 'TimeoutError' }); },
@@ -570,6 +570,45 @@ test('Zyte failures retain safe phase-specific diagnostics without leaking respo
   const denied = await execute(job, site, 'fixture', async () => new Response('not retained', { status: 451 }),
     async () => {}, async () => {});
   assert.deepEqual(denied.diagnostic, { stage: 'provider', code: 'provider_policy_restriction' });
+});
+
+test('large valid supplier pages preserve bounded positive and negative classification', async () => {
+  const job = { source: site.name, username: 'alice', rate: config.rates[0], attempt_id: randomUUID(),
+    target_url: targetFor(site, 'alice', config.rates[0]) };
+  for (const statusCode of [200, 404]) {
+    let calls = 0;
+    const outcome = await execute(job, site, 'fixture', async (_url, options) => {
+      calls++;
+      const body = '<title>Alice</title>profile-marker alice ' + 'x'.repeat(2 * 1024 * 1024);
+      return Response.json({ url: job.target_url, statusCode, echoData: JSON.parse(options.body).echoData,
+        httpResponseHeaders: [{ name: 'Content-Type', value: 'text/html' }],
+        httpResponseBody: Buffer.from(body).toString('base64') });
+    }, async () => {}, async () => {});
+    assert.equal(calls, 1);
+    assert.equal(outcome.state, 'response');
+    assert.equal(outcome.result.status, statusCode === 200 ? 'found' : 'not_found');
+    if (statusCode === 404) assert.equal(outcome.result.profile, undefined);
+  }
+});
+
+test('LoLProfile search-query reflection is not paid profile evidence', () => {
+  const source = require('../sites.json').find(source => source.name === 'LoLProfile');
+  const username = 'pf4bf343b2e7825';
+  for (const mode of ['http', 'browser']) {
+    const rate = { mode, hosts: ['lolprofile.net'] };
+    const target = targetFor(source, username, rate);
+    const body = `<title>Search results</title><input value="${username}"><script>const query="${username}"</script>`;
+    const data = { url: target, statusCode: 200,
+      httpResponseHeaders: [{ name: 'Content-Type', value: 'text/html' }],
+      httpResponseBody: Buffer.from(body).toString('base64'), browserHtml: body };
+    const result = classifyResponse(source, username, target, rate, data);
+    assert.equal(result.status, 'unknown');
+    assert.equal(result.profile, undefined);
+    const missing = source.errorMsg;
+    assert.equal(classifyResponse(source, username, target, rate, {
+      ...data, browserHtml: missing, httpResponseBody: Buffer.from(missing).toString('base64'),
+    }).status, 'not_found');
+  }
 });
 
 test('PSN reflected missing usernames cannot become paid browser profiles', () => {

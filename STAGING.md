@@ -137,6 +137,11 @@ saved status/replays remain available.
 
 Records retain normalized classification, evidence, profile values, timestamps,
 latency and provider reference/status, but no raw response bodies or credentials.
+Supplier JSON envelopes are bounded to 8 MiB; valid large YouTube and DeviantArt
+responses exceeded the former 2 MiB envelope limit. Classifier body limits remain
+unchanged, and larger envelopes still fail explicitly without retries. LoLProfile
+HTTP 200 search pages now abstain because a reflected missing username produced
+reviewed false positives; this is containment, not verified positive support.
 Attempt `diagnostic` retains the executor's safe `{stage,code}` diagnostic, or
 null when absent; it never includes raw provider errors.
 `costVerified:false,cost:null` means no supplier-cost verification or customer

@@ -4805,7 +4805,8 @@
     "category": "gaming",
     "checkMethod": "message",
     "errorMsg": "We could not find any results, please try again later or check your input.",
-    "expectedStatus": 200
+    "abstainOn200": true,
+    "caveat": "The search endpoint reflected a reviewed missing username and returned false positives through Zyte HTTP and browser. Positive detection needs a validated exact-account result rule; HTTP 200 alone is not profile evidence."
   },
   {
     "name": "Lor.sh (Mastodon Instance)",
