@@ -131,3 +131,33 @@ test('nightly view exposes degraded/skipped gates, report identity, evidence age
     assert.doesNotMatch(html, /<script>bad/);
   });
 });
+
+test('nightly view lists individual needs-review items, orders disagreements first and escapes them', async () => {
+  const store = createMemoryStore();
+  await store.save(report({
+    review: { pending: 1, disagreements: 1, reviewed: 5, items: [
+      { source: 'Reddit', username: 'spez', expected: 'found', actual: 'found', kind: 'pending', note: 'awaiting confirm' },
+      { source: 'GitHub', username: 'octocat', expected: 'found', actual: 'not_found', kind: 'disagreement',
+        reasonCodes: ['http_404'], checkedAt: '2026-11-09T10:00:00Z', note: '<script>x</script>',
+        profile: { name: 'The Octocat', bio: 'builds <b>things</b>', followers: 42 } },
+    ] },
+  }));
+  await withServer({ store }, async base => {
+    const html = await (await fetch(`${base}/lab`, { headers: { authorization: basic(PASSWORD) } })).text();
+    for (const value of ['Needs review', 'GitHub', 'octocat', 'not_found', 'http_404', 'Reddit', 'awaiting confirm',
+      'The Octocat', 'followers: 42']) {
+      assert.ok(html.includes(value), value);
+    }
+    assert.ok(html.indexOf('octocat') < html.indexOf('spez'), 'disagreements render before pending items');
+    assert.ok(html.includes('&lt;script&gt;x&lt;/script&gt;'));
+    assert.ok(html.includes('builds &lt;b&gt;things&lt;/b&gt;'), 'metadata values are escaped');
+    assert.doesNotMatch(html, /<script>x/);
+    assert.doesNotMatch(html, /<b>things/);
+  });
+});
+
+test('validateReport accepts an optional review object with items and rejects malformed ones', () => {
+  assert.equal(validateReport(report({ review: { pending: 0, disagreements: 0, reviewed: 0, items: [] } })), null);
+  assert.ok(validateReport({ schemaVersion: 1, generatedAt: '2026-11-09T00:00:00Z', review: [] }));
+  assert.ok(validateReport({ schemaVersion: 1, generatedAt: '2026-11-09T00:00:00Z', review: { items: {} } }));
+});
